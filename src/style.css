@@ -798,6 +798,17 @@ body {
 .facts, .sources { padding-left: 20px; margin: 0 0 10px; }
 .facts li, .sources li { margin-bottom: 6px; }
 .about a { color: var(--accent); overflow-wrap: anywhere; }
+.donate {
+  margin: 22px 0 4px;
+  padding: 16px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(240, 144, 63, .14), rgba(240, 144, 63, .05));
+  border: 1px solid rgba(240, 144, 63, .3);
+}
+.donate h3 { margin: 0 0 6px; }
+.donate p { margin: 0 0 12px; }
+.about .donate__btn { display: inline-block; color: #1a0d05; text-decoration: none; padding-inline: 26px; font-size: 14px; }
+.about__contact { margin-top: 8px; font-size: 13px; color: var(--ink-soft); }
 .about__note { margin-top: 14px; font-size: 13px; color: var(--ink-soft); }
 
 /* Wide viewports (landscape phones, tablets in landscape, desktops):

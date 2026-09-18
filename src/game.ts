@@ -1,6 +1,8 @@
 import { sfx } from "./sound";
 
 export const CATCH_WINDOW_MS = 5000;
+// Each catch buys a little time back instead of refilling the whole window.
+export const CATCH_BONUS_MS = 800;
 const HOLE_COUNT = 9;
 const BEST_KEY = "tilcayo.best";
 
@@ -95,7 +97,7 @@ export class Game {
     return clamp(1500 - this.score * 28, 620, 1500);
   }
   private spawnGap(): number {
-    return clamp(1100 - this.score * 30, 380, 1100);
+    return clamp(800 - this.score * 24, 320, 800);
   }
   private simultaneous(): number {
     if (this.score >= 40) return 3;
@@ -188,7 +190,7 @@ export class Game {
     setTimeout(() => hole.el.classList.remove("is-caught", "is-hit"), 550);
 
     this.score += 1;
-    this.deadline = performance.now() + CATCH_WINDOW_MS;
+    this.deadline = Math.min(this.deadline + CATCH_BONUS_MS, performance.now() + CATCH_WINDOW_MS);
     this.catEl.classList.remove("is-alert");
     this.catEl.classList.remove("is-pounce");
     void this.catEl.offsetWidth; // restart animation

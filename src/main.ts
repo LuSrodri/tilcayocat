@@ -47,7 +47,7 @@ const game = new Game($("holes"), catEl, {
     overlayTitle.textContent = isNewBest ? "New record!" : "Too slow!";
     overlayText.innerHTML = isNewBest
       ? "The tilcayo is impressed. Can you beat yourself again?"
-      : "Five seconds went by with no mouse. The tilcayo is giving you <em>that</em> look.";
+      : "The clock ran out before the next catch. The tilcayo is giving you <em>that</em> look.";
     overlayStats.hidden = false;
     overlayStats.textContent = `${score} ${score === 1 ? "mouse" : "mice"} caught · best ${best}`;
     playBtn.textContent = "Play again";

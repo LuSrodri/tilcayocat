@@ -1,5 +1,6 @@
 /* TEAM */
 Site: tilcayo.cat
+Contact: rodrigueslucass@outlook.com.br
 Location: Brazil
 
 /* THANKS */

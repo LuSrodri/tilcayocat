@@ -6,7 +6,7 @@
 
 - Genre: arcade / reflex (whack-a-mole style), single player, free, no account, no ads.
 - Platform: any modern web browser; designed for phones first, also works on desktop (keys 1–9 map to the 3×3 hole grid).
-- Rules: tap a mouse to catch it (+1). Every catch resets a 5-second timer. Mice stay up for less time and appear more often as the score grows. Best score is stored locally on the device.
+- Rules: tap a mouse to catch it (+1). You start with 5 seconds and every catch adds 0.8 seconds (capped at 5). Mice stay up for less time and appear more often as the score grows. Best score is stored locally on the device.
 - An info button (ⓘ) opens a page about the real tilcayo cat.
 
 ## About the tilcayo cat (Leopardus tilcayo)
@@ -34,7 +34,7 @@
 ## Frequently asked questions
 
 Q: What is the Tilcayo Cat Game?
-A: A free, mobile-first browser game at https://tilcayo.cat where you play as the tilcayo cat, a new wild cat species discovered after more than 100 years. Mice pop out of nine holes on a moonlit lawn; tap them to catch them. If more than 5 seconds pass without a catch, the round ends.
+A: A free, mobile-first browser game at https://tilcayo.cat where you play as the tilcayo cat, a new wild cat species discovered after more than 100 years. Mice pop out of nine holes on a moonlit lawn; tap them to catch them. You start with 5 seconds, each catch adds 0.8 seconds (capped at 5), and the round ends when the timer hits zero.
 
 Q: Is the tilcayo cat real?
 A: Yes. Leopardus tilcayo was formally described in September 2026 in Current Biology by an international team including Paola Nogales Ascarrunz, Jonas Lescroart and Eduardo Eizirik. It lives in the Bolivian Yungas cloud forest.
@@ -47,6 +47,11 @@ A: Click the mice, or press keys 1–9 (numpad layout: 7-8-9 is the top row) to 
 
 Q: Does the game have sound?
 A: Yes: synthesized sound effects and a short looping chiptune, with a mute toggle in the top bar.
+
+## Support and contact
+
+- The only known tilcayo in captivity lives at Senda Verde Animal Refuge (Yungas, Bolivia), the cat that led scientists to the species. Donations: https://sendaverde.org/donate/
+- Contact for the game: rodrigueslucass@outlook.com.br
 
 ## Citation
 

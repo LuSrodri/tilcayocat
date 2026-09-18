@@ -103,7 +103,9 @@
         "@id": "https://tilcayo.cat/#organization",
         "name": "Tilcayo Cat",
         "url": "https://tilcayo.cat/",
-        "logo": { "@type": "ImageObject", "url": "https://tilcayo.cat/icon-512.png", "width": 512, "height": 512 }
+        "logo": { "@type": "ImageObject", "url": "https://tilcayo.cat/icon-512.png", "width": 512, "height": 512 },
+        "email": "rodrigueslucass@outlook.com.br",
+        "contactPoint": { "@type": "ContactPoint", "email": "rodrigueslucass@outlook.com.br", "contactType": "customer support", "availableLanguage": ["en", "pt"] }
       },
       {
         "@type": ["VideoGame", "WebApplication"],
@@ -172,7 +174,7 @@
           {
             "@type": "Question",
             "name": "How do you play Tilcayo Cat?",
-            "acceptedAnswer": { "@type": "Answer", "text": "Tap the mice as they pop out of their holes in the grass. Every catch resets a 5-second timer. If the timer reaches zero before you catch another mouse, the game ends." }
+            "acceptedAnswer": { "@type": "Answer", "text": "Tap the mice as they pop out of their holes in the grass. You start with 5 seconds; every catch adds 0.8 seconds (up to 5). If the timer reaches zero, the game ends." }
           },
           {
             "@type": "Question",
@@ -253,7 +255,7 @@
     <div id="overlay" class="overlay" role="dialog" aria-modal="true" aria-labelledby="overlayTitle">
       <div class="overlay__card">
         <h1 id="overlayTitle" class="overlay__title">Tilcayo Cat Game</h1>
-        <p id="overlayText" class="overlay__text">A moonlit night in the Yungas. You are a tilcayo, the new cat species discovered after 100+ years. Tap the mice as they pop out. <strong>Never go more than 5 seconds without a catch.</strong></p>
+        <p id="overlayText" class="overlay__text">A moonlit night in the Yungas. You are a tilcayo, the new cat species discovered after 100+ years. Tap the mice as they pop out. <strong>You start with 5 seconds; each catch buys you 0.8 s more.</strong></p>
         <p id="overlayStats" class="overlay__stats" hidden></p>
         <div class="overlay__actions">
           <button id="playBtn" class="btn btn--primary" type="button">Play</button>
@@ -311,6 +313,12 @@
       <h3>Why it matters</h3>
       <p>Finding a new mammal is rare; a new cat is rarer still. The team hopes the description drives conservation of the Yungas forests, one of the least-studied and most species-rich regions of the Neotropics.</p>
 
+      <aside class="donate">
+        <h3>Help the tilcayo's home</h3>
+        <p>The only known tilcayo in captivity lives at Senda Verde, in the Bolivian Yungas. He is the cat that led scientists to the discovery of the species. The refuge cares for hundreds of rescued animals and runs on donations.</p>
+        <a class="btn btn--primary donate__btn" href="https://sendaverde.org/donate/" target="_blank" rel="noopener noreferrer">Donate to Senda Verde</a>
+      </aside>
+
       <h3>Sources</h3>
       <ul class="sources">
         <li><a href="https://www.cell.com/current-biology/fulltext/S0960-9822(26)01110-3" target="_blank" rel="noopener noreferrer">Current Biology — species description (2026)</a></li>
@@ -318,6 +326,7 @@
         <li><a href="https://www.scientificamerican.com/article/see-the-first-new-species-of-cat-discovered-in-more-than-a-century-its-adorable/" target="_blank" rel="noopener noreferrer">Scientific American — See the first new species of cat discovered in more than a century</a></li>
       </ul>
       <p class="about__note">The game's artwork is an original illustration inspired by these photographs.</p>
+      <p class="about__contact">Questions or ideas? Write to <a href="mailto:rodrigueslucass@outlook.com.br">rodrigueslucass@outlook.com.br</a>.</p>
     </article>
   </dialog>
 

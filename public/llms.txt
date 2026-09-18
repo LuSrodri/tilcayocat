@@ -6,7 +6,7 @@
 
 - Genre: arcade / reflex (whack-a-mole style), single player, free, no account, no ads.
 - Platform: any modern web browser; designed for phones first, also works on desktop (keys 1–9 map to the 3×3 hole grid).
-- Rules: tap a mouse to catch it (+1). Every catch resets a 5-second timer. Mice stay up for less time and appear more often as the score grows. Best score is stored locally on the device.
+- Rules: tap a mouse to catch it (+1). You start with 5 seconds and every catch adds 0.8 seconds (capped at 5). Mice stay up for less time and appear more often as the score grows. Best score is stored locally on the device.
 - An info button (ⓘ) opens a page about the real tilcayo cat.
 
 ## About the tilcayo cat (Leopardus tilcayo)
@@ -19,6 +19,11 @@
 - Only one individual is known: a ten-year-old male living at the Senda Verde Animal Refuge (Yungas, Bolivia), handed over by a local family around 2017.
 - Identified by wild-cat conservationist and National Geographic Explorer Paola Nogales Ascarrunz with co-lead author Jonas Lescroart (University of Antwerp) and Eduardo Eizirik (PUCRS, Brazil), from a genomic study of 38 cats including 26 tiger cats that split the tiger cats into at least five species.
 - "Tilcayo" is the name local communities already used for the cat; the scientists kept it to honour that knowledge.
+
+## Support and contact
+
+- Donate to Senda Verde Animal Refuge, home of the only known tilcayo: https://sendaverde.org/donate/
+- Contact: rodrigueslucass@outlook.com.br
 
 ## Sources
 
