@@ -35,7 +35,9 @@ const game = new Game($("holes"), catEl, {
     const ratio = remaining / CATCH_WINDOW_MS;
     timerFill.style.transform = `scaleX(${ratio})`;
     timerText.textContent = `${(remaining / 1000).toFixed(1)}s`;
-    timerBar.dataset.zone = ratio > 0.5 ? "ok" : ratio > 0.25 ? "warn" : "danger";
+    const zone = ratio > 0.5 ? "ok" : ratio > 0.25 ? "warn" : "danger";
+    timerBar.dataset.zone = zone;
+    field.dataset.zone = zone;
   },
   onGameOver(score, best, isNewBest) {
     music.stop();

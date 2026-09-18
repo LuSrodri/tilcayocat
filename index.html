@@ -31,6 +31,9 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,500;12..96,700&family=Unbounded:wght@600;800&display=swap">
   <link rel="preload" as="image" href="/img/cat.webp" type="image/webp" fetchpriority="high">
+  <link rel="preload" as="image" href="/img/cat-catch.webp" type="image/webp">
+  <link rel="preload" as="image" href="/img/cat-angry.webp" type="image/webp">
+  <link rel="preload" as="image" href="/img/paw.webp" type="image/webp">
   <link rel="canonical" href="https://tilcayo.cat/">
   <link rel="alternate" hreflang="en" href="https://tilcayo.cat/">
   <link rel="alternate" hreflang="x-default" href="https://tilcayo.cat/">
@@ -217,10 +220,21 @@
         <div class="hills"></div>
       </div>
       <div class="lawn">
-        <div id="cat" class="cat">
-          <picture>
+        <div class="moonlight" aria-hidden="true"></div>
+        <div class="cloud-shadow" aria-hidden="true"></div>
+        <div id="cat" class="cat" data-state="idle">
+          <span class="cat__shadow" aria-hidden="true"></span>
+          <picture class="cat__img cat__img--idle">
             <source srcset="/img/cat.webp" type="image/webp">
             <img src="/img/cat.png" alt="Tilcayo cat sitting on the grass, watching the mouse holes" width="720" height="1142" draggable="false" fetchpriority="high">
+          </picture>
+          <picture class="cat__img cat__img--catch">
+            <source srcset="/img/cat-catch.webp" type="image/webp">
+            <img src="/img/cat-catch.png" alt="Tilcayo cat holding a caught mouse in its mouth" width="720" height="1126" draggable="false" loading="eager" decoding="async">
+          </picture>
+          <picture class="cat__img cat__img--angry">
+            <source srcset="/img/cat-angry.webp" type="image/webp">
+            <img src="/img/cat-angry.png" alt="Angry tilcayo cat hissing after the mouse escaped" width="720" height="1136" draggable="false" loading="eager" decoding="async">
           </picture>
         </div>
         <div id="holes" class="holes" role="group" aria-label="Mouse holes"></div>
@@ -230,6 +244,7 @@
         <span class="firefly" style="left:60%;top:80%;--d:12s;--delay:1s;--dx:-36px;--dy:-40px" aria-hidden="true"></span>
         <span class="firefly" style="left:88%;top:70%;--d:10s;--delay:6s;--dx:-20px;--dy:-60px" aria-hidden="true"></span>
       </div>
+      <div class="vignette" aria-hidden="true"></div>
     </section>
 
     <div id="overlay" class="overlay" role="dialog" aria-modal="true" aria-labelledby="overlayTitle">

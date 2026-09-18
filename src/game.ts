@@ -10,6 +10,8 @@ interface Hole {
   hideAt: number;
 }
 
+export type CatState = "idle" | "catch" | "angry" | "sad";
+
 export interface GameCallbacks {
   onScore(score: number, best: number): void;
   onTimer(remainingMs: number): void;
@@ -25,6 +27,7 @@ export class Game {
   private nextSpawnAt = 0;
   private raf = 0;
   private lastAlertAt = 0;
+  private catTimer = 0;
 
   constructor(
     private readonly holesEl: HTMLElement,
@@ -50,6 +53,7 @@ export class Game {
     this.nextSpawnAt = now + 350;
     this.catEl.classList.remove("is-sad");
     this.catEl.classList.add("is-idle");
+    this.setCat("idle");
     cancelAnimationFrame(this.raf);
     this.raf = requestAnimationFrame(this.tick);
   }
@@ -72,7 +76,9 @@ export class Game {
         `<span class="hole__back"></span>` +
         `<span class="hole__clip"><span class="hole__mouse">${MOUSE_IMG}</span></span>` +
         `<span class="hole__front"></span>` +
-        `<span class="hole__paw" aria-hidden="true">${PAW_SVG}</span>` +
+        `<span class="hole__flash" aria-hidden="true"></span>` +
+        `<span class="hole__pawshadow" aria-hidden="true"></span>` +
+        `<span class="hole__paw" aria-hidden="true">${PAW_IMG}</span>` +
         `<span class="hole__pop" aria-hidden="true">+1</span>`;
       const hole: Hole = { el, up: false, hideAt: 0 };
       el.addEventListener("pointerdown", (ev) => {
@@ -113,7 +119,10 @@ export class Game {
     }
 
     for (const h of this.holes) {
-      if (h.up && now >= h.hideAt) this.lower(h);
+      if (h.up && now >= h.hideAt) {
+        this.lower(h);
+        this.escaped(h);
+      }
     }
 
     if (now >= this.nextSpawnAt) {
@@ -140,11 +149,36 @@ export class Game {
     hole.el.classList.remove("is-up");
   }
 
+  // A mouse went back down uncaught: the cat is not amused.
+  private escaped(hole: Hole): void {
+    hole.el.classList.remove("is-escaped");
+    void hole.el.offsetWidth;
+    hole.el.classList.add("is-escaped");
+    setTimeout(() => hole.el.classList.remove("is-escaped"), 500);
+    this.setCat("angry", 650);
+  }
+
+  // Swap the cat sprite; a duration makes it fall back to idle afterwards.
+  private setCat(state: CatState, duration?: number): void {
+    window.clearTimeout(this.catTimer);
+    this.catEl.dataset.state = state;
+    if (duration) {
+      this.catTimer = window.setTimeout(() => {
+        if (this.running) this.catEl.dataset.state = "idle";
+      }, duration);
+    }
+  }
+
   private tap(hole: Hole): void {
     if (!this.running) return;
     sfx.unlock();
     if (!hole.up) {
       sfx.miss();
+      hole.el.classList.remove("is-hit");
+      void hole.el.offsetWidth;
+      hole.el.classList.add("is-hit", "is-whiff");
+      setTimeout(() => hole.el.classList.remove("is-hit", "is-whiff"), 450);
+      this.setCat("angry", 450);
       return;
     }
     hole.up = false;
@@ -159,6 +193,7 @@ export class Game {
     this.catEl.classList.remove("is-pounce");
     void this.catEl.offsetWidth; // restart animation
     this.catEl.classList.add("is-pounce");
+    this.setCat("catch", 900);
     sfx.catch();
     if (navigator.vibrate) navigator.vibrate(12);
     this.cb.onScore(this.score, Math.max(this.best, this.score));
@@ -170,6 +205,7 @@ export class Game {
     for (const h of this.holes) this.lower(h);
     this.catEl.classList.remove("is-idle", "is-alert");
     this.catEl.classList.add("is-sad");
+    this.setCat("angry");
     const isNewBest = this.score > this.best;
     if (isNewBest) {
       this.best = this.score;
@@ -205,12 +241,6 @@ const MOUSE_IMG =
   `<picture><source srcset="/img/mouse.webp" type="image/webp">` +
   `<img src="/img/mouse.png" alt="" width="420" height="358" draggable="false" decoding="async"></picture>`;
 
-const PAW_SVG =
-  `<svg viewBox="0 0 100 100" aria-hidden="true">` +
-  `<g fill="#c8743a" stroke="#1e1410" stroke-width="3">` +
-  `<ellipse cx="50" cy="64" rx="24" ry="19"/>` +
-  `<ellipse cx="22" cy="42" rx="9" ry="11" transform="rotate(-18 22 42)"/>` +
-  `<ellipse cx="40" cy="28" rx="9" ry="11"/>` +
-  `<ellipse cx="60" cy="28" rx="9" ry="11"/>` +
-  `<ellipse cx="78" cy="42" rx="9" ry="11" transform="rotate(18 78 42)"/>` +
-  `</g></svg>`;
+const PAW_IMG =
+  `<picture><source srcset="/img/paw.webp" type="image/webp">` +
+  `<img src="/img/paw.png" alt="" width="520" height="612" draggable="false" decoding="async"></picture>`;

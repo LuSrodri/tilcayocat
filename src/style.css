@@ -288,6 +288,47 @@ body {
   padding-bottom: max(12px, env(safe-area-inset-bottom));
 }
 
+/* Lighting: moonlight wash, drifting cloud shadow, edge vignette, danger pulse */
+.moonlight {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background:
+    radial-gradient(70% 60% at 82% -10%, rgba(220, 232, 255, .22), transparent 70%),
+    linear-gradient(115deg, rgba(220, 232, 255, .06), transparent 45%);
+  mix-blend-mode: screen;
+}
+.cloud-shadow {
+  position: absolute;
+  top: -20%;
+  left: -40%;
+  width: 60%;
+  height: 140%;
+  pointer-events: none;
+  z-index: 0;
+  background: radial-gradient(50% 50% at 50% 50%, rgba(2, 5, 16, .45), rgba(2, 5, 16, .2) 50%, transparent 72%);
+  filter: blur(18px);
+  animation: cloudDrift 46s linear infinite;
+}
+@keyframes cloudDrift { from { translate: 0 0; } to { translate: 260% 0; } }
+
+.vignette {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 4;
+  background: radial-gradient(120% 90% at 50% 45%, transparent 55%, rgba(2, 5, 16, .55) 100%);
+  transition: box-shadow .25s ease;
+}
+.field[data-zone="danger"] .vignette {
+  animation: dangerPulse .6s ease-in-out infinite alternate;
+}
+@keyframes dangerPulse {
+  from { box-shadow: inset 0 0 0 0 rgba(255, 90, 72, 0); }
+  to { box-shadow: inset 0 0 80px 20px rgba(255, 90, 72, .35); }
+}
+
 /* Fireflies */
 .firefly {
   position: absolute;
@@ -321,13 +362,51 @@ body {
   transform-origin: 50% 96%;
   animation: breathe 3.4s ease-in-out infinite;
   z-index: 2;
-  filter: drop-shadow(0 12px 8px rgba(0, 0, 0, .6)) brightness(.9) saturate(.92);
+  filter: drop-shadow(-10px 8px 10px rgba(0, 0, 0, .55)) brightness(.9) saturate(.92);
   transition: filter .3s ease, translate .3s ease;
 }
-.cat picture, .cat img { display: block; width: 100%; height: 100%; object-fit: contain; pointer-events: none; }
+.cat__img { position: absolute; inset: 0; opacity: 0; transition: opacity .12s ease; }
+.cat__img img { display: block; width: 100%; height: 100%; object-fit: contain; object-position: center bottom; pointer-events: none; }
+.cat[data-state="idle"] .cat__img--idle,
+.cat[data-state="catch"] .cat__img--catch,
+.cat[data-state="angry"] .cat__img--angry,
+.cat[data-state="sad"] .cat__img--angry { opacity: 1; }
+.cat[data-state="catch"] { animation: catchBounce .9s ease-out; }
+.cat[data-state="angry"] .cat__img--angry { animation: hiss .45s ease-in-out; }
+
+/* ground shadow cast by the moon (light from top-right) */
+.cat__shadow {
+  position: absolute;
+  left: 50%;
+  bottom: -2%;
+  width: 118%;
+  height: 12%;
+  translate: -56% 0;
+  border-radius: 50%;
+  background: radial-gradient(ellipse at 50% 50%, rgba(0, 0, 0, .55), rgba(0, 0, 0, .25) 55%, transparent 72%);
+  filter: blur(3px);
+  z-index: -1;
+  transition: scale .3s ease, opacity .3s ease;
+}
+.cat.is-pounce .cat__shadow { scale: .92 .8; opacity: .8; }
+
+@keyframes catchBounce {
+  0% { scale: 1 1; }
+  12% { scale: 1.06 .9; }
+  30% { scale: .97 1.05; }
+  50% { scale: 1.02 .98; }
+  100% { scale: 1 1; }
+}
+@keyframes hiss {
+  0%, 100% { translate: 0 0; }
+  20% { translate: -2% 0; }
+  40% { translate: 2% 0; }
+  60% { translate: -1.5% 0; }
+  80% { translate: 1.5% 0; }
+}
 
 .cat.is-pounce { animation: pounce .38s cubic-bezier(.3,1.4,.5,1); }
-.cat.is-sad { filter: drop-shadow(0 12px 8px rgba(0, 0, 0, .6)) saturate(.6) brightness(.75); translate: 0 2%; }
+.cat.is-sad { filter: drop-shadow(-10px 8px 10px rgba(0, 0, 0, .55)) saturate(.7) brightness(.8); translate: 0 2%; }
 .cat.is-alert { animation: alert .5s ease-in-out infinite alternate; }
 
 @keyframes breathe { 0%, 100% { scale: 1 1; } 50% { scale: 1.012 .985; } }
@@ -379,8 +458,27 @@ body {
   border-radius: 50%;
   background:
     radial-gradient(ellipse at 50% 30%, var(--dirt-dark) 45%, var(--dirt) 80%);
-  box-shadow: inset 0 -4px 8px rgba(0,0,0,.6), 0 2px 0 rgba(0,0,0,.35);
+  box-shadow:
+    inset 0 -4px 8px rgba(0,0,0,.6),
+    inset 2px 3px 6px rgba(190, 210, 255, .14),
+    -6px 4px 10px rgba(0,0,0,.45),
+    0 2px 0 rgba(0,0,0,.35);
 }
+.hole__back::after {
+  /* the mouse's own shadow on the dirt */
+  content: "";
+  position: absolute;
+  left: 22%;
+  right: 22%;
+  top: 30%;
+  height: 40%;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, .55);
+  filter: blur(3px);
+  opacity: 0;
+  transition: opacity .18s ease;
+}
+.hole.is-up .hole__back::after { opacity: 1; }
 
 .hole__clip {
   position: absolute;
@@ -403,7 +501,7 @@ body {
   transition: translate .16s cubic-bezier(.2,.9,.3,1.2);
   will-change: translate;
 }
-.hole__mouse picture, .hole__mouse img { display: block; width: 100%; height: 100%; object-fit: contain; object-position: center bottom; filter: drop-shadow(0 4px 4px rgba(0,0,0,.5)) brightness(.92); pointer-events: none; }
+.hole__mouse picture, .hole__mouse img { display: block; width: 100%; height: 100%; object-fit: contain; object-position: center bottom; filter: drop-shadow(-4px 5px 5px rgba(0,0,0,.55)) brightness(.92); pointer-events: none; }
 
 .hole.is-up .hole__mouse { translate: -50% 8%; }
 .hole.is-caught .hole__mouse { translate: -50% 105%; transition-duration: .1s; }
@@ -447,24 +545,83 @@ body {
 .hole__paw {
   position: absolute;
   left: 50%;
-  top: 30%;
-  width: 48%;
-  aspect-ratio: 1;
-  translate: -50% -30%;
+  bottom: 22%;
+  width: 78%;
+  max-width: 200px;
+  aspect-ratio: 520 / 612;
+  translate: -50% 0;
+  transform-origin: 50% 0%;
   pointer-events: none;
   opacity: 0;
+  z-index: 3;
+  filter: drop-shadow(-8px 10px 8px rgba(0, 0, 0, .55)) brightness(.95);
 }
-.hole.is-hit .hole__paw { animation: slap .32s cubic-bezier(.2,1.2,.4,1) forwards; }
+.hole__paw img { display: block; width: 100%; height: 100%; object-fit: contain; }
+.hole.is-hit .hole__paw { animation: slap .42s cubic-bezier(.3,1.1,.4,1) forwards; }
+.hole.is-whiff .hole__paw { animation: whiff .4s ease-out forwards; }
+
+.hole__pawshadow {
+  position: absolute;
+  left: 20%;
+  right: 20%;
+  bottom: 18%;
+  height: 22%;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, .6);
+  filter: blur(4px);
+  opacity: 0;
+  pointer-events: none;
+  z-index: 2;
+}
+.hole.is-hit .hole__pawshadow { animation: pawShadow .42s ease-out forwards; }
+
+.hole__flash {
+  position: absolute;
+  left: 50%;
+  bottom: 28%;
+  width: 90%;
+  aspect-ratio: 1;
+  translate: -50% 40%;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 236, 170, .9), rgba(255, 190, 90, .45) 35%, transparent 70%);
+  mix-blend-mode: screen;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 1;
+}
+.hole.is-hit:not(.is-whiff) .hole__flash { animation: flash .5s ease-out forwards; }
+.hole.is-escaped .hole__back { animation: escapePuff .5s ease-out; }
+
+@keyframes slap {
+  0% { opacity: 0; translate: -50% -90%; scale: 1.15; rotate: -6deg; }
+  40% { opacity: 1; translate: -50% -2%; scale: .95; rotate: 0deg; }
+  55% { translate: -50% 2%; scale: 1 .96; }
+  100% { opacity: 0; translate: -50% -70%; scale: 1.05; rotate: 4deg; }
+}
+@keyframes whiff {
+  0% { opacity: 0; translate: -50% -90%; scale: 1.1; rotate: 8deg; }
+  45% { opacity: .9; translate: -50% 4%; scale: .98; rotate: -4deg; }
+  100% { opacity: 0; translate: -50% -80%; scale: 1.05; rotate: 6deg; }
+}
+@keyframes pawShadow {
+  0% { opacity: 0; scale: .5; }
+  40% { opacity: .9; scale: 1; }
+  100% { opacity: 0; scale: .8; }
+}
+@keyframes flash {
+  0% { opacity: 0; scale: .4; }
+  25% { opacity: 1; scale: 1; }
+  100% { opacity: 0; scale: 1.4; }
+}
+@keyframes escapePuff {
+  0% { box-shadow: inset 0 -4px 8px rgba(0,0,0,.6), 0 0 0 0 rgba(120, 90, 60, .5); }
+  100% { box-shadow: inset 0 -4px 8px rgba(0,0,0,.6), 0 0 0 14px rgba(120, 90, 60, 0); }
+}
 
 @keyframes pop {
   0% { opacity: 0; translate: -50% 10px; scale: .6; }
   20% { opacity: 1; scale: 1.15; }
   100% { opacity: 0; translate: -50% -40px; scale: 1; }
-}
-@keyframes slap {
-  0% { opacity: 0; scale: 2.2; translate: -50% -140%; }
-  55% { opacity: 1; scale: .85; translate: -50% -30%; }
-  100% { opacity: 0; scale: 1; translate: -50% -30%; }
 }
 
 .field.is-shake { animation: shake .3s ease-in-out; }
@@ -670,7 +827,7 @@ body {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .cat, .cloud, .firefly, .sky::before { animation: none !important; }
+  .cat, .cloud, .firefly, .sky::before, .cloud-shadow, .vignette { animation: none !important; }
   .hole__mouse { transition-duration: .01s; }
   .overlay, .overlay__card { transition: none; animation: none; }
 }
