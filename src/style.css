@@ -332,11 +332,11 @@ body {
 /* Fireflies */
 .firefly {
   position: absolute;
-  width: 5px;
-  height: 5px;
+  width: 4px;
+  height: 4px;
   border-radius: 50%;
-  background: #e8ff8a;
-  box-shadow: 0 0 8px 3px rgba(232, 255, 138, .55);
+  background: #dff58a;
+  box-shadow: 0 0 6px 2px rgba(223, 245, 138, .4);
   opacity: 0;
   pointer-events: none;
   z-index: 1;
@@ -546,8 +546,8 @@ body {
   position: absolute;
   left: 50%;
   bottom: 22%;
-  width: 78%;
-  max-width: 200px;
+  width: 66%;
+  max-width: 170px;
   aspect-ratio: 520 / 612;
   translate: -50% 0;
   transform-origin: 50% 0%;
@@ -555,6 +555,9 @@ body {
   opacity: 0;
   z-index: 3;
   filter: drop-shadow(-8px 10px 8px rgba(0, 0, 0, .55)) brightness(.95);
+  /* the leg fades into the dark instead of ending in a hard cut */
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0%, rgba(0,0,0,.3) 20%, #000 50%);
+  mask-image: linear-gradient(to bottom, transparent 0%, rgba(0,0,0,.3) 20%, #000 50%);
 }
 .hole__paw img { display: block; width: 100%; height: 100%; object-fit: contain; }
 .hole.is-hit .hole__paw { animation: slap .42s cubic-bezier(.3,1.1,.4,1) forwards; }
@@ -576,20 +579,21 @@ body {
 .hole.is-hit .hole__pawshadow { animation: pawShadow .42s ease-out forwards; }
 
 .hole__flash {
+  /* impact: a ring of kicked-up dust around the hole */
   position: absolute;
   left: 50%;
-  bottom: 28%;
-  width: 90%;
-  aspect-ratio: 1;
-  translate: -50% 40%;
+  bottom: 14%;
+  width: 84%;
+  height: 34%;
+  translate: -50% 0;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(255, 236, 170, .9), rgba(255, 190, 90, .45) 35%, transparent 70%);
-  mix-blend-mode: screen;
+  border: 3px solid rgba(150, 120, 80, .55);
+  background: radial-gradient(ellipse at 50% 50%, transparent 55%, rgba(120, 95, 60, .35) 75%, transparent 100%);
   opacity: 0;
   pointer-events: none;
   z-index: 1;
 }
-.hole.is-hit:not(.is-whiff) .hole__flash { animation: flash .5s ease-out forwards; }
+.hole.is-hit .hole__flash { animation: flash .45s ease-out .14s forwards; }
 .hole.is-escaped .hole__back { animation: escapePuff .5s ease-out; }
 
 @keyframes slap {
@@ -609,9 +613,9 @@ body {
   100% { opacity: 0; scale: .8; }
 }
 @keyframes flash {
-  0% { opacity: 0; scale: .4; }
-  25% { opacity: 1; scale: 1; }
-  100% { opacity: 0; scale: 1.4; }
+  0% { opacity: 0; scale: .6; }
+  35% { opacity: .9; scale: 1; }
+  100% { opacity: 0; scale: 1.45 1.3; }
 }
 @keyframes escapePuff {
   0% { box-shadow: inset 0 -4px 8px rgba(0,0,0,.6), 0 0 0 0 rgba(120, 90, 60, .5); }
