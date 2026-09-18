@@ -1,6 +1,4 @@
 import "./style.css";
-import catSvg from "./art/cat.svg?raw";
-import mouseSvg from "./art/mouse.svg?raw";
 import { Game, CATCH_WINDOW_MS } from "./game";
 import { sfx } from "./sound";
 
@@ -11,7 +9,6 @@ function $<T extends HTMLElement>(id: string): T {
 }
 
 const catEl = $("cat");
-catEl.innerHTML = catSvg;
 
 const scoreEl = $("score");
 const bestEl = $("best");
@@ -29,7 +26,7 @@ const about = $<HTMLDialogElement>("aboutDialog");
 
 let lastScore = 0;
 
-const game = new Game($("holes"), catEl, mouseSvg, {
+const game = new Game($("holes"), catEl, {
   onScore(score, best) {
     scoreEl.textContent = String(score);
     bestEl.textContent = String(best);

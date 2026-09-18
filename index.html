@@ -26,6 +26,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&display=swap">
+  <link rel="preload" as="image" href="/img/cat.webp" type="image/webp" fetchpriority="high">
   <link rel="canonical" href="https://tilcayo.cat/">
   <link rel="alternate" hreflang="en" href="https://tilcayo.cat/">
   <link rel="alternate" hreflang="x-default" href="https://tilcayo.cat/">
@@ -145,6 +146,7 @@
   </noscript>
 
   <main id="app" class="app">
+    <div class="hud-wrap">
     <header class="hud" aria-label="Game status">
       <div class="hud__score">
         <span class="hud__label">Mice</span>
@@ -162,6 +164,7 @@
         <svg viewBox="0 0 24 24" width="26" height="26" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="7.5" r="1.4" fill="currentColor"/><path d="M10.5 11h2v6h1.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </button>
     </header>
+    </div>
 
     <section id="field" class="field" aria-label="Lawn with mouse holes">
       <div class="sky">
@@ -170,7 +173,12 @@
         <div class="hills"></div>
       </div>
       <div class="lawn">
-        <div id="cat" class="cat" aria-hidden="true"></div>
+        <div id="cat" class="cat">
+          <picture>
+            <source srcset="/img/cat.webp" type="image/webp">
+            <img src="/img/cat.png" alt="Tilcayo cat sitting on the grass, watching the mouse holes" width="720" height="1142" draggable="false" fetchpriority="high">
+          </picture>
+        </div>
         <div id="holes" class="holes" role="group" aria-label="Mouse holes"></div>
       </div>
     </section>

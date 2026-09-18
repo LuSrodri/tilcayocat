@@ -29,7 +29,6 @@ export class Game {
   constructor(
     private readonly holesEl: HTMLElement,
     private readonly catEl: HTMLElement,
-    private readonly mouseSvg: string,
     private readonly cb: GameCallbacks
   ) {
     this.best = readBest();
@@ -71,7 +70,7 @@ export class Game {
       el.setAttribute("aria-label", `Mouse hole ${i + 1}`);
       el.innerHTML =
         `<span class="hole__back"></span>` +
-        `<span class="hole__clip"><span class="hole__mouse">${this.mouseSvg}</span></span>` +
+        `<span class="hole__clip"><span class="hole__mouse">${MOUSE_IMG}</span></span>` +
         `<span class="hole__front"></span>` +
         `<span class="hole__paw" aria-hidden="true">${PAW_SVG}</span>` +
         `<span class="hole__pop" aria-hidden="true">+1</span>`;
@@ -201,6 +200,10 @@ function writeBest(v: number): void {
     /* storage unavailable (private mode etc.) */
   }
 }
+
+const MOUSE_IMG =
+  `<picture><source srcset="/img/mouse.webp" type="image/webp">` +
+  `<img src="/img/mouse.png" alt="" width="420" height="358" draggable="false" decoding="async"></picture>`;
 
 const PAW_SVG =
   `<svg viewBox="0 0 100 100" aria-hidden="true">` +

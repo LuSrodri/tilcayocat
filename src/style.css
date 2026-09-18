@@ -52,18 +52,23 @@ body {
 .app {
   position: relative;
   width: 100%;
-  max-width: 560px;
   height: 100dvh;
-  min-height: 480px;
-  margin: 0 auto;
+  min-height: 300px;
   display: flex;
   flex-direction: column;
   background: linear-gradient(var(--sky-top), var(--sky-bottom));
   overflow: hidden;
-  box-shadow: 0 0 0 1px rgba(0,0,0,.08), 0 0 60px rgba(0,0,0,.25);
 }
 
 /* HUD */
+.hud-wrap {
+  position: relative;
+  z-index: 5;
+  background: rgba(255, 250, 241, .72);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(0,0,0,.06);
+}
 .hud {
   position: relative;
   z-index: 5;
@@ -72,11 +77,10 @@ body {
   align-items: center;
   gap: 10px;
   min-height: var(--hud-h);
-  padding: max(10px, env(safe-area-inset-top)) 14px 8px;
-  background: rgba(255, 250, 241, .72);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  border-bottom: 1px solid rgba(0,0,0,.06);
+  width: 100%;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: max(10px, env(safe-area-inset-top)) clamp(14px, 3vw, 32px) 8px;
 }
 
 .hud__score, .hud__best {
@@ -95,7 +99,7 @@ body {
 }
 
 .hud__value {
-  font-size: 26px;
+  font-size: clamp(24px, 4vmin, 34px);
   font-weight: 700;
   font-variant-numeric: tabular-nums;
 }
@@ -108,7 +112,7 @@ body {
 
 .timer {
   flex: 1;
-  height: 14px;
+  height: clamp(12px, 2vmin, 18px);
   border-radius: 999px;
   background: rgba(0,0,0,.12);
   overflow: hidden;
@@ -209,44 +213,46 @@ body {
   position: relative;
   flex: 1;
   min-height: 0;
-  background:
-    radial-gradient(circle at 30% 20%, rgba(255,255,255,.08), transparent 30%),
-    repeating-linear-gradient(115deg, transparent 0 22px, rgba(255,255,255,.035) 22px 26px),
-    linear-gradient(var(--grass-light), var(--grass) 30%, var(--grass-dark));
+  background-color: var(--grass);
+  background-image:
+    linear-gradient(rgba(255,255,255,.10), rgba(0,0,0,0) 30%, rgba(0,0,0,.18)),
+    url("/img/grass.jpg");
+  background-image:
+    linear-gradient(rgba(255,255,255,.10), rgba(0,0,0,0) 30%, rgba(0,0,0,.18)),
+    image-set(url("/img/grass.webp") type("image/webp"), url("/img/grass.jpg") type("image/jpeg"));
+  background-size: auto, clamp(220px, 28vmin, 360px);
+  background-repeat: no-repeat, repeat;
   border-top: 4px solid var(--grass-light);
   display: grid;
-  grid-template-rows: minmax(120px, 34%) 1fr;
+  grid-template-rows: minmax(110px, 36%) 1fr;
+  grid-template-areas: "cat" "holes";
+  justify-items: center;
   padding-bottom: max(12px, env(safe-area-inset-bottom));
 }
 
 /* Cat */
 .cat {
+  grid-area: cat;
   position: relative;
   justify-self: center;
   align-self: end;
-  width: min(46%, 220px);
-  aspect-ratio: 400 / 420;
-  margin-top: -6%;
-  transform-origin: 50% 95%;
+  width: min(46vw, 52vmin, 260px);
+  aspect-ratio: 720 / 1142;
+  margin-top: -4%;
+  transform-origin: 50% 96%;
   animation: breathe 3.4s ease-in-out infinite;
   z-index: 2;
+  filter: drop-shadow(0 10px 6px rgba(20, 40, 10, .35));
+  transition: filter .3s ease, translate .3s ease;
 }
-.cat svg { display: block; width: 100%; height: 100%; overflow: visible; }
-
-.cat .ear-l { transform-origin: 160px 110px; }
-.cat .ear-r { transform-origin: 240px 110px; }
-.cat.is-idle .ear-l { animation: twitchL 6s ease-in-out infinite; }
-.cat.is-idle .ear-r { animation: twitchR 7.5s ease-in-out infinite; }
-.cat .tongue { transform-origin: 200px 226px; animation: tongue 5s ease-in-out infinite; }
+.cat picture, .cat img { display: block; width: 100%; height: 100%; object-fit: contain; pointer-events: none; }
 
 .cat.is-pounce { animation: pounce .38s cubic-bezier(.3,1.4,.5,1); }
-.cat.is-sad .lid { transform: translateY(6px); transition: transform .3s ease; }
-.cat.is-alert .lid { transform: translateY(-5px); transition: transform .15s ease; }
+.cat.is-sad { filter: drop-shadow(0 10px 6px rgba(20, 40, 10, .35)) saturate(.7) brightness(.92); translate: 0 2%; }
+.cat.is-alert { animation: alert .5s ease-in-out infinite alternate; }
 
 @keyframes breathe { 0%, 100% { scale: 1 1; } 50% { scale: 1.012 .985; } }
-@keyframes twitchL { 0%, 88%, 100% { rotate: 0deg; } 92% { rotate: -14deg; } 96% { rotate: 4deg; } }
-@keyframes twitchR { 0%, 84%, 100% { rotate: 0deg; } 88% { rotate: 14deg; } 92% { rotate: -4deg; } }
-@keyframes tongue { 0%, 70%, 100% { scale: 1 1; } 80% { scale: 1 1.35; } 90% { scale: 1 .6; } }
+@keyframes alert { from { rotate: -1.5deg; } to { rotate: 1.5deg; } }
 @keyframes pounce {
   0% { scale: 1 1; translate: 0 0; }
   35% { scale: 1.08 .82; translate: 0 6%; }
@@ -256,13 +262,17 @@ body {
 
 /* Holes */
 .holes {
+  grid-area: holes;
   position: relative;
   z-index: 3;
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   grid-template-rows: repeat(3, 1fr);
   gap: 2% 4%;
-  padding: 4% 8% 2%;
+  padding: 4% 6% 2%;
+  width: 100%;
+  max-width: 640px;
+  height: 100%;
   min-height: 0;
 }
 
@@ -307,14 +317,14 @@ body {
   position: absolute;
   left: 50%;
   bottom: -4%;
-  width: 84%;
-  max-width: 130px;
-  aspect-ratio: 1;
+  width: 92%;
+  max-width: 190px;
+  aspect-ratio: 420 / 358;
   translate: -50% 105%;
   transition: translate .16s cubic-bezier(.2,.9,.3,1.2);
   will-change: translate;
 }
-.hole__mouse svg { display: block; width: 100%; height: 100%; filter: drop-shadow(0 4px 4px rgba(0,0,0,.25)); }
+.hole__mouse picture, .hole__mouse img { display: block; width: 100%; height: 100%; object-fit: contain; object-position: center bottom; filter: drop-shadow(0 4px 4px rgba(0,0,0,.25)); pointer-events: none; }
 
 .hole.is-up .hole__mouse { translate: -50% 8%; }
 .hole.is-caught .hole__mouse { translate: -50% 105%; transition-duration: .1s; }
@@ -521,16 +531,60 @@ body {
 .about a { color: var(--accent-deep); overflow-wrap: anywhere; }
 .about__note { margin-top: 14px; font-size: 13px; color: var(--ink-soft); }
 
-/* Landscape phones: give the lawn more room */
-@media (max-height: 520px) and (orientation: landscape) {
-  .app { max-width: none; }
-  .sky { height: 14%; min-height: 40px; }
-  .lawn { grid-template-rows: minmax(70px, 30%) 1fr; }
-  .cat { width: min(30%, 150px); }
+/* Wide viewports (landscape phones, tablets in landscape, desktops):
+   cat on the left, holes on the right, everything scaled by the viewport. */
+@media (min-aspect-ratio: 5/4) {
+  .sky { height: 18%; min-height: 48px; }
+  .lawn {
+    grid-template-columns: minmax(180px, 1fr) minmax(0, 2fr);
+    grid-template-rows: minmax(0, 1fr);
+    grid-template-areas: "cat holes";
+    align-items: end;
+    padding: 0 clamp(8px, 3vw, 48px) max(10px, env(safe-area-inset-bottom));
+    column-gap: clamp(8px, 2vw, 32px);
+  }
+  .cat {
+    align-self: end;
+    justify-self: end;
+    width: auto;
+    height: min(96%, 70vmin, 600px);
+    max-width: 32vw;
+    min-height: 0;
+    margin: 0 0 1vmin;
+  }
+  .holes {
+    justify-self: start;
+    align-self: stretch;
+    max-width: min(60vw, 150vmin, 900px);
+    height: 100%;
+    max-height: 100%;
+    padding: 2% 3% 1%;
+    gap: 3% 4%;
+  }
+}
+
+/* Very short landscape (phones on their side): trim the sky and HUD */
+@media (max-height: 460px) and (orientation: landscape) {
+  :root { --hud-h: 48px; }
+  .hud { padding-top: max(6px, env(safe-area-inset-top)); padding-bottom: 4px; }
+  .sky { height: 10%; min-height: 24px; }
+  .cloud { display: none; }
+}
+
+/* Large tablets & desktops in portrait-ish ratios: let the stage breathe */
+@media (min-width: 760px) and (max-aspect-ratio: 5/4) {
+  .holes { max-width: min(80vw, 760px); }
+  .cat { width: min(34vw, 300px); }
+}
+
+/* Big desktop screens: cap type & stage sizes */
+@media (min-width: 1400px) {
+  .holes { max-width: 960px; }
+  .overlay__card { width: min(100%, 440px); }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .cat, .cat .ear-l, .cat .ear-r, .cat .tongue, .cloud { animation: none !important; }
+  .cat, .cloud { animation: none !important; }
   .hole__mouse { transition-duration: .01s; }
   .overlay, .overlay__card { transition: none; animation: none; }
 }
