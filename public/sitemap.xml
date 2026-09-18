@@ -10,5 +10,15 @@
       <image:title>Tilcayo Cat Game — A New Cat Discovered After 100+ Years</image:title>
       <image:caption>Illustrated tilcayo cat (Leopardus tilcayo) sitting on grass next to a mouse hole</image:caption>
     </image:image>
+    <image:image>
+      <image:loc>https://tilcayo.cat/img/real-crouch.jpg</image:loc>
+      <image:title>The only known tilcayo cat (Leopardus tilcayo)</image:title>
+      <image:caption>At Senda Verde Animal Refuge, Bolivian Yungas. Photo: Fernando Faciole / National Geographic</image:caption>
+    </image:image>
+    <image:image>
+      <image:loc>https://tilcayo.cat/img/real-portrait.jpg</image:loc>
+      <image:title>Portrait of the tilcayo cat</image:title>
+      <image:caption>Photo: Fernando Faciole / National Geographic</image:caption>
+    </image:image>
   </url>
 </urlset>

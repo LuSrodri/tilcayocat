@@ -139,7 +139,10 @@
         "taxonRank": "species",
         "parentTaxon": { "@type": "Taxon", "name": "Leopardus", "taxonRank": "genus", "parentTaxon": { "@type": "Taxon", "name": "Felidae", "taxonRank": "family" } },
         "url": "https://tilcayo.cat/#about",
-        "image": "https://tilcayo.cat/og.png",
+        "image": [
+          { "@type": "ImageObject", "url": "https://tilcayo.cat/img/real-crouch.jpg", "width": 1200, "height": 677, "caption": "The only known tilcayo cat at Senda Verde Animal Refuge, Bolivia", "creditText": "Fernando Faciole / National Geographic" },
+          { "@type": "ImageObject", "url": "https://tilcayo.cat/img/real-portrait.jpg", "width": 391, "height": 511, "caption": "Portrait of the tilcayo cat", "creditText": "Fernando Faciole / National Geographic" }
+        ],
         "additionalProperty": [
           { "@type": "PropertyValue", "name": "Native range", "value": "Yungas cloud forest, Bolivia" },
           { "@type": "PropertyValue", "name": "Head-to-body length", "value": "about 45 cm (18 in)" },
@@ -269,6 +272,24 @@
         <button id="closeAbout" class="about__close" type="button" aria-label="Close">&times;</button>
       </header>
 
+      <div class="gallery">
+        <figure class="gallery__item gallery__item--wide">
+          <picture>
+            <source srcset="/img/real-crouch.webp" type="image/webp">
+            <img src="/img/real-crouch.jpg" alt="The only known tilcayo cat, a ten-year-old male, crouching and looking at the camera at Senda Verde Animal Refuge, Bolivia" width="1200" height="677" loading="lazy" decoding="async">
+          </picture>
+          <figcaption>The only known tilcayo, at Senda Verde Animal Refuge in the Bolivian Yungas.</figcaption>
+        </figure>
+        <figure class="gallery__item">
+          <picture>
+            <source srcset="/img/real-portrait.webp" type="image/webp">
+            <img src="/img/real-portrait.jpg" alt="Close-up portrait of the tilcayo cat facing the camera, tongue tip out, showing the twin black forehead stripes and rosettes" width="391" height="511" loading="lazy" decoding="async">
+          </picture>
+          <figcaption>Twin forehead stripes, large rosettes, tongue out: the real face behind the game.</figcaption>
+        </figure>
+      </div>
+      <p class="gallery__credit">Photos: Fernando Faciole / National Geographic.</p>
+
       <p><strong>The first new wild cat species described in more than 100 years.</strong> In September 2026 an international team published a study in <em>Current Biology</em> formally naming <em>Leopardus tilcayo</em>, a small spotted cat from the Yungas cloud forests on the eastern slopes of the Bolivian Andes.</p>
 
       <h3>Quick facts</h3>
@@ -296,7 +317,7 @@
         <li><a href="https://www.discoverwildlife.com/animal-facts/mammals/tilcayo-cat-bolivian-yungus" target="_blank" rel="noopener noreferrer">BBC Discover Wildlife — New species of wild cat discovered in Bolivia's cloud forest</a></li>
         <li><a href="https://www.scientificamerican.com/article/see-the-first-new-species-of-cat-discovered-in-more-than-a-century-its-adorable/" target="_blank" rel="noopener noreferrer">Scientific American — See the first new species of cat discovered in more than a century</a></li>
       </ul>
-      <p class="about__note">Photos of the real cat: Fernando Faciole / National Geographic. This game's artwork is an original illustration inspired by them.</p>
+      <p class="about__note">The game's artwork is an original illustration inspired by these photographs.</p>
     </article>
   </dialog>
 
