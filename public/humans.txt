@@ -1,0 +1,14 @@
+/* TEAM */
+Site: tilcayo.cat
+Location: Brazil
+
+/* THANKS */
+The Senda Verde Animal Refuge, Bolivia, and the researchers who described Leopardus tilcayo.
+Real-cat photos by Fernando Faciole / National Geographic (not used on this site; artwork is original).
+
+/* SITE */
+Last update: 2026-09-17
+Language: English
+Standards: HTML5, CSS3, TypeScript
+Components: Vite
+Hosting: Cloudflare Pages

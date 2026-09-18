@@ -1,0 +1,32 @@
+# Tilcayo Cat
+
+> Tilcayo Cat (https://tilcayo.cat) is a free, mobile-first browser game in which the player is a tilcayo cat (Leopardus tilcayo) sitting on a lawn and catching mice that pop out of their holes. The core rule: the player must never go more than 5 seconds without catching a mouse, or the game ends.
+
+## The game
+
+- Genre: arcade / reflex (whack-a-mole style), single player, free, no account, no ads.
+- Platform: any modern web browser; designed for phones first, also works on desktop (keys 1–9 map to the 3×3 hole grid).
+- Rules: tap a mouse to catch it (+1). Every catch resets a 5-second timer. Mice stay up for less time and appear more often as the score grows. Best score is stored locally on the device.
+- An info button (ⓘ) opens a page about the real tilcayo cat.
+
+## About the tilcayo cat (Leopardus tilcayo)
+
+- The first new wild cat species described in more than 100 years; formally described in September 2026 in the journal Current Biology (https://www.cell.com/current-biology/fulltext/S0960-9822(26)01110-3).
+- A tiger cat (genus Leopardus) native to the Bolivian Yungas cloud forest, on the eastern slopes of the Andes.
+- Smaller than a domestic cat: about 45 cm (18 in) head-to-body and roughly 1.3 kg (3 lb).
+- Rust-orange coat with large leopard-like rosettes, two dark stripes down the forehead, a longer and more slender tail and muted fur colour compared with the oncilla (northern tiger cat).
+- Diverged from its closest tiger-cat relative around 1.4 million years ago.
+- Only one individual is known: a ten-year-old male living at the Senda Verde Animal Refuge (Yungas, Bolivia), handed over by a local family around 2017.
+- Identified by wild-cat conservationist and National Geographic Explorer Paola Nogales Ascarrunz with co-lead author Jonas Lescroart (University of Antwerp) and Eduardo Eizirik (PUCRS, Brazil), from a genomic study of 38 cats including 26 tiger cats that split the tiger cats into at least five species.
+- "Tilcayo" is the name local communities already used for the cat; the scientists kept it to honour that knowledge.
+
+## Sources
+
+- BBC Discover Wildlife: https://www.discoverwildlife.com/animal-facts/mammals/tilcayo-cat-bolivian-yungus
+- Scientific American: https://www.scientificamerican.com/article/see-the-first-new-species-of-cat-discovered-in-more-than-a-century-its-adorable/
+
+## Site
+
+- Home / play: https://tilcayo.cat/
+- Sitemap: https://tilcayo.cat/sitemap.xml
+- Social preview image: https://tilcayo.cat/og.png

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
+  <url>
+    <loc>https://tilcayo.cat/</loc>
+    <lastmod>2026-09-17</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>1.0</priority>
+    <image:image>
+      <image:loc>https://tilcayo.cat/og.png</image:loc>
+      <image:title>Tilcayo Cat — Catch the Mice</image:title>
+      <image:caption>Illustrated tilcayo cat (Leopardus tilcayo) sitting on grass next to a mouse hole</image:caption>
+    </image:image>
+  </url>
+</urlset>

@@ -1,0 +1,23 @@
+{
+  "name": "Tilcayo Cat — Catch the Mice",
+  "short_name": "Tilcayo Cat",
+  "description": "Be the tilcayo cat, the first new wild cat species in over a century. Pounce on the mice before 5 seconds run out.",
+  "id": "/",
+  "start_url": "/?source=pwa",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#6fae4c",
+  "theme_color": "#5f9a3f",
+  "lang": "en",
+  "dir": "ltr",
+  "categories": ["games", "entertainment", "education"],
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-512-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "screenshots": [
+    { "src": "/og.png", "sizes": "1200x630", "type": "image/png", "form_factor": "wide", "label": "Tilcayo Cat" }
+  ]
+}
