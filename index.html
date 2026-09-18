@@ -35,7 +35,8 @@
   <link rel="preload" as="image" href="/img/cat-catch.webp" type="image/webp">
   <link rel="preload" as="image" href="/img/cat-angry.webp" type="image/webp">
   <link rel="preload" as="image" href="/img/paw.webp" type="image/webp">
-  <link rel="preload" as="image" href="/img/hole.webp" type="image/webp">
+  <link rel="preload" as="image" href="/img/hole-back.webp" type="image/webp">
+  <link rel="preload" as="image" href="/img/hole-front.webp" type="image/webp">
   <link rel="canonical" href="https://tilcayo.cat/">
   <link rel="alternate" hreflang="en" href="https://tilcayo.cat/">
   <link rel="alternate" hreflang="x-default" href="https://tilcayo.cat/">
@@ -195,28 +196,34 @@
   </noscript>
 
   <main id="app" class="app">
-    <div class="hud-wrap">
     <header class="hud" aria-label="Game status">
-      <div class="hud__score">
-        <span class="hud__label">Mice</span>
-        <span id="score" class="hud__value hud__value--score" aria-live="polite">0</span>
+      <div class="hud__row">
+        <div class="hud__score">
+          <span class="hud__label">Mice</span>
+          <span id="score" class="hud__value hud__value--score" aria-live="polite">0</span>
+        </div>
+        <div class="hud__best">
+          <span class="hud__label">Best</span>
+          <span id="best" class="hud__value">0</span>
+        </div>
       </div>
       <div class="hud__timer" role="timer" aria-label="Time left to catch the next mouse">
         <div id="timerBar" class="timer"><div id="timerFill" class="timer__fill"></div><div class="timer__shine"></div></div>
         <span id="timerText" class="timer__text">5.0s</span>
       </div>
-      <div class="hud__best">
-        <span class="hud__label">Best</span>
-        <span id="best" class="hud__value">0</span>
+      <div id="powerBadge" class="power-badge" data-kind="" hidden aria-live="polite">
+        <span id="powerRing" class="power-badge__ring" style="--p:1"><span class="power-badge__icon"></span></span>
+        <span class="power-badge__text"><span id="powerName" class="power-badge__name">Auto-catch</span><span id="powerTime" class="power-badge__time">6s</span></span>
       </div>
+    </header>
+    <div class="hud__actions">
       <button id="soundBtn" class="info-btn" type="button" aria-label="Mute sound" aria-pressed="false">
-        <svg class="ico-on" viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4z" fill="currentColor"/><path d="M16 8.5a4.5 4.5 0 0 1 0 7M18.5 6a8 8 0 0 1 0 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-        <svg class="ico-off" viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4z" fill="currentColor"/><path d="M16 9l5 6M21 9l-5 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        <svg class="ico-on" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4z" fill="currentColor"/><path d="M16 8.5a4.5 4.5 0 0 1 0 7M18.5 6a8 8 0 0 1 0 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        <svg class="ico-off" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4z" fill="currentColor"/><path d="M16 9l5 6M21 9l-5 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
       </button>
       <a id="infoBtn" class="info-btn" href="/about" aria-label="About the tilcayo cat">
-        <svg viewBox="0 0 24 24" width="26" height="26" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="7.5" r="1.4" fill="currentColor"/><path d="M10.5 11h2v6h1.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="7.5" r="1.4" fill="currentColor"/><path d="M10.5 11h2v6h1.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </a>
-    </header>
     </div>
 
     <section id="field" class="field" aria-label="Lawn with mouse holes">
@@ -248,10 +255,6 @@
           </picture>
         </div>
         <div id="holes" class="holes" role="group" aria-label="Mouse holes"></div>
-        <div id="powerBadge" class="power-badge" data-kind="" hidden aria-live="polite">
-          <span id="powerRing" class="power-badge__ring" style="--p:1"><span class="power-badge__icon"></span></span>
-          <span class="power-badge__text"><span id="powerName" class="power-badge__name">Auto-catch</span><span id="powerTime" class="power-badge__time">6s</span></span>
-        </div>
         <div id="toast" class="toast" data-kind="" aria-hidden="true"></div>
         <span class="firefly" style="left:12%;top:20%;--d:9s;--delay:0s;--dx:40px;--dy:-30px" aria-hidden="true"></span>
         <span class="firefly" style="left:78%;top:34%;--d:11s;--delay:2s;--dx:-30px;--dy:-50px" aria-hidden="true"></span>
