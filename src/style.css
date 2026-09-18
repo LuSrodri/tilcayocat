@@ -496,9 +496,10 @@ body {
   transition: translate .16s cubic-bezier(.2,.9,.3,1.2);
   will-change: translate;
 }
-.hole__mouse { width: 54%; max-width: 150px; aspect-ratio: 420 / 358; }
+.hole__mouse { width: 38%; max-width: 110px; aspect-ratio: 420 / 645; }
 .hole__mouse picture, .hole__mouse img { display: block; width: 100%; height: 100%; object-fit: contain; object-position: center bottom; filter: drop-shadow(-4px 5px 5px rgba(0,0,0,.55)) brightness(.95); pointer-events: none; }
-.hole.is-up[data-what="mouse"] .hole__mouse { translate: -50% 10%; }
+.hole.is-up[data-what="mouse"] .hole__mouse { translate: -50% 0; }
+.holes[data-power="freeze"] .hole__mouse img { filter: drop-shadow(0 0 8px rgba(143, 233, 255, .9)) drop-shadow(-4px 5px 5px rgba(0,0,0,.55)) saturate(.6) brightness(1.1) hue-rotate(160deg); transition: filter .3s ease; }
 
 .hole__power { width: 44%; max-width: 120px; aspect-ratio: 1; }
 .hole__power-img {
@@ -763,10 +764,8 @@ body {
   letter-spacing: -.02em;
   line-height: 1.05;
   text-wrap: balance;
-  background: linear-gradient(90deg, var(--gold), var(--accent), var(--magenta));
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+  color: var(--gold);
+  text-shadow: 0 2px 0 rgba(0,0,0,.35);
 }
 .overlay__text { margin: 0 0 12px; color: var(--ink-soft); font-size: 15px; line-height: 1.45; }
 .overlay__text strong { color: var(--ink); }
@@ -856,12 +855,20 @@ body {
 }
 
 /* ============================================================ ABOUT PAGE */
+html:has(body.page) { height: auto; min-height: 100%; }
 body.page {
   height: auto;
-  min-height: 100%;
+  min-height: 100dvh;
   overflow: auto;
   user-select: text;
   -webkit-user-select: text;
+  background: var(--sky-top);
+}
+.page__bg {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
   background:
     radial-gradient(60% 30% at 80% -5%, rgba(255, 95, 184, .18), transparent 70%),
     radial-gradient(50% 30% at 10% 10%, rgba(62, 242, 208, .14), transparent 70%),
@@ -894,10 +901,7 @@ body.page {
   font-weight: 800;
   line-height: 1.05;
   letter-spacing: -.02em;
-  background: linear-gradient(90deg, var(--gold), var(--accent), var(--magenta));
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+  color: var(--gold);
 }
 .about__latin { margin: 6px 0 0; color: var(--ink-soft); font-size: 15px; }
 .about__lead { font-size: 17px; }

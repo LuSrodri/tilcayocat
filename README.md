@@ -2,7 +2,7 @@
 
 A new cat discovered after 100+ years, turned into a game.
 
-A mobile-first browser game at [tilcayo.cat](https://tilcayo.cat). You are a tilcayo cat (*Leopardus tilcayo*, the first new wild cat species described in over a century) sitting on the grass. Tap the mice as they pop out of 25 holes. You start with **5 seconds**; each catch adds **0.8 s** (capped at 5), each empty slap costs **0.3 s**. Power-ups pop up now and then: **Auto-catch** (6 s of automatic paws), **Full time** (clock back to 5 s) and **Freeze** (clock paused 4 s). When the timer hits zero the round is over.
+A mobile-first browser game at [tilcayo.cat](https://tilcayo.cat). You are a tilcayo cat (*Leopardus tilcayo*, the first new wild cat species described in over a century) sitting on the grass. Tap the mice as they pop out of 25 holes. You start with **5 seconds**; each catch adds **0.8 s** (capped at 5), each empty slap costs **0.3 s**. Power-ups pop up now and then: **Auto-catch** (6 s of automatic paws), **Full time** (clock back to 5 s) and **Freeze** (clock, mice and spawns paused 4 s). When the timer hits zero the round is over.
 
 The ⓘ button opens `/about`, a sourced profile of the real cat with photos and a donation link to Senda Verde.
 

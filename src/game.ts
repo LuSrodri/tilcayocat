@@ -72,7 +72,7 @@ export class Game {
     this.lastFrame = now;
     this.deadline = now + CATCH_WINDOW_MS;
     this.nextSpawnAt = now + 350;
-    this.nextPowerAt = now + 9000 + Math.random() * 6000;
+    this.nextPowerAt = now + 25000 + Math.random() * 15000;
     this.catEl.classList.remove("is-sad");
     this.catEl.classList.add("is-idle");
     this.setCat("idle");
@@ -136,8 +136,13 @@ export class Game {
     const dt = now - this.lastFrame;
     this.lastFrame = now;
 
-    // Freeze: the clock simply does not advance.
-    if (this.power === "freeze") this.deadline += dt;
+    // Freeze: the clock stops, mice stay put and nothing new comes out.
+    const frozen = this.power === "freeze";
+    if (frozen) {
+      this.deadline += dt;
+      this.nextSpawnAt += dt;
+      for (const h of this.holes) if (h.up) h.hideAt += dt;
+    }
 
     if (this.power && now >= this.powerUntil) this.setPower(null);
     if (this.power) this.cb.onPower(this.power, this.powerUntil - now, POWER_DURATION[this.power]);
@@ -156,6 +161,7 @@ export class Game {
 
     for (const h of this.holes) {
       if (!h.up) continue;
+      if (frozen) continue;
       if (h.what === "mouse" && this.power === "auto" && now >= h.autoAt) {
         this.catchMouse(h);
         continue;
@@ -166,7 +172,7 @@ export class Game {
       }
     }
 
-    if (now >= this.nextSpawnAt) {
+    if (!frozen && now >= this.nextSpawnAt) {
       const upMice = this.holes.filter((h) => h.up && h.what === "mouse").length;
       if (upMice < this.simultaneous()) this.spawn(now, "mouse");
       this.nextSpawnAt = now + this.spawnGap() * (0.7 + Math.random() * 0.6);
@@ -176,7 +182,7 @@ export class Game {
     if (now >= this.nextPowerAt) {
       const powerUp = this.holes.some((h) => h.up && h.what !== "mouse");
       if (!powerUp && !this.power) this.spawn(now, POWER_KINDS[Math.floor(Math.random() * POWER_KINDS.length)]!);
-      this.nextPowerAt = now + 9000 + Math.random() * 8000;
+      this.nextPowerAt = now + 30000 + Math.random() * 20000;
     }
 
     this.raf = requestAnimationFrame(this.tick);
@@ -337,7 +343,7 @@ function writeBest(v: number): void {
 
 const MOUSE_IMG =
   `<picture><source srcset="/img/mouse.webp" type="image/webp">` +
-  `<img src="/img/mouse.png" alt="" width="420" height="358" draggable="false" decoding="async"></picture>`;
+  `<img src="/img/mouse.png" alt="" width="420" height="645" draggable="false" decoding="async"></picture>`;
 
 const PAW_IMG =
   `<picture><source srcset="/img/paw.webp" type="image/webp">` +

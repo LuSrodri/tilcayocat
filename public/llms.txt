@@ -7,7 +7,7 @@
 - Genre: arcade / reflex (whack-a-mole style), single player, free, no account, no ads.
 - Platform: any modern web browser; designed for phones first, also works on desktop with the mouse.
 - Rules: 25 holes in a 5×5 grid. Tap a mouse to catch it (+1). You start with 5 seconds; every catch adds 0.8 seconds (capped at 5) and slapping an empty hole costs 0.3 seconds. Mice stay up for less time and appear more often as the score grows. Best score is stored locally on the device.
-- Power-ups pop out of holes now and then: Auto-catch (the cat catches every mouse automatically for 6 s), Full time (clock refilled to 5 s) and Freeze (clock paused for 4 s).
+- Power-ups pop out of holes now and then: Auto-catch (the cat catches every mouse automatically for 6 s), Full time (clock refilled to 5 s) and Freeze (clock, mice and spawns paused for 4 s).
 - The ⓘ button opens https://tilcayo.cat/about, a page about the real tilcayo cat with photos, facts, sources and a donation link.
 
 ## About the tilcayo cat (Leopardus tilcayo)
