@@ -24,3 +24,4 @@ User-agent: Bingbot
 Allow: /
 
 Sitemap: https://tilcayo.cat/sitemap.xml
+# Machine-readable summary for AI assistants: https://tilcayo.cat/llms.txt

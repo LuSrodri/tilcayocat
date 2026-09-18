@@ -98,7 +98,7 @@ shareBtn.addEventListener("click", async () => {
   const url = "https://tilcayo.cat/";
   try {
     if (navigator.share) {
-      await navigator.share({ title: "Tilcayo Cat", text, url });
+      await navigator.share({ title: "Tilcayo Cat Game", text, url });
     } else {
       await navigator.clipboard.writeText(`${text} ${url}`);
       shareBtn.textContent = "Copied!";

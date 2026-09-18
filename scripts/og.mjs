@@ -51,9 +51,9 @@ const foreground = `
   </defs>
   <rect y="290" width="${W}" height="340" fill="url(#shade)"/>
   <rect y="288" width="${W}" height="4" fill="#78aa6e" fill-opacity=".5"/>
-  <text x="70" y="150" font-family="Arial Black, Arial, Helvetica, sans-serif" font-size="92" font-weight="900" fill="#f0903f" letter-spacing="-2">Tilcayo Cat</text>
-  <text x="74" y="212" font-family="Arial, Helvetica, sans-serif" font-size="36" font-weight="700" fill="#f2ecdf">Catch the mice · 5 seconds per catch</text>
-  <text x="74" y="260" font-family="Arial, Helvetica, sans-serif" font-size="26" fill="#b7b0a2">Play as Leopardus tilcayo, the first new wild cat in 100+ years</text>
+  <text x="70" y="150" font-family="Arial Black, Arial, Helvetica, sans-serif" font-size="84" font-weight="900" fill="#f0903f" letter-spacing="-2">Tilcayo Cat Game</text>
+  <text x="74" y="212" font-family="Arial, Helvetica, sans-serif" font-size="36" font-weight="700" fill="#f2ecdf">A new cat discovered after 100+ years</text>
+  <text x="74" y="260" font-family="Arial, Helvetica, sans-serif" font-size="26" fill="#b7b0a2">Be Leopardus tilcayo. Catch the mice · 5 seconds per catch</text>
   <text x="74" y="590" font-family="Arial, Helvetica, sans-serif" font-size="30" font-weight="700" fill="#f2ecdf">tilcayo.cat</text>
   <ellipse cx="330" cy="520" rx="100" ry="36" fill="url(#holeG)"/>
   <ellipse cx="600" cy="560" rx="100" ry="36" fill="url(#holeG)"/>

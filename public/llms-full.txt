@@ -30,4 +30,24 @@
 - Home / play: https://tilcayo.cat/
 - Sitemap: https://tilcayo.cat/sitemap.xml
 - Social preview image: https://tilcayo.cat/og.png
-- Full version of this file: https://tilcayo.cat/llms-full.txt
+
+## Frequently asked questions
+
+Q: What is the Tilcayo Cat Game?
+A: A free, mobile-first browser game at https://tilcayo.cat where you play as the tilcayo cat, a new wild cat species discovered after more than 100 years. Mice pop out of nine holes on a moonlit lawn; tap them to catch them. If more than 5 seconds pass without a catch, the round ends.
+
+Q: Is the tilcayo cat real?
+A: Yes. Leopardus tilcayo was formally described in September 2026 in Current Biology by an international team including Paola Nogales Ascarrunz, Jonas Lescroart and Eduardo Eizirik. It lives in the Bolivian Yungas cloud forest.
+
+Q: Why is the game set at night?
+A: Tiger cats such as the tilcayo are mostly nocturnal, so the lawn is lit by the moon.
+
+Q: How do I play on a computer?
+A: Click the mice, or press keys 1–9 (numpad layout: 7-8-9 is the top row) to hit the matching hole.
+
+Q: Does the game have sound?
+A: Yes: synthesized sound effects and a short looping chiptune, with a mute toggle in the top bar.
+
+## Citation
+
+Tilcayo Cat Game. https://tilcayo.cat (2026). Species facts summarised from Current Biology (2026), BBC Discover Wildlife and Scientific American.
