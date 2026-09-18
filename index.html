@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
   <title>Tilcayo Cat Game — A New Cat Discovered After 100+ Years</title>
-  <meta name="description" content="Tilcayo Cat Game: play as Leopardus tilcayo, the new wild cat discovered after 100+ years. Catch the mice popping from their holes before 5 seconds run out.">
+  <meta name="description" content="Tilcayo Cat Game: play as Leopardus tilcayo, the new wild cat discovered after 100+ years. Catch mice from 25 holes, grab power-ups and keep the 5-second clock alive.">
   <meta name="keywords" content="tilcayo cat, Leopardus tilcayo, tilcayo game, new cat species, Bolivia wild cat, tiger cat, mouse catching game, mobile browser game, whack-a-mole cat">
   <meta name="author" content="tilcayo.cat">
   <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
@@ -35,6 +35,7 @@
   <link rel="preload" as="image" href="/img/cat-catch.webp" type="image/webp">
   <link rel="preload" as="image" href="/img/cat-angry.webp" type="image/webp">
   <link rel="preload" as="image" href="/img/paw.webp" type="image/webp">
+  <link rel="preload" as="image" href="/img/hole.webp" type="image/webp">
   <link rel="canonical" href="https://tilcayo.cat/">
   <link rel="alternate" hreflang="en" href="https://tilcayo.cat/">
   <link rel="alternate" hreflang="x-default" href="https://tilcayo.cat/">
@@ -57,7 +58,7 @@
   <meta property="og:image:type" content="image/png">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
-  <meta property="og:updated_time" content="2026-09-17T22:00:00+00:00">
+  <meta property="og:updated_time" content="2026-09-18T21:00:00+00:00">
   <meta property="og:image:alt" content="Tilcayo Cat Game: illustrated tilcayo cat (Leopardus tilcayo) on a moonlit lawn beside a mouse peeking from its hole">
 
   <!-- Twitter / X -->
@@ -68,129 +69,129 @@
   <meta name="twitter:image:alt" content="Tilcayo Cat Game: illustrated tilcayo cat on a moonlit lawn beside a mouse peeking from its hole">
 
   <script type="application/ld+json">
-  {
-    "@context": "https://schema.org",
-    "@graph": [
-      {
-        "@type": "WebSite",
-        "@id": "https://tilcayo.cat/#website",
-        "url": "https://tilcayo.cat/",
-        "name": "Tilcayo Cat Game",
-        "alternateName": "Tilcayo Cat",
-        "description": "Tilcayo Cat Game: a free mobile-first browser game about the tilcayo cat (Leopardus tilcayo), the new cat species discovered after more than 100 years.",
-        "inLanguage": "en",
-        "datePublished": "2026-09-17",
-        "dateModified": "2026-09-17",
-        "keywords": "tilcayo cat, Leopardus tilcayo, new cat species, cat game, Bolivia, Yungas, tiger cat",
-        "about": { "@id": "https://tilcayo.cat/#tilcayo" },
-        "publisher": { "@id": "https://tilcayo.cat/#organization" }
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebSite",
+      "@id": "https://tilcayo.cat/#website",
+      "url": "https://tilcayo.cat/",
+      "name": "Tilcayo Cat Game",
+      "alternateName": "Tilcayo Cat",
+      "description": "Tilcayo Cat Game: a free mobile-first browser game about the tilcayo cat (Leopardus tilcayo), the new cat species discovered after more than 100 years.",
+      "inLanguage": "en",
+      "datePublished": "2026-09-17",
+      "dateModified": "2026-09-18",
+      "keywords": "tilcayo cat, Leopardus tilcayo, new cat species, cat game, Bolivia, Yungas, tiger cat",
+      "about": {
+        "@id": "https://tilcayo.cat/about#tilcayo"
       },
-      {
-        "@type": "WebPage",
-        "@id": "https://tilcayo.cat/#webpage",
-        "url": "https://tilcayo.cat/",
-        "name": "Tilcayo Cat Game — A New Cat Discovered After 100+ Years",
-        "isPartOf": { "@id": "https://tilcayo.cat/#website" },
-        "about": { "@id": "https://tilcayo.cat/#tilcayo" },
-        "mainEntity": { "@id": "https://tilcayo.cat/#game" },
-        "primaryImageOfPage": { "@type": "ImageObject", "url": "https://tilcayo.cat/tilcayo-cat-game-1200x630.png", "width": 1200, "height": 630 },
-        "inLanguage": "en",
-        "datePublished": "2026-09-17",
-        "dateModified": "2026-09-17",
-        "speakable": { "@type": "SpeakableSpecification", "cssSelector": ["#aboutTitle", ".about__body > p:first-of-type", ".facts"] }
+      "publisher": {
+        "@id": "https://tilcayo.cat/#organization"
+      }
+    },
+    {
+      "@type": "WebPage",
+      "@id": "https://tilcayo.cat/#webpage",
+      "url": "https://tilcayo.cat/",
+      "name": "Tilcayo Cat Game — A New Cat Discovered After 100+ Years",
+      "isPartOf": {
+        "@id": "https://tilcayo.cat/#website"
       },
-      {
-        "@type": "Organization",
-        "@id": "https://tilcayo.cat/#organization",
-        "name": "Tilcayo Cat",
-        "url": "https://tilcayo.cat/",
-        "logo": { "@type": "ImageObject", "url": "https://tilcayo.cat/icon-512.png", "width": 512, "height": 512 },
+      "about": {
+        "@id": "https://tilcayo.cat/about#tilcayo"
+      },
+      "mainEntity": {
+        "@id": "https://tilcayo.cat/#game"
+      },
+      "primaryImageOfPage": {
+        "@type": "ImageObject",
+        "url": "https://tilcayo.cat/tilcayo-cat-game-1200x630.png",
+        "width": 1200,
+        "height": 630
+      },
+      "inLanguage": "en",
+      "datePublished": "2026-09-17",
+      "dateModified": "2026-09-18"
+    },
+    {
+      "@type": "Organization",
+      "@id": "https://tilcayo.cat/#organization",
+      "name": "Tilcayo Cat",
+      "url": "https://tilcayo.cat/",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://tilcayo.cat/icon-512.png",
+        "width": 512,
+        "height": 512
+      },
+      "email": "rodrigueslucass@outlook.com.br",
+      "contactPoint": {
+        "@type": "ContactPoint",
         "email": "rodrigueslucass@outlook.com.br",
-        "contactPoint": { "@type": "ContactPoint", "email": "rodrigueslucass@outlook.com.br", "contactType": "customer support", "availableLanguage": ["en", "pt"] }
-      },
-      {
-        "@type": ["VideoGame", "WebApplication"],
-        "@id": "https://tilcayo.cat/#game",
-        "name": "Tilcayo Cat Game — A New Cat Discovered After 100+ Years",
-        "alternateName": "Tilcayo Cat Game",
-        "url": "https://tilcayo.cat/",
-        "image": "https://tilcayo.cat/tilcayo-cat-game-1200x630.png",
-        "description": "You are a tilcayo cat sitting on a lawn. Mice pop out of their holes; tap them to catch them. If more than 5 seconds pass without a catch, the game is over.",
-        "genre": ["Arcade", "Casual", "Reflex"],
-        "gamePlatform": ["Web browser", "Mobile", "Desktop"],
-        "applicationCategory": "GameApplication",
-        "operatingSystem": "Any",
-        "browserRequirements": "Requires JavaScript",
-        "playMode": "SinglePlayer",
-        "numberOfPlayers": { "@type": "QuantitativeValue", "value": 1 },
-        "inLanguage": "en",
-        "isAccessibleForFree": true,
-        "datePublished": "2026-09-17",
-        "dateModified": "2026-09-17",
-        "keywords": "tilcayo cat game, catch the mice, whack-a-mole, reflex game, new cat species",
-        "thumbnailUrl": "https://tilcayo.cat/tilcayo-cat-game-1200x630.png",
-        "contentRating": "Everyone",
-        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD", "availability": "https://schema.org/InStock" },
-        "character": { "@id": "https://tilcayo.cat/#tilcayo" },
-        "publisher": { "@id": "https://tilcayo.cat/#organization" }
-      },
-      {
-        "@type": "Taxon",
-        "@id": "https://tilcayo.cat/#tilcayo",
-        "name": "Leopardus tilcayo",
-        "alternateName": ["Tilcayo cat", "Tilcayo"],
-        "taxonRank": "species",
-        "parentTaxon": { "@type": "Taxon", "name": "Leopardus", "taxonRank": "genus", "parentTaxon": { "@type": "Taxon", "name": "Felidae", "taxonRank": "family" } },
-        "url": "https://tilcayo.cat/#about",
-        "image": [
-          { "@type": "ImageObject", "url": "https://tilcayo.cat/img/real-crouch.jpg", "width": 1200, "height": 677, "caption": "The only known tilcayo cat at Senda Verde Animal Refuge, Bolivia", "creditText": "Fernando Faciole / National Geographic" },
-          { "@type": "ImageObject", "url": "https://tilcayo.cat/img/real-portrait.jpg", "width": 391, "height": 511, "caption": "Portrait of the tilcayo cat", "creditText": "Fernando Faciole / National Geographic" }
-        ],
-        "additionalProperty": [
-          { "@type": "PropertyValue", "name": "Native range", "value": "Yungas cloud forest, Bolivia" },
-          { "@type": "PropertyValue", "name": "Head-to-body length", "value": "about 45 cm (18 in)" },
-          { "@type": "PropertyValue", "name": "Weight", "value": "about 1.3 kg (3 lb)" },
-          { "@type": "PropertyValue", "name": "Described", "value": "September 2026, Current Biology" },
-          { "@type": "PropertyValue", "name": "Activity", "value": "Nocturnal" }
-        ],
-        "description": "A small spotted wild cat native to the Bolivian Yungas cloud forest, formally described in September 2026 in Current Biology as the first new wild cat species in more than a century. It belongs to the tiger cat group, is smaller than a domestic cat (about 45 cm body length and 1.3 kg), and is distinguished from the oncilla by larger spot markings, a longer and more slender tail, and muted fur colour.",
-        "subjectOf": [
-          { "@type": "ScholarlyArticle", "name": "Tiger cats species delimitation (Current Biology, 2026)", "url": "https://www.cell.com/current-biology/fulltext/S0960-9822(26)01110-3" }
-        ]
-      },
-      {
-        "@type": "FAQPage",
-        "@id": "https://tilcayo.cat/#faq",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "What is a tilcayo cat?",
-            "acceptedAnswer": { "@type": "Answer", "text": "The tilcayo cat (Leopardus tilcayo) is a newly described species of small wild cat from Bolivia's Yungas cloud forest. Formally described in September 2026, it is the first new wild cat species identified in more than 100 years." }
-          },
-          {
-            "@type": "Question",
-            "name": "How big is a tilcayo cat?",
-            "acceptedAnswer": { "@type": "Answer", "text": "It is smaller than an average house cat: roughly 45 cm (18 in) from head to the base of the tail and about 1.3 kg (3 lb)." }
-          },
-          {
-            "@type": "Question",
-            "name": "How do you play Tilcayo Cat?",
-            "acceptedAnswer": { "@type": "Answer", "text": "Tap the mice as they pop out of their holes in the grass. You start with 5 seconds; every catch adds 0.8 seconds (up to 5). If the timer reaches zero, the game ends." }
-          },
-          {
-            "@type": "Question",
-            "name": "Where does the tilcayo cat live?",
-            "acceptedAnswer": { "@type": "Answer", "text": "In the Bolivian Yungas, a cloud-forest region on the eastern slopes of the Andes. The only known individual lives at the Senda Verde Animal Refuge in the Yungas." }
-          }
+        "contactType": "customer support",
+        "availableLanguage": [
+          "en",
+          "pt"
         ]
       }
-    ]
-  }
+    },
+    {
+      "@type": [
+        "VideoGame",
+        "WebApplication"
+      ],
+      "@id": "https://tilcayo.cat/#game",
+      "name": "Tilcayo Cat Game — A New Cat Discovered After 100+ Years",
+      "alternateName": "Tilcayo Cat Game",
+      "url": "https://tilcayo.cat/",
+      "image": "https://tilcayo.cat/tilcayo-cat-game-1200x630.png",
+      "description": "You are a tilcayo cat on a moonlit lawn with 25 mouse holes. Tap the mice to catch them, grab power-ups (auto-catch, full time, freeze), and keep the 5-second clock from running out.",
+      "genre": [
+        "Arcade",
+        "Casual",
+        "Reflex"
+      ],
+      "gamePlatform": [
+        "Web browser",
+        "Mobile",
+        "Desktop"
+      ],
+      "applicationCategory": "GameApplication",
+      "operatingSystem": "Any",
+      "browserRequirements": "Requires JavaScript",
+      "playMode": "SinglePlayer",
+      "numberOfPlayers": {
+        "@type": "QuantitativeValue",
+        "value": 1
+      },
+      "inLanguage": "en",
+      "isAccessibleForFree": true,
+      "datePublished": "2026-09-17",
+      "dateModified": "2026-09-18",
+      "keywords": "tilcayo cat game, catch the mice, whack-a-mole, reflex game, new cat species",
+      "thumbnailUrl": "https://tilcayo.cat/tilcayo-cat-game-1200x630.png",
+      "contentRating": "Everyone",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD",
+        "availability": "https://schema.org/InStock"
+      },
+      "character": {
+        "@id": "https://tilcayo.cat/about#tilcayo"
+      },
+      "publisher": {
+        "@id": "https://tilcayo.cat/#organization"
+      }
+    }
+  ]
+}
   </script>
 </head>
 <body>
   <noscript>
-    <p class="noscript">Tilcayo Cat needs JavaScript to run. Enable it to play — or scroll down to read about the tilcayo cat, the first new wild cat species in over a century.</p>
+    <p class="noscript">Tilcayo Cat needs JavaScript to run. Enable it to play — or <a href="/about">read about the tilcayo cat</a>, the first new wild cat species in over a century.</p>
   </noscript>
 
   <main id="app" class="app">
@@ -198,10 +199,10 @@
     <header class="hud" aria-label="Game status">
       <div class="hud__score">
         <span class="hud__label">Mice</span>
-        <span id="score" class="hud__value" aria-live="polite">0</span>
+        <span id="score" class="hud__value hud__value--score" aria-live="polite">0</span>
       </div>
       <div class="hud__timer" role="timer" aria-label="Time left to catch the next mouse">
-        <div id="timerBar" class="timer"><div id="timerFill" class="timer__fill"></div></div>
+        <div id="timerBar" class="timer"><div id="timerFill" class="timer__fill"></div><div class="timer__shine"></div></div>
         <span id="timerText" class="timer__text">5.0s</span>
       </div>
       <div class="hud__best">
@@ -212,24 +213,27 @@
         <svg class="ico-on" viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4z" fill="currentColor"/><path d="M16 8.5a4.5 4.5 0 0 1 0 7M18.5 6a8 8 0 0 1 0 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
         <svg class="ico-off" viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4z" fill="currentColor"/><path d="M16 9l5 6M21 9l-5 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
       </button>
-      <button id="infoBtn" class="info-btn" type="button" aria-label="About the tilcayo cat" aria-haspopup="dialog" aria-controls="aboutDialog">
+      <a id="infoBtn" class="info-btn" href="/about" aria-label="About the tilcayo cat">
         <svg viewBox="0 0 24 24" width="26" height="26" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="7.5" r="1.4" fill="currentColor"/><path d="M10.5 11h2v6h1.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      </button>
+      </a>
     </header>
     </div>
 
     <section id="field" class="field" aria-label="Lawn with mouse holes">
       <div class="sky">
-        <div class="moon" aria-hidden="true"></div>
-        <div class="cloud cloud--1"></div>
-        <div class="cloud cloud--2"></div>
-        <div class="hills"></div>
+        <picture class="sky__art">
+          <source media="(max-width: 700px)" srcset="/img/sky-sm.webp" type="image/webp">
+          <source srcset="/img/sky.webp" type="image/webp">
+          <img src="/img/sky.jpg" alt="" width="1800" height="600" decoding="async" fetchpriority="low">
+        </picture>
+        <div class="sky__stars" aria-hidden="true"></div>
       </div>
       <div class="lawn">
         <div class="moonlight" aria-hidden="true"></div>
         <div class="cloud-shadow" aria-hidden="true"></div>
         <div id="cat" class="cat" data-state="idle">
           <span class="cat__shadow" aria-hidden="true"></span>
+          <span class="cat__aura" aria-hidden="true"></span>
           <picture class="cat__img cat__img--idle">
             <source srcset="/img/cat.webp" type="image/webp">
             <img src="/img/cat.png" alt="Tilcayo cat sitting on the grass, watching the mouse holes" width="720" height="1142" draggable="false" fetchpriority="high">
@@ -244,6 +248,11 @@
           </picture>
         </div>
         <div id="holes" class="holes" role="group" aria-label="Mouse holes"></div>
+        <div id="powerBadge" class="power-badge" data-kind="" hidden aria-live="polite">
+          <span id="powerRing" class="power-badge__ring" style="--p:1"><span class="power-badge__icon"></span></span>
+          <span class="power-badge__text"><span id="powerName" class="power-badge__name">Auto-catch</span><span id="powerTime" class="power-badge__time">6s</span></span>
+        </div>
+        <div id="toast" class="toast" data-kind="" aria-hidden="true"></div>
         <span class="firefly" style="left:12%;top:20%;--d:9s;--delay:0s;--dx:40px;--dy:-30px" aria-hidden="true"></span>
         <span class="firefly" style="left:78%;top:34%;--d:11s;--delay:2s;--dx:-30px;--dy:-50px" aria-hidden="true"></span>
         <span class="firefly" style="left:30%;top:62%;--d:8s;--delay:4s;--dx:26px;--dy:-24px" aria-hidden="true"></span>
@@ -251,85 +260,27 @@
         <span class="firefly" style="left:88%;top:70%;--d:10s;--delay:6s;--dx:-20px;--dy:-60px" aria-hidden="true"></span>
       </div>
       <div class="vignette" aria-hidden="true"></div>
+      <div class="frost" aria-hidden="true"></div>
     </section>
 
     <div id="overlay" class="overlay" role="dialog" aria-modal="true" aria-labelledby="overlayTitle">
       <div class="overlay__card">
         <h1 id="overlayTitle" class="overlay__title">Tilcayo Cat Game</h1>
-        <p id="overlayText" class="overlay__text">A moonlit night in the Yungas. You are a tilcayo, the new cat species discovered after 100+ years. Tap the mice as they pop out. <strong>You start with 5 seconds; each catch buys you 0.8 s more.</strong></p>
+        <p id="overlayText" class="overlay__text">A moonlit night in the Yungas. You are a tilcayo, the new cat species discovered after 100+ years. Tap the mice as they pop out of 25 holes. <strong>You start with 5 s; each catch +0.8 s, each empty slap −0.3 s.</strong></p>
+        <ul class="powers" aria-label="Power-ups">
+          <li class="powers__item" data-kind="auto"><span class="powers__icon"></span><span><b>Auto-catch</b><small>6 s of automatic paws</small></span></li>
+          <li class="powers__item" data-kind="fulltime"><span class="powers__icon"></span><span><b>Full time</b><small>clock back to 5 s</small></span></li>
+          <li class="powers__item" data-kind="freeze"><span class="powers__icon"></span><span><b>Freeze</b><small>clock stops for 4 s</small></span></li>
+        </ul>
         <p id="overlayStats" class="overlay__stats" hidden></p>
         <div class="overlay__actions">
           <button id="playBtn" class="btn btn--primary" type="button">Play</button>
           <button id="shareBtn" class="btn" type="button" hidden>Share score</button>
         </div>
-        <button id="overlayInfo" class="link-btn" type="button">What is a tilcayo cat?</button>
+        <a class="link-btn" href="/about">What is a tilcayo cat?</a>
       </div>
     </div>
   </main>
-
-  <dialog id="aboutDialog" class="about" aria-labelledby="aboutTitle">
-    <article class="about__body" id="about">
-      <header class="about__header">
-        <h2 id="aboutTitle">The tilcayo cat</h2>
-        <p class="about__latin"><em>Leopardus tilcayo</em> · Bolivian Yungas cloud forest</p>
-        <button id="closeAbout" class="about__close" type="button" aria-label="Close">&times;</button>
-      </header>
-
-      <div class="gallery">
-        <figure class="gallery__item gallery__item--wide">
-          <picture>
-            <source srcset="/img/real-crouch.webp" type="image/webp">
-            <img src="/img/real-crouch.jpg" alt="The only known tilcayo cat, a ten-year-old male, crouching and looking at the camera at Senda Verde Animal Refuge, Bolivia" width="1200" height="677" loading="lazy" decoding="async">
-          </picture>
-          <figcaption>The only known tilcayo, at Senda Verde Animal Refuge in the Bolivian Yungas.</figcaption>
-        </figure>
-        <figure class="gallery__item">
-          <picture>
-            <source srcset="/img/real-portrait.webp" type="image/webp">
-            <img src="/img/real-portrait.jpg" alt="Close-up portrait of the tilcayo cat facing the camera, tongue tip out, showing the twin black forehead stripes and rosettes" width="391" height="511" loading="lazy" decoding="async">
-          </picture>
-          <figcaption>Twin forehead stripes, large rosettes, tongue out: the real face behind the game.</figcaption>
-        </figure>
-      </div>
-      <p class="gallery__credit">Photos: Fernando Faciole / National Geographic.</p>
-
-      <p><strong>The first new wild cat species described in more than 100 years.</strong> In September 2026 an international team published a study in <em>Current Biology</em> formally naming <em>Leopardus tilcayo</em>, a small spotted cat from the Yungas cloud forests on the eastern slopes of the Bolivian Andes.</p>
-
-      <h3>Quick facts</h3>
-      <ul class="facts">
-        <li><b>Group:</b> tiger cats (genus <em>Leopardus</em>), South America's small spotted wild cats</li>
-        <li><b>Size:</b> about 45 cm (18 in) head-to-body and roughly 1.3 kg (3 lb) — smaller than a house cat</li>
-        <li><b>Look:</b> rust-orange coat with large leopard-like rosettes, two dark stripes down the forehead, a long slender tail and a muted fur colour</li>
-        <li><b>Home:</b> Yungas cloud forest, Bolivia, in the Andes–Amazon transition zone</li>
-        <li><b>Lineage:</b> DNA suggests it split from its closest tiger-cat relative around 1.4 million years ago</li>
-      </ul>
-
-      <h3>A discovery by chance</h3>
-      <p>Around 2017 a local family handed a small spotted cat to the Senda Verde Animal Refuge in the Yungas. Wild-cat conservationist and National Geographic Explorer Paola Nogales Ascarrunz met him while volunteering there and noticed he did not match any known tiger cat. Genetic analysis of 38 cats — including 26 tiger cats — led by Nogales Ascarrunz, Jonas Lescroart (University of Antwerp) and Eduardo Eizirik (PUCRS, Brazil) showed the tiger cats are at least five distinct species, one of them entirely new.</p>
-      <p>That ten-year-old male is still the only known individual of the species. Researchers are now placing camera traps across the Yungas to find tilcayos in the wild, which are easily mistaken for oncillas or margays.</p>
-
-      <h3>Why "tilcayo"?</h3>
-      <p>"Tilcayo" is the name local communities already used for the cat. The scientists kept it to honour that ancestral knowledge and the communities' connection to the animal.</p>
-
-      <h3>Why it matters</h3>
-      <p>Finding a new mammal is rare; a new cat is rarer still. The team hopes the description drives conservation of the Yungas forests, one of the least-studied and most species-rich regions of the Neotropics.</p>
-
-      <aside class="donate">
-        <h3>Help the tilcayo's home</h3>
-        <p>The only known tilcayo in captivity lives at Senda Verde, in the Bolivian Yungas. He is the cat that led scientists to the discovery of the species. The refuge cares for hundreds of rescued animals and runs on donations.</p>
-        <a class="btn btn--primary donate__btn" href="https://sendaverde.org/donate/" target="_blank" rel="noopener noreferrer">Donate to Senda Verde</a>
-      </aside>
-
-      <h3>Sources</h3>
-      <ul class="sources">
-        <li><a href="https://www.cell.com/current-biology/fulltext/S0960-9822(26)01110-3" target="_blank" rel="noopener noreferrer">Current Biology — species description (2026)</a></li>
-        <li><a href="https://www.discoverwildlife.com/animal-facts/mammals/tilcayo-cat-bolivian-yungus" target="_blank" rel="noopener noreferrer">BBC Discover Wildlife — New species of wild cat discovered in Bolivia's cloud forest</a></li>
-        <li><a href="https://www.scientificamerican.com/article/see-the-first-new-species-of-cat-discovered-in-more-than-a-century-its-adorable/" target="_blank" rel="noopener noreferrer">Scientific American — See the first new species of cat discovered in more than a century</a></li>
-      </ul>
-      <p class="about__note">The game's artwork is an original illustration inspired by these photographs.</p>
-      <p class="about__contact">Questions or ideas? Write to <a href="mailto:rodrigueslucass@outlook.com.br">rodrigueslucass@outlook.com.br</a>.</p>
-    </article>
-  </dialog>
 
   <script type="module" src="/src/main.ts"></script>
 </body>

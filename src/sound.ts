@@ -52,6 +52,13 @@ export const sfx = {
   miss(): void {
     tone(220, 0.12, "sawtooth", 0.05, 160);
   },
+  powerUp(): void {
+    tone(660, 0.1, "sine", 0.06, 990);
+    setTimeout(() => tone(990, 0.14, "sine", 0.06, 1320), 90);
+  },
+  powerCollect(): void {
+    [523, 659, 784, 1047].forEach((f, i) => setTimeout(() => tone(f, 0.16, "triangle", 0.1), i * 70));
+  },
   over(): void {
     tone(440, 0.25, "triangle", 0.12, 220);
     setTimeout(() => tone(330, 0.4, "triangle", 0.12, 110), 200);

@@ -3,13 +3,25 @@ import { sfx } from "./sound";
 export const CATCH_WINDOW_MS = 5000;
 // Each catch buys a little time back instead of refilling the whole window.
 export const CATCH_BONUS_MS = 800;
-const HOLE_COUNT = 9;
+// Slapping an empty hole costs time.
+export const MISS_PENALTY_MS = 300;
+export const GRID = 5;
+const HOLE_COUNT = GRID * GRID;
 const BEST_KEY = "tilcayo.best";
+
+export type PowerKind = "auto" | "fulltime" | "freeze";
+export const POWER_DURATION: Record<PowerKind, number> = { auto: 6000, fulltime: 0, freeze: 4000 };
+export const POWER_LABEL: Record<PowerKind, string> = { auto: "Auto-catch", fulltime: "Full time", freeze: "Freeze" };
+const POWER_KINDS: PowerKind[] = ["auto", "fulltime", "freeze"];
+
+type Occupant = "mouse" | PowerKind;
 
 interface Hole {
   el: HTMLButtonElement;
   up: boolean;
+  what: Occupant;
   hideAt: number;
+  autoAt: number;
 }
 
 export type CatState = "idle" | "catch" | "angry" | "sad";
@@ -17,6 +29,7 @@ export type CatState = "idle" | "catch" | "angry" | "sad";
 export interface GameCallbacks {
   onScore(score: number, best: number): void;
   onTimer(remainingMs: number): void;
+  onPower(kind: PowerKind | null, remainingMs: number, totalMs: number): void;
   onGameOver(score: number, best: number, isNewBest: boolean): void;
 }
 
@@ -27,9 +40,13 @@ export class Game {
   private running = false;
   private deadline = 0;
   private nextSpawnAt = 0;
+  private nextPowerAt = 0;
   private raf = 0;
+  private lastFrame = 0;
   private lastAlertAt = 0;
   private catTimer = 0;
+  private power: PowerKind | null = null;
+  private powerUntil = 0;
 
   constructor(
     private readonly holesEl: HTMLElement,
@@ -41,6 +58,7 @@ export class Game {
     this.catEl.classList.add("is-idle");
     this.cb.onScore(0, this.best);
     this.cb.onTimer(CATCH_WINDOW_MS);
+    this.cb.onPower(null, 0, 0);
   }
 
   get bestScore(): number {
@@ -51,8 +69,10 @@ export class Game {
     this.reset();
     this.running = true;
     const now = performance.now();
+    this.lastFrame = now;
     this.deadline = now + CATCH_WINDOW_MS;
     this.nextSpawnAt = now + 350;
+    this.nextPowerAt = now + 9000 + Math.random() * 6000;
     this.catEl.classList.remove("is-sad");
     this.catEl.classList.add("is-idle");
     this.setCat("idle");
@@ -62,6 +82,7 @@ export class Game {
 
   private reset(): void {
     this.score = 0;
+    this.setPower(null);
     for (const h of this.holes) this.lower(h);
     this.cb.onScore(0, this.best);
     this.cb.onTimer(CATCH_WINDOW_MS);
@@ -69,6 +90,7 @@ export class Game {
 
   private buildHoles(): void {
     this.holesEl.replaceChildren();
+    this.holesEl.style.setProperty("--grid", String(GRID));
     for (let i = 0; i < HOLE_COUNT; i++) {
       const el = document.createElement("button");
       el.type = "button";
@@ -76,13 +98,16 @@ export class Game {
       el.setAttribute("aria-label", `Mouse hole ${i + 1}`);
       el.innerHTML =
         `<span class="hole__back"></span>` +
-        `<span class="hole__clip"><span class="hole__mouse">${MOUSE_IMG}</span></span>` +
+        `<span class="hole__clip">` +
+        `<span class="hole__mouse">${MOUSE_IMG}</span>` +
+        `<span class="hole__power"><span class="hole__power-img"></span></span>` +
+        `</span>` +
         `<span class="hole__front"></span>` +
         `<span class="hole__flash" aria-hidden="true"></span>` +
         `<span class="hole__pawshadow" aria-hidden="true"></span>` +
         `<span class="hole__paw" aria-hidden="true">${PAW_IMG}</span>` +
         `<span class="hole__pop" aria-hidden="true">+1</span>`;
-      const hole: Hole = { el, up: false, hideAt: 0 };
+      const hole: Hole = { el, up: false, what: "mouse", hideAt: 0, autoAt: 0 };
       el.addEventListener("pointerdown", (ev) => {
         ev.preventDefault();
         this.tap(hole);
@@ -94,19 +119,28 @@ export class Game {
 
   // Difficulty curve: mice stay up for less time and appear more often as the score grows.
   private upTime(): number {
-    return clamp(1500 - this.score * 28, 620, 1500);
+    return clamp(1600 - this.score * 22, 650, 1600);
   }
   private spawnGap(): number {
-    return clamp(800 - this.score * 24, 320, 800);
+    return clamp(700 - this.score * 18, 280, 700);
   }
   private simultaneous(): number {
-    if (this.score >= 40) return 3;
-    if (this.score >= 15) return 2;
-    return 1;
+    if (this.score >= 80) return 5;
+    if (this.score >= 40) return 4;
+    if (this.score >= 15) return 3;
+    return 2;
   }
 
   private tick = (now: number): void => {
     if (!this.running) return;
+    const dt = now - this.lastFrame;
+    this.lastFrame = now;
+
+    // Freeze: the clock simply does not advance.
+    if (this.power === "freeze") this.deadline += dt;
+
+    if (this.power && now >= this.powerUntil) this.setPower(null);
+    if (this.power) this.cb.onPower(this.power, this.powerUntil - now, POWER_DURATION[this.power]);
 
     const remaining = this.deadline - now;
     this.cb.onTimer(Math.max(0, remaining));
@@ -121,29 +155,49 @@ export class Game {
     }
 
     for (const h of this.holes) {
-      if (h.up && now >= h.hideAt) {
+      if (!h.up) continue;
+      if (h.what === "mouse" && this.power === "auto" && now >= h.autoAt) {
+        this.catchMouse(h);
+        continue;
+      }
+      if (now >= h.hideAt) {
         this.lower(h);
-        this.escaped(h);
+        if (h.what === "mouse") this.escaped(h);
       }
     }
 
     if (now >= this.nextSpawnAt) {
-      const upCount = this.holes.filter((h) => h.up).length;
-      if (upCount < this.simultaneous()) this.spawn(now);
+      const upMice = this.holes.filter((h) => h.up && h.what === "mouse").length;
+      if (upMice < this.simultaneous()) this.spawn(now, "mouse");
       this.nextSpawnAt = now + this.spawnGap() * (0.7 + Math.random() * 0.6);
+    }
+
+    // Power-ups show up now and then, never while one is already up or running.
+    if (now >= this.nextPowerAt) {
+      const powerUp = this.holes.some((h) => h.up && h.what !== "mouse");
+      if (!powerUp && !this.power) this.spawn(now, POWER_KINDS[Math.floor(Math.random() * POWER_KINDS.length)]!);
+      this.nextPowerAt = now + 9000 + Math.random() * 8000;
     }
 
     this.raf = requestAnimationFrame(this.tick);
   };
 
-  private spawn(now: number): void {
+  private spawn(now: number, what: Occupant): void {
     const free = this.holes.filter((h) => !h.up && !h.el.classList.contains("is-caught"));
     if (!free.length) return;
     const hole = free[Math.floor(Math.random() * free.length)]!;
     hole.up = true;
-    hole.hideAt = now + this.upTime() * (0.8 + Math.random() * 0.4);
+    hole.what = what;
+    hole.el.dataset.what = what;
+    if (what === "mouse") {
+      hole.hideAt = now + this.upTime() * (0.8 + Math.random() * 0.4);
+      hole.autoAt = now + 140;
+      sfx.squeak();
+    } else {
+      hole.hideAt = now + 2600;
+      sfx.powerUp();
+    }
     hole.el.classList.add("is-up");
-    sfx.squeak();
   }
 
   private lower(hole: Hole): void {
@@ -171,23 +225,39 @@ export class Game {
     }
   }
 
+  private setPower(kind: PowerKind | null): void {
+    this.power = kind;
+    this.powerUntil = kind ? performance.now() + POWER_DURATION[kind] : 0;
+    this.catEl.dataset.power = kind ?? "";
+    this.holesEl.dataset.power = kind ?? "";
+    this.cb.onPower(kind, kind ? POWER_DURATION[kind] : 0, kind ? POWER_DURATION[kind] : 0);
+  }
+
   private tap(hole: Hole): void {
     if (!this.running) return;
     sfx.unlock();
     if (!hole.up) {
-      sfx.miss();
-      hole.el.classList.remove("is-hit");
-      void hole.el.offsetWidth;
-      hole.el.classList.add("is-hit", "is-whiff");
-      setTimeout(() => hole.el.classList.remove("is-hit", "is-whiff"), 450);
-      this.setCat("angry", 450);
+      this.whiff(hole);
       return;
     }
+    if (hole.what === "mouse") {
+      this.catchMouse(hole);
+    } else {
+      this.collect(hole, hole.what);
+    }
+  }
+
+  private whiff(hole: Hole): void {
+    sfx.miss();
+    this.deadline -= MISS_PENALTY_MS;
+    this.burst(hole, "is-whiff", `−${(MISS_PENALTY_MS / 1000).toFixed(1)}s`, 450);
+    this.setCat("angry", 450);
+  }
+
+  private catchMouse(hole: Hole): void {
     hole.up = false;
     hole.el.classList.remove("is-up");
-    hole.el.classList.add("is-caught", "is-hit");
-    // keep the caught hole busy briefly so a new mouse doesn't instantly reuse it
-    setTimeout(() => hole.el.classList.remove("is-caught", "is-hit"), 550);
+    this.burst(hole, "is-caught", "+1", 550);
 
     this.score += 1;
     this.deadline = Math.min(this.deadline + CATCH_BONUS_MS, performance.now() + CATCH_WINDOW_MS);
@@ -201,9 +271,35 @@ export class Game {
     this.cb.onScore(this.score, Math.max(this.best, this.score));
   }
 
+  private collect(hole: Hole, kind: PowerKind): void {
+    hole.up = false;
+    hole.el.classList.remove("is-up");
+    this.burst(hole, "is-caught is-collected", POWER_LABEL[kind], 700);
+    sfx.powerCollect();
+    if (navigator.vibrate) navigator.vibrate([10, 20, 10]);
+    if (kind === "fulltime") {
+      this.deadline = performance.now() + CATCH_WINDOW_MS;
+      this.cb.onPower("fulltime", 0, 0);
+      this.setPower(null);
+      return;
+    }
+    this.setPower(kind);
+  }
+
+  // Paw slap + floating label on a hole; extra classes drive the variant.
+  private burst(hole: Hole, classes: string, label: string, ms: number): void {
+    const list = classes.split(" ");
+    hole.el.classList.remove("is-hit", ...list);
+    void hole.el.offsetWidth;
+    hole.el.querySelector(".hole__pop")!.textContent = label;
+    hole.el.classList.add("is-hit", ...list);
+    setTimeout(() => hole.el.classList.remove("is-hit", ...list), ms);
+  }
+
   private end(): void {
     this.running = false;
     cancelAnimationFrame(this.raf);
+    this.setPower(null);
     for (const h of this.holes) this.lower(h);
     this.catEl.classList.remove("is-idle", "is-alert");
     this.catEl.classList.add("is-sad");

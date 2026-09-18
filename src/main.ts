@@ -1,5 +1,5 @@
 import "./style.css";
-import { Game, CATCH_WINDOW_MS } from "./game";
+import { Game, CATCH_WINDOW_MS, POWER_LABEL } from "./game";
 import { sfx, music, volume } from "./sound";
 
 function $<T extends HTMLElement>(id: string): T {
@@ -22,14 +22,21 @@ const overlayStats = $("overlayStats");
 const playBtn = $<HTMLButtonElement>("playBtn");
 const shareBtn = $<HTMLButtonElement>("shareBtn");
 const field = $("field");
-const about = $<HTMLDialogElement>("aboutDialog");
+const powerBadge = $("powerBadge");
+const powerName = $("powerName");
+const powerTime = $("powerTime");
+const powerRing = $("powerRing");
 
 let lastScore = 0;
+let toastTimer = 0;
 
 const game = new Game($("holes"), catEl, {
   onScore(score, best) {
     scoreEl.textContent = String(score);
     bestEl.textContent = String(best);
+    scoreEl.classList.remove("is-bump");
+    void scoreEl.offsetWidth;
+    scoreEl.classList.add("is-bump");
   },
   onTimer(remaining) {
     const ratio = remaining / CATCH_WINDOW_MS;
@@ -38,6 +45,30 @@ const game = new Game($("holes"), catEl, {
     const zone = ratio > 0.5 ? "ok" : ratio > 0.25 ? "warn" : "danger";
     timerBar.dataset.zone = zone;
     field.dataset.zone = zone;
+  },
+  onPower(kind, remaining, total) {
+    field.dataset.power = kind ?? "";
+    if (kind === "fulltime") {
+      // instant effect: flash the clock and show a short toast
+      timerBar.classList.remove("is-refill");
+      void timerBar.offsetWidth;
+      timerBar.classList.add("is-refill");
+      toast("Full time!", "fulltime");
+      return;
+    }
+    if (!kind) {
+      powerBadge.hidden = true;
+      powerBadge.dataset.kind = "";
+      return;
+    }
+    if (powerBadge.hidden || powerBadge.dataset.kind !== kind) {
+      powerBadge.hidden = false;
+      powerBadge.dataset.kind = kind;
+      powerName.textContent = POWER_LABEL[kind];
+      toast(POWER_LABEL[kind] + "!", kind);
+    }
+    powerTime.textContent = `${Math.ceil(remaining / 1000)}s`;
+    powerRing.style.setProperty("--p", String(total ? remaining / total : 0));
   },
   onGameOver(score, best, isNewBest) {
     music.stop();
@@ -55,6 +86,17 @@ const game = new Game($("holes"), catEl, {
     showOverlay();
   }
 });
+
+function toast(text: string, kind: string): void {
+  const el = $("toast");
+  el.textContent = text;
+  el.dataset.kind = kind;
+  el.classList.remove("is-on");
+  void el.offsetWidth;
+  el.classList.add("is-on");
+  window.clearTimeout(toastTimer);
+  toastTimer = window.setTimeout(() => el.classList.remove("is-on"), 1400);
+}
 
 function showOverlay(): void {
   overlay.hidden = false;
@@ -111,28 +153,6 @@ shareBtn.addEventListener("click", async () => {
   }
 });
 
-// About dialog
-const openAbout = (): void => {
-  about.showModal();
-  $("closeAbout").focus({ preventScroll: true });
-};
-$("infoBtn").addEventListener("click", openAbout);
-$("overlayInfo").addEventListener("click", openAbout);
-$("closeAbout").addEventListener("click", () => about.close());
-about.addEventListener("click", (ev) => {
-  if (ev.target === about) about.close();
-});
-
 // Block iOS double-tap zoom / long-press callouts on the play area.
 field.addEventListener("contextmenu", (ev) => ev.preventDefault());
 field.addEventListener("touchstart", () => sfx.unlock(), { passive: true, once: true });
-
-// Keyboard support: 1–9 taps the matching hole (numpad layout, top-left is 7).
-const keyMap: Record<string, number> = { "7": 0, "8": 1, "9": 2, "4": 3, "5": 4, "6": 5, "1": 6, "2": 7, "3": 8 };
-document.addEventListener("keydown", (ev) => {
-  if (about.open || !overlay.hidden) return;
-  const idx = keyMap[ev.key];
-  if (idx === undefined) return;
-  const hole = $("holes").children[idx];
-  hole?.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true }));
-});
