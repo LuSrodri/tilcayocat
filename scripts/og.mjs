@@ -86,7 +86,7 @@ await sharp(Buffer.from(background))
     { input: catBuf, top: H - catMeta.height - 30, left: 1150 - catMeta.width }
   ])
   .png({ compressionLevel: 9 })
-  .toFile("public/og.png");
+  .toFile("public/tilcayo-cat-game-1200x630.png");
 
 // Icons: cat head-and-shoulders on a grass square.
 async function icon(size, maskable) {

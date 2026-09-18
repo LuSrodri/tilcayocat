@@ -29,7 +29,7 @@
 
 - Home / play: https://tilcayo.cat/
 - Sitemap: https://tilcayo.cat/sitemap.xml
-- Social preview image: https://tilcayo.cat/og.png
+- Social preview image: https://tilcayo.cat/tilcayo-cat-game-1200x630.png
 
 ## Frequently asked questions
 

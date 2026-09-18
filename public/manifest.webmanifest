@@ -18,6 +18,6 @@
     { "src": "/icon-512-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
   ],
   "screenshots": [
-    { "src": "/og.png", "sizes": "1200x630", "type": "image/png", "form_factor": "wide", "label": "Tilcayo Cat Game" }
+    { "src": "/tilcayo-cat-game-1200x630.png", "sizes": "1200x630", "type": "image/png", "form_factor": "wide", "label": "Tilcayo Cat Game" }
   ]
 }
