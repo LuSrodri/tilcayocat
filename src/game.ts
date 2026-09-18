@@ -117,17 +117,18 @@ export class Game {
     }
   }
 
-  // Difficulty curve: mice stay up for less time and appear more often as the score grows.
+  // Difficulty curve: a gentle ramp. Mice stay up a little less and appear a little
+  // more often as the score grows; the floor is only reached after ~100 catches.
   private upTime(): number {
-    return clamp(1600 - this.score * 22, 650, 1600);
+    return clamp(1700 - this.score * 8, 800, 1700);
   }
   private spawnGap(): number {
-    return clamp(700 - this.score * 18, 280, 700);
+    return clamp(750 - this.score * 5, 360, 750);
   }
   private simultaneous(): number {
-    if (this.score >= 80) return 5;
-    if (this.score >= 40) return 4;
-    if (this.score >= 15) return 3;
+    if (this.score >= 120) return 5;
+    if (this.score >= 70) return 4;
+    if (this.score >= 30) return 3;
     return 2;
   }
 

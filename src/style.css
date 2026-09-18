@@ -465,10 +465,10 @@ body {
 .hole__back::after {
   content: "";
   position: absolute;
-  left: 32%;
-  right: 32%;
-  top: 30%;
-  height: 24%;
+  left: 30%;
+  right: 30%;
+  top: 28%;
+  height: 26%;
   border-radius: 50%;
   background: rgba(0, 0, 0, .6);
   filter: blur(3px);
@@ -496,9 +496,9 @@ body {
   transition: translate .16s cubic-bezier(.2,.9,.3,1.2);
   will-change: translate;
 }
-.hole__mouse { width: 38%; max-width: 110px; aspect-ratio: 420 / 645; }
+.hole__mouse { width: 44%; max-width: 130px; aspect-ratio: 420 / 645; }
 .hole__mouse picture, .hole__mouse img { display: block; width: 100%; height: 100%; object-fit: contain; object-position: center bottom; filter: drop-shadow(-4px 5px 5px rgba(0,0,0,.55)) brightness(.95); pointer-events: none; }
-.hole.is-up[data-what="mouse"] .hole__mouse { translate: -50% 0; }
+.hole.is-up[data-what="mouse"] .hole__mouse { translate: -50% 58%; }
 .holes[data-power="freeze"] .hole__mouse img { filter: drop-shadow(0 0 8px rgba(143, 233, 255, .9)) drop-shadow(-4px 5px 5px rgba(0,0,0,.55)) saturate(.6) brightness(1.1) hue-rotate(160deg); transition: filter .3s ease; }
 
 .hole__power { width: 44%; max-width: 120px; aspect-ratio: 1; }
@@ -767,7 +767,7 @@ body {
   color: var(--gold);
   text-shadow: 0 2px 0 rgba(0,0,0,.35);
 }
-.overlay__text { margin: 0 0 12px; color: var(--ink-soft); font-size: 15px; line-height: 1.45; }
+.overlay__text { margin: 0 0 12px; color: var(--ink-soft); font-size: 15px; line-height: 1.45; text-align: justify; text-justify: inter-word; hyphens: auto; }
 .overlay__text strong { color: var(--ink); }
 .overlay__stats {
   margin: 0 0 14px;
@@ -893,6 +893,8 @@ body.page {
 .page__brand { font-family: var(--font-display); font-size: 14px; font-weight: 800; }
 .about-page { max-width: 720px; margin: 0 auto; padding: 24px clamp(16px, 4vw, 32px) 40px; }
 .about__body { line-height: 1.6; }
+.about-page p, .about-page li, .about-page figcaption, .about__latin { text-align: justify; text-justify: inter-word; hyphens: auto; }
+.about__cta, .page__foot { text-align: center; }
 .about__header--page { margin-bottom: 18px; }
 .about__header--page h1 {
   margin: 0;
