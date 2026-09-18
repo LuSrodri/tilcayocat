@@ -8,7 +8,7 @@ The info button opens a short, sourced profile of the real cat.
 
 - Vite + TypeScript, no framework
 - Original SVG artwork (cat, mouse, paw) inlined at build time
-- Synthesized Web Audio effects, no media assets
+- Synthesized Web Audio effects and a chiptune loop, no media assets
 - Static output deployed to Cloudflare Pages
 
 ## Scripts

@@ -10,8 +10,14 @@ const background = `
 <svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">
   <defs>
     <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#bfe3f3"/><stop offset="1" stop-color="#e8f4e2"/>
+      <stop offset="0" stop-color="#070b1c"/><stop offset=".6" stop-color="#101a3a"/><stop offset="1" stop-color="#1d2f55"/>
     </linearGradient>
+    <radialGradient id="moon" cx="38%" cy="36%" r="60%">
+      <stop offset="0" stop-color="#fffdf0"/><stop offset=".55" stop-color="#f6f0d6"/><stop offset="1" stop-color="#d9d0aa"/>
+    </radialGradient>
+    <radialGradient id="glow" cx="50%" cy="50%" r="50%">
+      <stop offset="0" stop-color="#f6f0d6" stop-opacity=".45"/><stop offset="1" stop-color="#f6f0d6" stop-opacity="0"/>
+    </radialGradient>
     <linearGradient id="shade" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0" stop-color="#fff" stop-opacity=".12"/><stop offset=".4" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".2"/>
     </linearGradient>
@@ -20,35 +26,43 @@ const background = `
     </radialGradient>
   </defs>
   <rect width="${W}" height="${H}" fill="url(#sky)"/>
-  <ellipse cx="200" cy="300" rx="420" ry="150" fill="#8fbf86"/>
-  <ellipse cx="1000" cy="310" rx="460" ry="150" fill="#8fbf86"/>
-  <ellipse cx="600" cy="330" rx="420" ry="120" fill="#6aa65a"/>
+  <g fill="#fff">
+    <circle cx="90" cy="60" r="1.4"/><circle cx="240" cy="30" r="1"/><circle cx="410" cy="80" r="1.6"/><circle cx="520" cy="40" r="1"/>
+    <circle cx="700" cy="70" r="1.3"/><circle cx="830" cy="28" r="1"/><circle cx="960" cy="90" r="1.5"/><circle cx="1120" cy="50" r="1"/>
+    <circle cx="160" cy="120" r="1"/><circle cx="620" cy="130" r="1.2"/><circle cx="880" cy="150" r="1"/><circle cx="1180" cy="120" r="1.3"/>
+    <circle cx="330" cy="160" r="1"/><circle cx="760" cy="180" r="1"/><circle cx="1040" cy="200" r="1.1"/>
+  </g>
+  <circle cx="1040" cy="110" r="150" fill="url(#glow)"/>
+  <circle cx="1040" cy="110" r="52" fill="url(#moon)"/>
+  <ellipse cx="200" cy="300" rx="420" ry="150" fill="#17263f"/>
+  <ellipse cx="1000" cy="310" rx="460" ry="150" fill="#17263f"/>
+  <ellipse cx="600" cy="330" rx="420" ry="120" fill="#0f1d2e"/>
 </svg>`;
 
 const foreground = `
 <svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">
   <defs>
     <linearGradient id="shade" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#fff" stop-opacity=".12"/><stop offset=".4" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".2"/>
+      <stop offset="0" stop-color="#080e28" stop-opacity=".55"/><stop offset=".4" stop-color="#060a1e" stop-opacity=".62"/><stop offset="1" stop-color="#030614" stop-opacity=".8"/>
     </linearGradient>
     <radialGradient id="holeG" cx="50%" cy="30%" r="70%">
-      <stop offset="0" stop-color="#2c1a0e"/><stop offset="1" stop-color="#6b4a2b"/>
+      <stop offset="0" stop-color="#120b06"/><stop offset="1" stop-color="#3a2a1a"/>
     </radialGradient>
   </defs>
   <rect y="290" width="${W}" height="340" fill="url(#shade)"/>
-  <rect y="288" width="${W}" height="6" fill="#a4d67c"/>
-  <text x="70" y="150" font-family="Arial, Helvetica, sans-serif" font-size="96" font-weight="700" fill="#a9541b" stroke="#fffaf1" stroke-width="10" paint-order="stroke" letter-spacing="-2">Tilcayo Cat</text>
-  <text x="74" y="212" font-family="Arial, Helvetica, sans-serif" font-size="38" font-weight="700" fill="#1f1a16">Catch the mice · 5 seconds per catch</text>
-  <text x="74" y="262" font-family="Arial, Helvetica, sans-serif" font-size="28" fill="#5b514a">Play as Leopardus tilcayo, the first new wild cat in 100+ years</text>
-  <text x="74" y="590" font-family="Arial, Helvetica, sans-serif" font-size="30" font-weight="700" fill="#fffaf1" stroke="#3d6b2a" stroke-width="4" paint-order="stroke">tilcayo.cat</text>
+  <rect y="288" width="${W}" height="4" fill="#78aa6e" fill-opacity=".5"/>
+  <text x="70" y="150" font-family="Arial Black, Arial, Helvetica, sans-serif" font-size="92" font-weight="900" fill="#f0903f" letter-spacing="-2">Tilcayo Cat</text>
+  <text x="74" y="212" font-family="Arial, Helvetica, sans-serif" font-size="36" font-weight="700" fill="#f2ecdf">Catch the mice · 5 seconds per catch</text>
+  <text x="74" y="260" font-family="Arial, Helvetica, sans-serif" font-size="26" fill="#b7b0a2">Play as Leopardus tilcayo, the first new wild cat in 100+ years</text>
+  <text x="74" y="590" font-family="Arial, Helvetica, sans-serif" font-size="30" font-weight="700" fill="#f2ecdf">tilcayo.cat</text>
   <ellipse cx="330" cy="520" rx="100" ry="36" fill="url(#holeG)"/>
   <ellipse cx="600" cy="560" rx="100" ry="36" fill="url(#holeG)"/>
 </svg>`;
 
 const holeLip = `
 <svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">
-  <path d="M230 520 a100 36 0 0 0 200 0 a100 26 0 0 1 -200 0z" fill="#8a6136"/>
-  <path d="M500 560 a100 36 0 0 0 200 0 a100 26 0 0 1 -200 0z" fill="#8a6136"/>
+  <path d="M230 520 a100 36 0 0 0 200 0 a100 26 0 0 1 -200 0z" fill="#5a4229"/>
+  <path d="M500 560 a100 36 0 0 0 200 0 a100 26 0 0 1 -200 0z" fill="#5a4229"/>
 </svg>`;
 
 // tiled grass band
@@ -58,9 +72,9 @@ const grassBand = await sharp({ create: { width: W, height: 340, channels: 3, ba
   .png()
   .toBuffer();
 
-const catBuf = await sharp("public/img/cat.png").resize({ height: 430 }).toBuffer();
+const catBuf = await sharp("public/img/cat.png").resize({ height: 430 }).modulate({ brightness: 0.9, saturation: 0.92 }).toBuffer();
 const catMeta = await sharp(catBuf).metadata();
-const mouseBuf = await sharp("public/img/mouse.png").resize({ width: 170 }).toBuffer();
+const mouseBuf = await sharp("public/img/mouse.png").resize({ width: 170 }).modulate({ brightness: 0.92 }).toBuffer();
 const mouseMeta = await sharp(mouseBuf).metadata();
 
 await sharp(Buffer.from(background))
@@ -78,7 +92,7 @@ await sharp(Buffer.from(background))
 async function icon(size, maskable) {
   const rx = maskable ? 0 : Math.round(size * 0.21);
   const bg = `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}">
-    <defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8fcc66"/><stop offset="1" stop-color="#4f8a37"/></linearGradient></defs>
+    <defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1d2f55"/><stop offset="1" stop-color="#070b1c"/></linearGradient></defs>
     <rect width="${size}" height="${size}" rx="${rx}" fill="url(#g)"/></svg>`;
   const scale = maskable ? 0.78 : 0.98;
   const catH = Math.round(size * scale * 1.55);

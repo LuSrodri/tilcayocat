@@ -9,9 +9,8 @@
   <meta name="author" content="tilcayo.cat">
   <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
   <meta name="googlebot" content="index, follow">
-  <meta name="theme-color" content="#5f9a3f" media="(prefers-color-scheme: light)">
-  <meta name="theme-color" content="#2f5a22" media="(prefers-color-scheme: dark)">
-  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#0a0e1c">
+  <meta name="color-scheme" content="dark">
   <meta name="application-name" content="Tilcayo Cat">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -25,7 +24,7 @@
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&display=swap">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,500;12..96,700&family=Unbounded:wght@600;800&display=swap">
   <link rel="preload" as="image" href="/img/cat.webp" type="image/webp" fetchpriority="high">
   <link rel="canonical" href="https://tilcayo.cat/">
   <link rel="alternate" hreflang="en" href="https://tilcayo.cat/">
@@ -160,6 +159,10 @@
         <span class="hud__label">Best</span>
         <span id="best" class="hud__value">0</span>
       </div>
+      <button id="soundBtn" class="info-btn" type="button" aria-label="Mute sound" aria-pressed="false">
+        <svg class="ico-on" viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4z" fill="currentColor"/><path d="M16 8.5a4.5 4.5 0 0 1 0 7M18.5 6a8 8 0 0 1 0 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        <svg class="ico-off" viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4z" fill="currentColor"/><path d="M16 9l5 6M21 9l-5 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      </button>
       <button id="infoBtn" class="info-btn" type="button" aria-label="About the tilcayo cat" aria-haspopup="dialog" aria-controls="aboutDialog">
         <svg viewBox="0 0 24 24" width="26" height="26" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="7.5" r="1.4" fill="currentColor"/><path d="M10.5 11h2v6h1.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </button>
@@ -168,6 +171,7 @@
 
     <section id="field" class="field" aria-label="Lawn with mouse holes">
       <div class="sky">
+        <div class="moon" aria-hidden="true"></div>
         <div class="cloud cloud--1"></div>
         <div class="cloud cloud--2"></div>
         <div class="hills"></div>
@@ -180,13 +184,18 @@
           </picture>
         </div>
         <div id="holes" class="holes" role="group" aria-label="Mouse holes"></div>
+        <span class="firefly" style="left:12%;top:20%;--d:9s;--delay:0s;--dx:40px;--dy:-30px" aria-hidden="true"></span>
+        <span class="firefly" style="left:78%;top:34%;--d:11s;--delay:2s;--dx:-30px;--dy:-50px" aria-hidden="true"></span>
+        <span class="firefly" style="left:30%;top:62%;--d:8s;--delay:4s;--dx:26px;--dy:-24px" aria-hidden="true"></span>
+        <span class="firefly" style="left:60%;top:80%;--d:12s;--delay:1s;--dx:-36px;--dy:-40px" aria-hidden="true"></span>
+        <span class="firefly" style="left:88%;top:70%;--d:10s;--delay:6s;--dx:-20px;--dy:-60px" aria-hidden="true"></span>
       </div>
     </section>
 
     <div id="overlay" class="overlay" role="dialog" aria-modal="true" aria-labelledby="overlayTitle">
       <div class="overlay__card">
         <h1 id="overlayTitle" class="overlay__title">Tilcayo Cat</h1>
-        <p id="overlayText" class="overlay__text">You are a tilcayo — the first new wild cat in over a century. Tap the mice as they pop out. <strong>Never go more than 5 seconds without a catch.</strong></p>
+        <p id="overlayText" class="overlay__text">A moonlit night in the Yungas. You are a tilcayo, the first new wild cat in over a century. Tap the mice as they pop out. <strong>Never go more than 5 seconds without a catch.</strong></p>
         <p id="overlayStats" class="overlay__stats" hidden></p>
         <div class="overlay__actions">
           <button id="playBtn" class="btn btn--primary" type="button">Play</button>

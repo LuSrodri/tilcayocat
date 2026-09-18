@@ -1,6 +1,6 @@
 import "./style.css";
 import { Game, CATCH_WINDOW_MS } from "./game";
-import { sfx } from "./sound";
+import { sfx, music, volume } from "./sound";
 
 function $<T extends HTMLElement>(id: string): T {
   const el = document.getElementById(id);
@@ -38,6 +38,7 @@ const game = new Game($("holes"), catEl, {
     timerBar.dataset.zone = ratio > 0.5 ? "ok" : ratio > 0.25 ? "warn" : "danger";
   },
   onGameOver(score, best, isNewBest) {
+    music.stop();
     lastScore = score;
     field.classList.add("is-shake");
     setTimeout(() => field.classList.remove("is-shake"), 320);
@@ -69,7 +70,27 @@ function hideOverlay(): void {
 playBtn.addEventListener("click", () => {
   sfx.unlock();
   hideOverlay();
+  music.start();
   game.start();
+});
+
+// Sound toggle
+const soundBtn = $<HTMLButtonElement>("soundBtn");
+const renderSound = (): void => {
+  soundBtn.setAttribute("aria-pressed", String(volume.muted));
+  soundBtn.setAttribute("aria-label", volume.muted ? "Unmute sound" : "Mute sound");
+};
+renderSound();
+soundBtn.addEventListener("click", () => {
+  sfx.unlock();
+  volume.toggle();
+  renderSound();
+});
+
+// Pause the tune when the tab is hidden; the round itself ends on return (timer keeps counting).
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden) music.stop();
+  else if (overlay.hidden) music.start();
 });
 
 shareBtn.addEventListener("click", async () => {
