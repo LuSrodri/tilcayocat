@@ -1,0 +1,15 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "tilcayocat-mp",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-09-01",
+  "observability": { "enabled": true },
+  "routes": [{ "pattern": "tilcayo.cat/mp/*", "zone_name": "tilcayo.cat" }],
+  "durable_objects": {
+    "bindings": [
+      { "name": "MATCH", "class_name": "MatchRoom" },
+      { "name": "LOBBY", "class_name": "Lobby" }
+    ]
+  },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["MatchRoom", "Lobby"] }]
+}

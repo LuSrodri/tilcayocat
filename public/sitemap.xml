@@ -27,4 +27,10 @@
       <image:caption>Photo: Fernando Faciole / National Geographic</image:caption>
     </image:image>
   </url>
+  <url>
+    <loc>https://tilcayo.cat/play</loc>
+    <lastmod>2026-09-19</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+  </url>
 </urlset>

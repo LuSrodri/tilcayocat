@@ -3,3 +3,5 @@ dist
 .wrangler
 .DS_Store
 *.log
+worker/node_modules
+worker/.wrangler

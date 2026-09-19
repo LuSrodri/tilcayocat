@@ -968,3 +968,141 @@ body.page {
   .hole__mouse, .hole__power { transition-duration: .01s; }
   .overlay, .overlay__card { transition: none; animation: none; }
 }
+
+/* ============================================================ 1v1 ARENA */
+.btn--duel { background: linear-gradient(180deg, var(--teal), #1fb8a0); color: #062421; box-shadow: 0 6px 0 #0d7a6b, 0 0 20px rgba(62, 242, 208, .35), 0 10px 18px rgba(0,0,0,.4); }
+.btn--duel:active { box-shadow: 0 2px 0 #0d7a6b; transform: translateY(4px); }
+.overlay__card--wide { width: min(100%, 460px); }
+.panel[hidden] { display: none; }
+.field-row { display: flex; flex-direction: column; gap: 4px; margin: 0 0 12px; text-align: left; }
+.input {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: rgba(255,255,255,.06);
+  color: var(--ink);
+  font: inherit;
+  font-size: 16px;
+}
+.input:focus { outline: 2px solid var(--teal); outline-offset: 1px; }
+.input--code { font-family: var(--font-display); letter-spacing: .2em; text-transform: uppercase; text-align: center; font-weight: 700; }
+.join { display: flex; gap: 8px; margin: 12px 0 6px; }
+.join .btn { flex: none; }
+.overlay__error { margin: 8px 0; color: var(--danger); font-weight: 600; }
+.code-box { display: flex; align-items: center; justify-content: center; gap: 12px; margin: 10px 0 16px; flex-wrap: wrap; }
+.code-box[hidden] { display: none; }
+.code-box__code { font-family: var(--font-display); font-size: 34px; font-weight: 800; letter-spacing: .18em; color: var(--gold); }
+.spinner { width: 34px; height: 34px; margin: 4px auto 10px; border-radius: 50%; border: 4px solid rgba(255,255,255,.15); border-top-color: var(--teal); animation: spin 1s linear infinite; }
+@keyframes spin { to { rotate: 360deg; } }
+
+.leader { margin: 18px 0 6px; text-align: left; }
+.leader__title { margin: 0 0 8px; font-family: var(--font-display); font-size: 13px; color: var(--teal); letter-spacing: .04em; text-transform: uppercase; }
+.leader__list { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; max-height: 190px; overflow: auto; }
+.leader__row { display: grid; grid-template-columns: 26px 1fr auto; gap: 8px; align-items: center; padding: 6px 10px; border-radius: 10px; background: rgba(255,255,255,.05); font-size: 13px; }
+.leader__rank { font-family: var(--font-display); font-weight: 800; color: var(--gold); }
+.leader__name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.leader__wins { color: var(--ink-soft); font-variant-numeric: tabular-nums; }
+.leader__empty { font-size: 13px; color: var(--ink-soft); }
+
+.ranking { width: 100%; border-collapse: collapse; margin: 8px 0 14px; font-size: 14px; }
+.ranking th { font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-soft); font-weight: 600; padding: 4px 6px; }
+.ranking td { padding: 8px 6px; border-top: 1px solid var(--line); text-align: center; font-variant-numeric: tabular-nums; }
+.ranking td.ranking__name, .ranking th:nth-child(2) { text-align: left; }
+.ranking td.is-won { color: var(--ok); font-weight: 700; }
+.ranking tr.is-me td { background: rgba(62, 242, 208, .08); }
+
+/* duel HUD: both players, round, clock */
+.hud--duel { left: 50%; translate: -50% 0; min-width: 0; width: min(92vw, 520px); padding: 8px 12px; }
+@media (max-width: 640px) {
+  .hud--duel { left: max(10px, env(safe-area-inset-left)); translate: 0; width: calc(100vw - 122px); padding: 6px 10px; }
+  .duel-hud__score { font-size: 22px; }
+  .duel-hud__clock { font-size: 24px; }
+}
+.duel-hud { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 10px; }
+.duel-hud__player { display: flex; flex-direction: column; line-height: 1.05; min-width: 0; }
+.duel-hud__player--2 { text-align: right; align-items: flex-end; }
+.duel-hud__name { font-size: 11px; font-weight: 700; color: var(--ink-soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+.duel-hud__score { font-family: var(--font-display); font-size: 26px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.duel-hud__player--1 .duel-hud__score { color: var(--gold); text-shadow: 0 0 14px rgba(255, 216, 74, .45); }
+.duel-hud__player--2 .duel-hud__score { color: var(--teal); text-shadow: 0 0 14px rgba(62, 242, 208, .45); }
+.duel-hud__score.is-bump { animation: bump .3s cubic-bezier(.3,1.6,.5,1); }
+.duel-hud__wins { display: flex; gap: 4px; margin-top: 3px; }
+.duel-hud__wins i { width: 9px; height: 9px; border-radius: 50%; background: rgba(255,255,255,.15); }
+.duel-hud__wins i.is-won { background: var(--gold); box-shadow: 0 0 8px var(--gold); }
+.duel-hud__player--2 .duel-hud__wins i.is-won { background: var(--teal); box-shadow: 0 0 8px var(--teal); }
+.duel-hud__mid { display: flex; flex-direction: column; align-items: center; line-height: 1; }
+.duel-hud__clock { font-family: var(--font-display); font-size: 28px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.field[data-zone="danger"] ~ .hud--duel .duel-hud__clock, body:has(.field[data-zone="danger"]) .duel-hud__clock { color: var(--danger); animation: pulse .5s ease-in-out infinite alternate; }
+body:has(.field[data-zone="warn"]) .duel-hud__clock { color: var(--warn); }
+
+.countdown {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  z-index: 9;
+  font-family: var(--font-display);
+  font-size: clamp(64px, 20vmin, 160px);
+  font-weight: 800;
+  color: var(--gold);
+  text-shadow: 0 0 30px rgba(255, 216, 74, .7), 0 6px 0 rgba(0,0,0,.4);
+  pointer-events: none;
+}
+.countdown[hidden] { display: none; }
+
+/* two cats on one lawn */
+.lawn--duel {
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: minmax(90px, 26%) 1fr;
+  grid-template-areas: "cat1 cat2" "holes holes";
+}
+.cat--duel { animation: none; margin: 0; }
+.cat--left { grid-area: cat1; justify-self: end; width: min(30vw, 34vmin, 200px); }
+.cat--right { grid-area: cat2; justify-self: start; width: min(30vw, 34vmin, 200px); }
+.cat--right .cat__img img { transform: scaleX(-1); }
+.cat--right .cat__shadow { translate: -44% 0; }
+.cat--duel.is-absent { opacity: .35; filter: grayscale(1) drop-shadow(-10px 8px 10px rgba(0,0,0,.55)); }
+.cat--left .cat__aura { opacity: 1; background: radial-gradient(circle, rgba(255, 216, 74, .35), transparent 65%); }
+.cat--right .cat__aura { opacity: 1; background: radial-gradient(circle, rgba(62, 242, 208, .35), transparent 65%); }
+.cat__tag {
+  position: absolute;
+  left: 50%;
+  top: -6%;
+  translate: -50% 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: rgba(10, 12, 40, .75);
+  border: 1px solid var(--line);
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+  z-index: 3;
+}
+.cat__tag-score { font-family: var(--font-display); font-weight: 800; }
+.cat--left .cat__tag-score { color: var(--gold); }
+.cat--right .cat__tag-score { color: var(--teal); }
+.lawn--duel .holes { grid-area: holes; }
+.lawn--duel .toast { top: 4%; }
+/* opponent's paw is tinted so you can tell whose slap it was */
+.hole[data-by="2"] .hole__paw { filter: drop-shadow(-8px 10px 8px rgba(0, 0, 0, .55)) hue-rotate(150deg) saturate(.8); }
+.hole[data-by="2"] .hole__pop { color: var(--teal); text-shadow: 0 2px 0 #0d5a50, 0 4px 10px rgba(0,0,0,.45); }
+.hole[data-by="1"] .hole__pop { color: var(--gold); text-shadow: 0 2px 0 var(--accent-deep), 0 4px 10px rgba(0,0,0,.45); }
+body[data-me="2"] .hole[data-by="2"] .hole__paw { filter: drop-shadow(-8px 10px 8px rgba(0, 0, 0, .55)) brightness(.95); }
+body[data-me="2"] .hole[data-by="1"] .hole__paw { filter: drop-shadow(-8px 10px 8px rgba(0, 0, 0, .55)) hue-rotate(150deg) saturate(.8); }
+
+@media (min-aspect-ratio: 5/4) {
+  .lawn--duel {
+    grid-template-columns: minmax(140px, 1fr) minmax(0, 2.4fr) minmax(140px, 1fr);
+    grid-template-rows: minmax(0, 1fr);
+    grid-template-areas: "cat1 holes cat2";
+    align-items: end;
+  }
+  .cat--left, .cat--right { width: auto; height: min(90%, 60vmin, 480px); max-width: 24vw; min-height: 0; margin-bottom: 1vmin; }
+  .cat--left { justify-self: end; }
+  .cat--right { justify-self: start; }
+  .lawn--duel .holes { justify-self: center; }
+}

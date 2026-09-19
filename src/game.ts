@@ -1,4 +1,5 @@
 import { sfx } from "./sound";
+import { createHoleEl, burst } from "./holes";
 
 export const CATCH_WINDOW_MS = 5000;
 // Each catch buys a little time back instead of refilling the whole window.
@@ -119,21 +120,7 @@ export class Game {
     this.holesEl.style.setProperty("--grid", String(grid));
     this.holesEl.dataset.grid = String(grid);
     for (let i = 0; i < grid * grid; i++) {
-      const el = document.createElement("button");
-      el.type = "button";
-      el.className = "hole";
-      el.setAttribute("aria-label", `Mouse hole ${i + 1}`);
-      el.innerHTML =
-        `<span class="hole__back"></span>` +
-        `<span class="hole__clip">` +
-        `<span class="hole__mouse">${MOUSE_IMG}</span>` +
-        `<span class="hole__power"><span class="hole__power-img"></span></span>` +
-        `</span>` +
-        `<span class="hole__front"></span>` +
-        `<span class="hole__flash" aria-hidden="true"></span>` +
-        `<span class="hole__pawshadow" aria-hidden="true"></span>` +
-        `<span class="hole__paw" aria-hidden="true">${PAW_IMG}</span>` +
-        `<span class="hole__pop" aria-hidden="true">+1</span>`;
+      const el = createHoleEl(i);
       const hole: Hole = { el, up: false, what: "mouse", hideAt: 0, autoAt: 0 };
       el.addEventListener("pointerdown", (ev) => {
         ev.preventDefault();
@@ -355,14 +342,8 @@ export class Game {
     this.setPower(kind);
   }
 
-  // Paw slap + floating label on a hole; extra classes drive the variant.
   private burst(hole: Hole, classes: string, label: string, ms: number): void {
-    const list = classes.split(" ");
-    hole.el.classList.remove("is-hit", ...list);
-    void hole.el.offsetWidth;
-    hole.el.querySelector(".hole__pop")!.textContent = label;
-    hole.el.classList.add("is-hit", ...list);
-    setTimeout(() => hole.el.classList.remove("is-hit", ...list), ms);
+    burst(hole.el, classes, label, ms);
   }
 
   private end(): void {
@@ -403,11 +384,3 @@ function writeBest(v: number): void {
     /* storage unavailable (private mode etc.) */
   }
 }
-
-const MOUSE_IMG =
-  `<picture><source srcset="/img/mouse.webp" type="image/webp">` +
-  `<img src="/img/mouse.png" alt="" width="420" height="645" draggable="false" decoding="async"></picture>`;
-
-const PAW_IMG =
-  `<picture><source srcset="/img/paw.webp" type="image/webp">` +
-  `<img src="/img/paw.png" alt="" width="520" height="612" draggable="false" decoding="async"></picture>`;
