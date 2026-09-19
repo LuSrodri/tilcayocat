@@ -6,6 +6,16 @@ A mobile-first browser game at [tilcayo.cat](https://tilcayo.cat). You are a til
 
 The ⓘ button opens `/about`, a sourced profile of the real cat with photos and a donation link to Senda Verde.
 
+## 1v1 online (`/play`)
+
+Two players share one 5×5 lawn for 60-second rounds, best of three, no power-ups. The room is a Cloudflare Durable Object (`worker/src/match.ts`) that spawns the mice, resolves taps (first tap wins) and keeps the score; a single `Lobby` object (`worker/src/lobby.ts`) pairs quick-match players and stores the global ranking in SQLite. The Worker is routed at `tilcayo.cat/mp/*`.
+
+```
+cd worker && npm i
+npm run dev      # local API on :8787 (the /play page uses it automatically on localhost)
+npm run deploy   # wrangler deploy
+```
+
 ## Stack
 
 - Vite + TypeScript, no framework

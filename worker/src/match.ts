@@ -27,7 +27,15 @@ interface Persisted {
 // object awake; everything needed to resume after hibernation lives in storage/attachments.
 export class MatchRoom extends DurableObject<Env> {
   private state: Persisted = { code: "", phase: "waiting", round: 0, wins: [0, 0], rounds: [], names: ["", ""] };
-  private loaded = false;
+
+  constructor(ctx: DurableObjectState, env: Env) {
+    super(ctx, env);
+    // Restore the match record before any event is delivered (also runs after hibernation).
+    ctx.blockConcurrencyWhile(async () => {
+      const saved = await ctx.storage.get<Persisted>("state");
+      if (saved) this.state = saved;
+    });
+  }
   private scores: [number, number] = [0, 0];
   private mice = new Map<number, MouseInfo>();
   private byHole = new Map<number, number>();
@@ -38,19 +46,11 @@ export class MatchRoom extends DurableObject<Env> {
   private timer: ReturnType<typeof setTimeout> | null = null;
   private nextSpawnAt = 0;
 
-  private async load(): Promise<void> {
-    if (this.loaded) return;
-    const saved = await this.ctx.storage.get<Persisted>("state");
-    if (saved) this.state = saved;
-    this.loaded = true;
-  }
-
   private async save(): Promise<void> {
     await this.ctx.storage.put("state", this.state);
   }
 
   async fetch(request: Request): Promise<Response> {
-    await this.load();
     const url = new URL(request.url);
     if (request.headers.get("Upgrade") !== "websocket") return new Response("Expected WebSocket", { status: 426 });
 
@@ -87,7 +87,6 @@ export class MatchRoom extends DurableObject<Env> {
   }
 
   async webSocketMessage(ws: WebSocket, raw: string | ArrayBuffer): Promise<void> {
-    await this.load();
     if (typeof raw !== "string") return;
     let msg: ClientMessage;
     try {
@@ -105,7 +104,6 @@ export class MatchRoom extends DurableObject<Env> {
   }
 
   async webSocketClose(ws: WebSocket, code: number, reason: string): Promise<void> {
-    await this.load();
     ws.close(code, reason);
     const att = ws.deserializeAttachment() as Attachment | null;
     if (!att) return;
