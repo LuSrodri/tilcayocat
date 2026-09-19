@@ -5,9 +5,21 @@ export const CATCH_WINDOW_MS = 5000;
 export const CATCH_BONUS_MS = 800;
 // Slapping an empty hole costs time.
 export const MISS_PENALTY_MS = 300;
-export const GRID = 5;
-const HOLE_COUNT = GRID * GRID;
+export const START_GRID = 2;
+export const MAX_GRID = 5;
 const BEST_KEY = "tilcayo.best";
+
+// Time-based progression (game time, frozen seconds excluded): the lawn grows and the mice speed up.
+interface Stage { at: number; grid?: number; faster?: boolean }
+const STAGES: Stage[] = [
+  { at: 10000, grid: 3 },
+  { at: 25000, faster: true },
+  { at: 35000, grid: 4 },
+  { at: 60000, faster: true },
+  { at: 75000, grid: 5 }
+];
+const LATE_SPEED_EVERY_MS = 15000;
+const SPEED_STEP = 1.1;
 
 export type PowerKind = "auto" | "fulltime" | "freeze";
 export const POWER_DURATION: Record<PowerKind, number> = { auto: 6000, fulltime: 0, freeze: 4000 };
@@ -30,6 +42,7 @@ export interface GameCallbacks {
   onScore(score: number, best: number): void;
   onTimer(remainingMs: number): void;
   onPower(kind: PowerKind | null, remainingMs: number, totalMs: number): void;
+  onStage(grid: number, speed: number, note: string): void;
   onGameOver(score: number, best: number, isNewBest: boolean): void;
 }
 
@@ -47,6 +60,11 @@ export class Game {
   private catTimer = 0;
   private power: PowerKind | null = null;
   private powerUntil = 0;
+  private elapsed = 0;
+  private grid = START_GRID;
+  private speed = 1;
+  private stageIdx = 0;
+  private nextLateSpeedAt = 0;
 
   constructor(
     private readonly holesEl: HTMLElement,
@@ -54,7 +72,7 @@ export class Game {
     private readonly cb: GameCallbacks
   ) {
     this.best = readBest();
-    this.buildHoles();
+    this.buildHoles(START_GRID);
     this.catEl.classList.add("is-idle");
     this.cb.onScore(0, this.best);
     this.cb.onTimer(CATCH_WINDOW_MS);
@@ -82,16 +100,25 @@ export class Game {
 
   private reset(): void {
     this.score = 0;
+    this.elapsed = 0;
+    this.speed = 1;
+    this.stageIdx = 0;
+    this.nextLateSpeedAt = STAGES[STAGES.length - 1]!.at + LATE_SPEED_EVERY_MS;
     this.setPower(null);
+    if (this.grid !== START_GRID) this.buildHoles(START_GRID);
     for (const h of this.holes) this.lower(h);
+    this.cb.onStage(this.grid, this.speed, "");
     this.cb.onScore(0, this.best);
     this.cb.onTimer(CATCH_WINDOW_MS);
   }
 
-  private buildHoles(): void {
+  private buildHoles(grid: number): void {
+    this.grid = grid;
+    this.holes = [];
     this.holesEl.replaceChildren();
-    this.holesEl.style.setProperty("--grid", String(GRID));
-    for (let i = 0; i < HOLE_COUNT; i++) {
+    this.holesEl.style.setProperty("--grid", String(grid));
+    this.holesEl.dataset.grid = String(grid);
+    for (let i = 0; i < grid * grid; i++) {
       const el = document.createElement("button");
       el.type = "button";
       el.className = "hole";
@@ -117,19 +144,49 @@ export class Game {
     }
   }
 
-  // Difficulty curve: a gentle ramp. Mice stay up a little less and appear a little
-  // more often as the score grows; the floor is only reached after ~100 catches.
+  // Pace is driven by the stage speed multiplier, not by the score.
   private upTime(): number {
-    return clamp(1700 - this.score * 8, 800, 1700);
+    return clamp(1600 / this.speed, 450, 1600);
   }
   private spawnGap(): number {
-    return clamp(750 - this.score * 5, 360, 750);
+    return clamp(800 / this.speed, 220, 800);
   }
   private simultaneous(): number {
-    if (this.score >= 120) return 5;
-    if (this.score >= 70) return 4;
-    if (this.score >= 30) return 3;
-    return 2;
+    // 2×2 → 1 mouse, 3×3 → 2, 4×4 → 2, 5×5 → 3; late speed-ups add one every two steps (max 5)
+    const base = this.grid <= 2 ? 1 : this.grid <= 4 ? 2 : 3;
+    const late = Math.max(0, Math.round(Math.log(this.speed) / Math.log(SPEED_STEP)) - 2);
+    return Math.min(5, base + Math.floor(late / 2));
+  }
+
+  private advance(now: number): void {
+    const stage = STAGES[this.stageIdx];
+    if (stage && this.elapsed >= stage.at) {
+      this.stageIdx++;
+      if (stage.grid) {
+        this.grow(stage.grid, now);
+        return;
+      }
+      if (stage.faster) this.speedUp();
+      return;
+    }
+    if (this.stageIdx >= STAGES.length && this.elapsed >= this.nextLateSpeedAt) {
+      this.nextLateSpeedAt += LATE_SPEED_EVERY_MS;
+      this.speedUp();
+    }
+  }
+
+  private speedUp(): void {
+    this.speed = Math.round(this.speed * SPEED_STEP * 1000) / 1000;
+    sfx.stage();
+    this.cb.onStage(this.grid, this.speed, `Speed ×${this.speed.toFixed(2)}`);
+  }
+
+  // Rebuild the lawn with more holes; whatever was up goes back underground.
+  private grow(grid: number, now: number): void {
+    this.buildHoles(grid);
+    this.nextSpawnAt = now + 600;
+    sfx.stage();
+    this.cb.onStage(this.grid, this.speed, `${grid} × ${grid}`);
   }
 
   private tick = (now: number): void => {
@@ -143,6 +200,11 @@ export class Game {
       this.deadline += dt;
       this.nextSpawnAt += dt;
       for (const h of this.holes) if (h.up) h.hideAt += dt;
+    }
+
+    if (!frozen) {
+      this.elapsed += dt;
+      this.advance(now);
     }
 
     if (this.power && now >= this.powerUntil) this.setPower(null);

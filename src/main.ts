@@ -26,6 +26,7 @@ const powerBadge = $("powerBadge");
 const powerName = $("powerName");
 const powerTime = $("powerTime");
 const powerRing = $("powerRing");
+const stageEl = $("stage");
 
 let lastScore = 0;
 let toastTimer = 0;
@@ -69,6 +70,11 @@ const game = new Game($("holes"), catEl, {
     }
     powerTime.textContent = `${Math.ceil(remaining / 1000)}s`;
     powerRing.style.setProperty("--p", String(total ? remaining / total : 0));
+  },
+  onStage(grid, speed, note) {
+    field.dataset.grid = String(grid);
+    stageEl.textContent = `${grid}×${grid} · ×${speed.toFixed(2)}`;
+    if (note) toast(note, note.startsWith("Speed") ? "speed" : "grid");
   },
   onGameOver(score, best, isNewBest) {
     music.stop();
