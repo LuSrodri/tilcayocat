@@ -52,6 +52,13 @@ export const sfx = {
   miss(): void {
     tone(220, 0.12, "sawtooth", 0.05, 160);
   },
+  grunt(): void {
+    tone(160, 0.14, "sawtooth", 0.05, 120);
+  },
+  ouch(): void {
+    tone(300, 0.08, "square", 0.09, 140);
+    setTimeout(() => tone(180, 0.22, "sawtooth", 0.08, 90), 70);
+  },
   powerUp(): void {
     tone(660, 0.1, "sine", 0.06, 990);
     setTimeout(() => tone(990, 0.14, "sine", 0.06, 1320), 90);

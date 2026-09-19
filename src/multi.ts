@@ -252,20 +252,38 @@ function handle(msg: ServerMessage): void {
     case "spawn": {
       mouseHole.set(msg.mouse.id, msg.mouse.hole);
       const el = holes[msg.mouse.hole]!;
+      el.dataset.what = msg.mouse.kind;
       el.classList.add("is-up");
-      sfx.squeak();
+      if (msg.mouse.kind === "porcupine") sfx.grunt();
+      else sfx.squeak();
+      break;
+    }
+    case "ouch": {
+      const el = holes[msg.hole]!;
+      el.dataset.by = String(msg.by);
+      burst(el, "is-whiff is-prick", "−15", 650);
+      setScores(msg.scores);
+      catState(msg.by, "angry", 900);
+      if (msg.by === me) {
+        sfx.ouch();
+        if (navigator.vibrate) navigator.vibrate([30, 40, 30]);
+      }
       break;
     }
     case "hide": {
       const h = mouseHole.get(msg.id);
       mouseHole.delete(msg.id);
-      if (h !== undefined) holes[h]!.classList.remove("is-up");
+      if (h !== undefined) {
+        holes[h]!.classList.remove("is-up");
+        resetWhat(holes[h]!);
+      }
       break;
     }
     case "catch": {
       mouseHole.delete(msg.id);
       const el = holes[msg.hole]!;
       el.classList.remove("is-up");
+      resetWhat(el);
       el.dataset.by = String(msg.by);
       burst(el, "is-caught", "+1", 550);
       setScores(msg.scores);
@@ -339,7 +357,17 @@ function resetArena(): void {
 
 function clearMice(): void {
   mouseHole.clear();
-  for (const el of holes) el.classList.remove("is-up");
+  for (const el of holes) {
+    el.classList.remove("is-up");
+    resetWhat(el);
+  }
+}
+
+// the sprite swap must wait until the critter has sunk back into the hole
+function resetWhat(el: HTMLElement): void {
+  setTimeout(() => {
+    if (!el.classList.contains("is-up")) el.dataset.what = "mouse";
+  }, 200);
 }
 
 function setScores(scores: [number, number]): void {

@@ -1,6 +1,6 @@
 import { DurableObject } from "cloudflare:workers";
 import {
-  COUNTDOWN_MS, GRID, INTERMISSION_MS, MAX_ROUNDS, ROUNDS_TO_WIN, ROUND_MS,
+  COUNTDOWN_MS, GRID, INTERMISSION_MS, MAX_ROUNDS, PORCUPINE_PENALTY, ROUNDS_TO_WIN, ROUND_MS,
   type ClientMessage, type MouseInfo, type PlayerInfo, type RoundResult, type ServerMessage, type Slot
 } from "./protocol";
 import type { Env } from "./index";
@@ -45,6 +45,7 @@ export class MatchRoom extends DurableObject<Env> {
   private loop: ReturnType<typeof setInterval> | null = null;
   private timer: ReturnType<typeof setTimeout> | null = null;
   private nextSpawnAt = 0;
+  private nextFoeAt = 0;
 
   private async save(): Promise<void> {
     await this.ctx.storage.put("state", this.state);
@@ -141,6 +142,7 @@ export class MatchRoom extends DurableObject<Env> {
     this.roundStart = Date.now();
     this.roundEnd = this.roundStart + ROUND_MS;
     this.nextSpawnAt = this.roundStart + 400;
+    this.nextFoeAt = this.roundStart + 6000 + Math.random() * 5000;
     this.broadcast({
       type: "round", round: this.state.round, startsAt: this.roundStart, endsAt: this.roundEnd,
       now: Date.now(), scores: this.scores, wins: this.state.wins
@@ -172,17 +174,23 @@ export class MatchRoom extends DurableObject<Env> {
     }
     if (now >= this.nextSpawnAt) {
       const p = this.pace(now);
-      if (this.mice.size < p.simultaneous) this.spawn(now, p.upTime);
+      const upMice = [...this.mice.values()].filter((m) => m.kind === "mouse").length;
+      if (upMice < p.simultaneous) this.spawn(now, p.upTime, "mouse");
       this.nextSpawnAt = now + p.gap * (0.7 + Math.random() * 0.6);
+    }
+    if (now >= this.nextFoeAt) {
+      if (![...this.mice.values()].some((m) => m.kind === "porcupine")) this.spawn(now, 2200, "porcupine");
+      this.nextFoeAt = now + 8000 + Math.random() * 6000;
     }
   }
 
-  private spawn(now: number, upTime: number): void {
+  private spawn(now: number, upTime: number, kind: "mouse" | "porcupine"): void {
     const free: number[] = [];
     for (let h = 0; h < GRID * GRID; h++) if (!this.byHole.has(h)) free.push(h);
     if (!free.length) return;
     const hole = free[Math.floor(Math.random() * free.length)]!;
-    const mouse: MouseInfo = { id: this.nextMouseId++, hole, expiresAt: now + upTime * (0.8 + Math.random() * 0.4) };
+    const jitter = kind === "mouse" ? 0.8 + Math.random() * 0.4 : 1;
+    const mouse: MouseInfo = { id: this.nextMouseId++, hole, kind, expiresAt: now + upTime * jitter };
     this.mice.set(mouse.id, mouse);
     this.byHole.set(hole, mouse.id);
     this.broadcast({ type: "spawn", mouse, now });
@@ -194,6 +202,13 @@ export class MatchRoom extends DurableObject<Env> {
     const id = this.byHole.get(hole);
     if (id === undefined) {
       this.broadcast({ type: "whiff", hole, by: slot });
+      return;
+    }
+    const critter = this.mice.get(id)!;
+    if (critter.kind === "porcupine") {
+      // the porcupine stays; the player pays
+      this.scores[slot - 1] = Math.max(0, this.scores[slot - 1] - PORCUPINE_PENALTY);
+      this.broadcast({ type: "ouch", id, hole, by: slot, scores: this.scores });
       return;
     }
     this.mice.delete(id);

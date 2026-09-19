@@ -6,6 +6,7 @@ export const ROUNDS_TO_WIN = 2;
 export const MAX_ROUNDS = 5;
 export const COUNTDOWN_MS = 3_000;
 export const INTERMISSION_MS = 5_000;
+export const PORCUPINE_PENALTY = 15;
 
 export type Slot = 1 | 2;
 
@@ -15,9 +16,12 @@ export interface PlayerInfo {
   connected: boolean;
 }
 
+export type Critter = "mouse" | "porcupine";
+
 export interface MouseInfo {
   id: number;
   hole: number;
+  kind: Critter;
   expiresAt: number;
 }
 
@@ -36,6 +40,7 @@ export type ServerMessage =
   | { type: "hide"; id: number }
   | { type: "catch"; id: number; hole: number; by: Slot; scores: [number, number] }
   | { type: "whiff"; hole: number; by: Slot }
+  | { type: "ouch"; id: number; hole: number; by: Slot; scores: [number, number] }
   | { type: "roundEnd"; result: RoundResult; wins: [number, number]; nextAt: number | null; now: number }
   | { type: "final"; winner: Slot | 0; wins: [number, number]; rounds: RoundResult[]; totals: [number, number]; forfeit: boolean }
   | { type: "full" }

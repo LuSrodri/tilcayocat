@@ -4,6 +4,10 @@ export const MOUSE_IMG =
   `<picture><source srcset="/img/mouse.webp" type="image/webp">` +
   `<img src="/img/mouse.png" alt="" width="420" height="645" draggable="false" decoding="async"></picture>`;
 
+export const PORCUPINE_IMG =
+  `<picture><source srcset="/img/porcupine.webp" type="image/webp">` +
+  `<img src="/img/porcupine.png" alt="" width="420" height="644" draggable="false" decoding="async"></picture>`;
+
 export const PAW_IMG =
   `<picture><source srcset="/img/paw.webp" type="image/webp">` +
   `<img src="/img/paw.png" alt="" width="520" height="612" draggable="false" decoding="async"></picture>`;
@@ -17,6 +21,7 @@ export function createHoleEl(index: number): HTMLButtonElement {
     `<span class="hole__back"></span>` +
     `<span class="hole__clip">` +
     `<span class="hole__mouse">${MOUSE_IMG}</span>` +
+    `<span class="hole__mouse hole__mouse--foe">${PORCUPINE_IMG}</span>` +
     `<span class="hole__power"><span class="hole__power-img"></span></span>` +
     `</span>` +
     `<span class="hole__front"></span>` +

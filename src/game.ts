@@ -4,8 +4,9 @@ import { createHoleEl, burst } from "./holes";
 export const CATCH_WINDOW_MS = 5000;
 // Each catch buys a little time back instead of refilling the whole window.
 export const CATCH_BONUS_MS = 800;
-// Slapping an empty hole costs time.
+// Slapping an empty hole costs time; slapping a porcupine costs a lot more.
 export const MISS_PENALTY_MS = 300;
+export const PORCUPINE_PENALTY_MS = 2000;
 export const START_GRID = 2;
 export const MAX_GRID = 5;
 const BEST_KEY = "tilcayo.best";
@@ -27,7 +28,7 @@ export const POWER_DURATION: Record<PowerKind, number> = { auto: 6000, fulltime:
 export const POWER_LABEL: Record<PowerKind, string> = { auto: "Auto-catch", fulltime: "Full time", freeze: "Freeze" };
 const POWER_KINDS: PowerKind[] = ["auto", "fulltime", "freeze"];
 
-type Occupant = "mouse" | PowerKind;
+type Occupant = "mouse" | "porcupine" | PowerKind;
 
 interface Hole {
   el: HTMLButtonElement;
@@ -55,6 +56,7 @@ export class Game {
   private deadline = 0;
   private nextSpawnAt = 0;
   private nextPowerAt = 0;
+  private nextFoeAt = 0;
   private raf = 0;
   private lastFrame = 0;
   private lastAlertAt = 0;
@@ -92,6 +94,7 @@ export class Game {
     this.deadline = now + CATCH_WINDOW_MS;
     this.nextSpawnAt = now + 350;
     this.nextPowerAt = now + 25000 + Math.random() * 15000;
+    this.nextFoeAt = now + 8000 + Math.random() * 6000;
     this.catEl.classList.remove("is-sad");
     this.catEl.classList.add("is-idle");
     this.setCat("idle");
@@ -186,6 +189,7 @@ export class Game {
     if (frozen) {
       this.deadline += dt;
       this.nextSpawnAt += dt;
+      this.nextFoeAt += dt;
       for (const h of this.holes) if (h.up) h.hideAt += dt;
     }
 
@@ -228,6 +232,12 @@ export class Game {
       this.nextSpawnAt = now + this.spawnGap() * (0.7 + Math.random() * 0.6);
     }
 
+    // A porcupine pokes its head out now and then. Slap it and you lose 2 seconds.
+    if (!frozen && now >= this.nextFoeAt) {
+      if (!this.holes.some((h) => h.up && h.what === "porcupine")) this.spawn(now, "porcupine");
+      this.nextFoeAt = now + 10000 + Math.random() * 8000;
+    }
+
     // Power-ups show up now and then, never while one is already up or running.
     if (now >= this.nextPowerAt) {
       const powerUp = this.holes.some((h) => h.up && h.what !== "mouse");
@@ -249,6 +259,9 @@ export class Game {
       hole.hideAt = now + this.upTime() * (0.8 + Math.random() * 0.4);
       hole.autoAt = now + 140;
       sfx.squeak();
+    } else if (what === "porcupine") {
+      hole.hideAt = now + 2200;
+      sfx.grunt();
     } else {
       hole.hideAt = now + 2600;
       sfx.powerUp();
@@ -298,6 +311,8 @@ export class Game {
     }
     if (hole.what === "mouse") {
       this.catchMouse(hole);
+    } else if (hole.what === "porcupine") {
+      this.prick(hole);
     } else {
       this.collect(hole, hole.what);
     }
@@ -308,6 +323,15 @@ export class Game {
     this.deadline -= MISS_PENALTY_MS;
     this.burst(hole, "is-whiff", `−${(MISS_PENALTY_MS / 1000).toFixed(1)}s`, 450);
     this.setCat("angry", 450);
+  }
+
+  // Ouch: the porcupine stays put and the clock takes the hit.
+  private prick(hole: Hole): void {
+    sfx.ouch();
+    this.deadline -= PORCUPINE_PENALTY_MS;
+    this.burst(hole, "is-whiff is-prick", `−${PORCUPINE_PENALTY_MS / 1000}s`, 650);
+    this.setCat("angry", 900);
+    if (navigator.vibrate) navigator.vibrate([30, 40, 30]);
   }
 
   private catchMouse(hole: Hole): void {
