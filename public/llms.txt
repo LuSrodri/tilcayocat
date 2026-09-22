@@ -39,5 +39,5 @@
 - 1v1 online: https://tilcayo.cat/play (two players share one 5×5 lawn, 60-second rounds, best of three, quick match or private room code, global ranking)
 - About the tilcayo cat: https://tilcayo.cat/about
 - Sitemap: https://tilcayo.cat/sitemap.xml
-- Social preview image: https://tilcayo.cat/tilcayo-cat-game-1200x630.png
+- Social preview image: https://tilcayo.cat/tilcayo-cat-og-v2.jpg
 - Full version of this file: https://tilcayo.cat/llms-full.txt

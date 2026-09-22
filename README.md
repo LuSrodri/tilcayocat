@@ -6,6 +6,18 @@ A mobile-first browser game at [tilcayo.cat](https://tilcayo.cat). You are a til
 
 The ⓘ button opens `/about`, a sourced profile of the real cat with photos and a donation link to Senda Verde.
 
+## Combos, ranks and streaks
+
+Catches less than 1.5 s apart chain into a **combo**: each link raises the catch sound a semitone, a draining meter shows how long you have, and 5/10/15/20/30 trigger callouts (10+ turns on "frenzy", a pulsing glow over the lawn). An escape, an empty slap or a porcupine breaks it.
+
+Every round ends on a **hunter rank** by mice caught — Sleepy Kitten (0), Curious Cub (5), Lawn Prowler (12), Night Hunter (20), Shadow Stalker (30), Yungas Legend (45), Mythic Tilcayo (65) — with a bar showing how many mice to the next one. Rank-ups, beating your best and beating a friend's score all pop mid-round. Days played in a row are kept as a **streak** (`src/rank.ts`).
+
+## Sharing
+
+After a round, **Share my card** draws a 1080×1350 PNG on a canvas (`src/sharecard.ts`, backdrop `public/img/card-bg.*`): score, rank, time, best combo, a heat strip (one tile per 10 s), the seal shelf and a "Can you beat me?" call to action. The sheet shares the image through the Web Share API where files are supported, and otherwise offers Save image, Post on X and Copy challenge (a Wordle-style emoji summary).
+
+Shared links carry the score: `https://tilcayo.cat/?beat=42`. The start screen turns into "Beat 42 mice", and `functions/index.ts` (a Pages Function on `/`) rewrites the Open Graph / X tags so the link unfurls as "Can you beat 42 mice?" with the sharer's rank card from `public/og/beat-<rank>.jpg`.
+
 ## Seals
 
 Six wax seals are earned by playing and kept on the device (`localStorage`); the start screen and the 1v1 lobby show the shelf, and earning one pops a toast.
@@ -38,9 +50,9 @@ npm run deploy   # wrangler deploy
 ## Stack
 
 - Vite + TypeScript, no framework
-- Painted sprites (cat states, mouse, paw, hole, power-ups, aurora sky) generated with GPT Image, optimized to WebP + PNG
+- Painted sprites and key art (cat states, mouse, paw, hole, power-ups, aurora sky, pounce key art, share-card backdrop) generated with GPT Image, optimized to WebP + PNG/JPEG
 - Synthesized Web Audio effects and a chiptune loop, no media assets
-- Static output deployed to Cloudflare Pages
+- Static output deployed to Cloudflare Pages, plus one Pages Function (`functions/index.ts`) for challenge-link previews
 
 ## Scripts
 
@@ -49,7 +61,8 @@ npm run deploy   # wrangler deploy
 | `npm run dev` | dev server |
 | `npm run build` | type-check and build to `dist/` |
 | `npm run preview` | serve `dist/` |
-| `npm run og` | regenerate `og.png`, favicons and PWA icons from the SVG art |
+| `npm run og` | regenerate favicons and PWA icons (and the legacy `tilcayo-cat-game-1200x630.png`) |
+| `npm run social` | regenerate the Open Graph card, the per-rank challenge cards and the share-card backdrop from `art-src/keyart.png` and `art-src/card-bg.png` |
 | `npm run deploy` | build and publish to Cloudflare Pages |
 
 ## SEO / GEO

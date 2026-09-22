@@ -42,9 +42,31 @@ export const sfx = {
   unlock(): void {
     context();
   },
-  catch(): void {
-    tone(520, 0.09, "square", 0.08, 880);
-    setTimeout(() => tone(1400, 0.12, "sine", 0.12, 2200), 40);
+  // Each link of a combo climbs a semitone (capped at an octave), so a streak sounds like it's going somewhere.
+  catch(combo = 1): void {
+    const lift = Math.pow(2, Math.min(Math.max(combo - 1, 0), 12) / 12);
+    tone(520 * lift, 0.09, "square", 0.08, 880 * lift);
+    setTimeout(() => tone(1400 * lift, 0.12, "sine", 0.12, 2200 * lift), 40);
+  },
+  combo(level: number): void {
+    const root = 523 * Math.pow(2, Math.min(level, 4) / 12);
+    [1, 1.26, 1.5, 2].forEach((m, i) => setTimeout(() => tone(root * m, 0.12, "square", 0.05), i * 55));
+    setTimeout(() => tone(root * 2.52, 0.3, "triangle", 0.08), 230);
+  },
+  rankUp(): void {
+    [784, 988, 1175, 1568].forEach((f, i) => setTimeout(() => tone(f, 0.16, "triangle", 0.09), i * 90));
+    setTimeout(() => tone(2093, 0.45, "sine", 0.07), 380);
+  },
+  record(): void {
+    const notes = [523, 659, 784, 1047, 784, 1047, 1319];
+    notes.forEach((f, i) => setTimeout(() => tone(f, 0.18, i % 2 ? "triangle" : "square", 0.06), i * 110));
+    setTimeout(() => {
+      tone(1568, 0.8, "triangle", 0.07);
+      tone(2093, 0.8, "sine", 0.05);
+    }, notes.length * 110);
+  },
+  tick(): void {
+    tone(1200, 0.03, "square", 0.025);
   },
   squeak(): void {
     tone(1800, 0.08, "triangle", 0.05, 2600);

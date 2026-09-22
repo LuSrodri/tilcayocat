@@ -21,6 +21,10 @@ const STAGES: Stage[] = [
   { at: 75000, grid: 5 }
 ];
 const LATE_SPEED_EVERY_MS = 15000;
+// Catches closer together than this keep the combo going; an escape or a slap breaks it.
+export const COMBO_WINDOW_MS = 1500;
+// Catches per 10-second slice, kept for the share card's heat strip.
+export const SLICE_MS = 10000;
 const SPEED_STEP = 1.1;
 
 export type PowerKind = "auto" | "fulltime" | "freeze";
@@ -44,18 +48,29 @@ export type CatState = "idle" | "catch" | "angry" | "sad";
 export type GameEvent =
   | { type: "start" }
   | { type: "time"; elapsed: number }
-  | { type: "catch"; score: number }
+  | { type: "catch"; score: number; combo: number }
   | { type: "escape" }
   | { type: "whiff" }
   | { type: "prick" }
   | { type: "power"; kind: PowerKind };
+
+// What a finished round looked like, for the results screen and the share card.
+export interface RoundStats {
+  score: number;
+  elapsedMs: number;
+  bestCombo: number;
+  grid: number;
+  powers: number;
+  slices: number[];
+}
 
 export interface GameCallbacks {
   onScore(score: number, best: number): void;
   onTimer(remainingMs: number): void;
   onPower(kind: PowerKind | null, remainingMs: number, totalMs: number): void;
   onStage(grid: number, speed: number, note: string): void;
-  onGameOver(score: number, best: number, isNewBest: boolean): void;
+  onGameOver(score: number, best: number, isNewBest: boolean, stats: RoundStats): void;
+  onCombo(combo: number, hole: HTMLElement | null): void;
   onEvent(ev: GameEvent): void;
 }
 
@@ -80,6 +95,11 @@ export class Game {
   private stageIdx = 0;
   private nextLateSpeedAt = 0;
   private lastSecond = 0;
+  private combo = 0;
+  private bestCombo = 0;
+  private lastCatchAt = 0;
+  private powersTaken = 0;
+  private slices: number[] = [];
 
   constructor(
     private readonly holesEl: HTMLElement,
@@ -119,6 +139,11 @@ export class Game {
     this.score = 0;
     this.elapsed = 0;
     this.lastSecond = 0;
+    this.combo = 0;
+    this.bestCombo = 0;
+    this.lastCatchAt = 0;
+    this.powersTaken = 0;
+    this.slices = [];
     this.speed = 1;
     this.stageIdx = 0;
     this.nextLateSpeedAt = STAGES[STAGES.length - 1]!.at + LATE_SPEED_EVERY_MS;
@@ -300,6 +325,7 @@ export class Game {
     hole.el.classList.add("is-escaped");
     setTimeout(() => hole.el.classList.remove("is-escaped"), 500);
     this.setCat("angry", 650);
+    this.breakCombo();
     this.cb.onEvent({ type: "escape" });
   }
 
@@ -343,6 +369,7 @@ export class Game {
     this.deadline -= MISS_PENALTY_MS;
     this.burst(hole, "is-whiff", `−${(MISS_PENALTY_MS / 1000).toFixed(1)}s`, 450);
     this.setCat("angry", 450);
+    this.breakCombo();
     this.cb.onEvent({ type: "whiff" });
   }
 
@@ -353,25 +380,34 @@ export class Game {
     this.burst(hole, "is-whiff is-prick", `−${PORCUPINE_PENALTY_MS / 1000}s`, 650);
     this.setCat("angry", 900);
     if (navigator.vibrate) navigator.vibrate([30, 40, 30]);
+    this.breakCombo();
     this.cb.onEvent({ type: "prick" });
   }
 
   private catchMouse(hole: Hole): void {
     hole.up = false;
     hole.el.classList.remove("is-up");
-    this.burst(hole, "is-caught", "+1", 550);
+    const now = performance.now();
+    this.combo = now - this.lastCatchAt <= COMBO_WINDOW_MS ? this.combo + 1 : 1;
+    this.lastCatchAt = now;
+    this.bestCombo = Math.max(this.bestCombo, this.combo);
+    this.burst(hole, "is-caught", this.combo >= 3 ? `+1 ×${this.combo}` : "+1", 550);
 
     this.score += 1;
+    const slice = Math.floor(this.elapsed / SLICE_MS);
+    while (this.slices.length <= slice) this.slices.push(0);
+    this.slices[slice]! += 1;
     this.deadline = Math.min(this.deadline + CATCH_BONUS_MS, performance.now() + CATCH_WINDOW_MS);
     this.catEl.classList.remove("is-alert");
     this.catEl.classList.remove("is-pounce");
     void this.catEl.offsetWidth; // restart animation
     this.catEl.classList.add("is-pounce");
     this.setCat("catch", 900);
-    sfx.catch();
+    sfx.catch(this.combo);
     if (navigator.vibrate) navigator.vibrate(12);
     this.cb.onScore(this.score, Math.max(this.best, this.score));
-    this.cb.onEvent({ type: "catch", score: this.score });
+    this.cb.onCombo(this.combo, hole.el);
+    this.cb.onEvent({ type: "catch", score: this.score, combo: this.combo });
   }
 
   private collect(hole: Hole, kind: PowerKind): void {
@@ -379,6 +415,7 @@ export class Game {
     hole.el.classList.remove("is-up");
     this.burst(hole, "is-caught is-collected", POWER_LABEL[kind], 700);
     sfx.powerCollect();
+    this.powersTaken += 1;
     if (navigator.vibrate) navigator.vibrate([10, 20, 10]);
     this.cb.onEvent({ type: "power", kind });
     if (kind === "fulltime") {
@@ -388,6 +425,11 @@ export class Game {
       return;
     }
     this.setPower(kind);
+  }
+
+  private breakCombo(): void {
+    if (this.combo) this.cb.onCombo(0, null);
+    this.combo = 0;
   }
 
   private burst(hole: Hole, classes: string, label: string, ms: number): void {
@@ -409,7 +451,18 @@ export class Game {
     }
     sfx.over();
     if (navigator.vibrate) navigator.vibrate([40, 30, 60]);
-    this.cb.onGameOver(this.score, this.best, isNewBest);
+    const slices = this.slices.slice();
+    const played = Math.max(1, Math.ceil(this.elapsed / SLICE_MS));
+    while (slices.length < played) slices.push(0);
+    this.cb.onCombo(0, null);
+    this.cb.onGameOver(this.score, this.best, isNewBest, {
+      score: this.score,
+      elapsedMs: this.elapsed,
+      bestCombo: this.bestCombo,
+      grid: this.grid,
+      powers: this.powersTaken,
+      slices
+    });
   }
 }
 

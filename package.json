@@ -9,6 +9,7 @@
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
     "og": "node scripts/og.mjs",
+    "social": "node scripts/social.mjs",
     "deploy": "npm run build && wrangler pages deploy dist --project-name tilcayocat"
   },
   "devDependencies": {

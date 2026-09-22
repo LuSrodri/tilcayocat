@@ -53,21 +53,21 @@
   <meta property="og:locale" content="en_US">
   <meta property="og:url" content="https://tilcayo.cat/">
   <meta property="og:title" content="Tilcayo Cat Game — A New Cat Discovered After 100+ Years">
-  <meta property="og:description" content="Tilcayo Cat Game — a new cat discovered after 100+ years. Be the tilcayo and catch the mice before 5 seconds run out.">
-  <meta property="og:image" content="https://tilcayo.cat/tilcayo-cat-game-1200x630.png">
-  <meta property="og:image:secure_url" content="https://tilcayo.cat/tilcayo-cat-game-1200x630.png">
-  <meta property="og:image:type" content="image/png">
+  <meta property="og:description" content="Be the tilcayo, the new cat discovered after 100+ years. Catch mice, chain combos, climb 7 hunter ranks and dare your friends to beat your score. Free, no install.">
+  <meta property="og:image" content="https://tilcayo.cat/tilcayo-cat-og-v2.jpg">
+  <meta property="og:image:secure_url" content="https://tilcayo.cat/tilcayo-cat-og-v2.jpg">
+  <meta property="og:image:type" content="image/jpeg">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
-  <meta property="og:updated_time" content="2026-09-18T21:00:00+00:00">
-  <meta property="og:image:alt" content="Tilcayo Cat Game: illustrated tilcayo cat (Leopardus tilcayo) on a moonlit lawn beside a mouse peeking from its hole">
+  <meta property="og:updated_time" content="2026-09-22T18:00:00+00:00">
+  <meta property="og:image:alt" content="Tilcayo Cat Game: a painted tilcayo cat (Leopardus tilcayo) pouncing on a startled mouse under a full moon and aurora">
 
   <!-- Twitter / X -->
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="Tilcayo Cat Game — A New Cat Discovered After 100+ Years">
-  <meta name="twitter:description" content="Tilcayo Cat Game — a new cat discovered after 100+ years. Be the tilcayo and catch the mice before 5 seconds run out.">
-  <meta name="twitter:image" content="https://tilcayo.cat/tilcayo-cat-game-1200x630.png">
-  <meta name="twitter:image:alt" content="Tilcayo Cat Game: illustrated tilcayo cat on a moonlit lawn beside a mouse peeking from its hole">
+  <meta name="twitter:description" content="Be the tilcayo, the new cat discovered after 100+ years. Catch mice, chain combos, climb 7 hunter ranks and dare your friends to beat your score.">
+  <meta name="twitter:image" content="https://tilcayo.cat/tilcayo-cat-og-v2.jpg">
+  <meta name="twitter:image:alt" content="Tilcayo Cat Game: a painted tilcayo cat pouncing on a startled mouse under a full moon">
 
   <script type="application/ld+json">
 {
@@ -107,13 +107,13 @@
       },
       "primaryImageOfPage": {
         "@type": "ImageObject",
-        "url": "https://tilcayo.cat/tilcayo-cat-game-1200x630.png",
+        "url": "https://tilcayo.cat/tilcayo-cat-og-v2.jpg",
         "width": 1200,
         "height": 630
       },
       "inLanguage": "en",
       "datePublished": "2026-09-17",
-      "dateModified": "2026-09-18"
+      "dateModified": "2026-09-22"
     },
     {
       "@type": "Organization",
@@ -146,7 +146,7 @@
       "name": "Tilcayo Cat Game — A New Cat Discovered After 100+ Years",
       "alternateName": "Tilcayo Cat Game",
       "url": "https://tilcayo.cat/",
-      "image": "https://tilcayo.cat/tilcayo-cat-game-1200x630.png",
+      "image": "https://tilcayo.cat/tilcayo-cat-og-v2.jpg",
       "description": "You are a tilcayo cat on a moonlit lawn with 25 mouse holes. Tap the mice to catch them, grab power-ups (auto-catch, full time, freeze), and keep the 5-second clock from running out.",
       "genre": [
         "Arcade",
@@ -171,7 +171,7 @@
       "datePublished": "2026-09-17",
       "dateModified": "2026-09-18",
       "keywords": "tilcayo cat game, catch the mice, whack-a-mole, reflex game, new cat species",
-      "thumbnailUrl": "https://tilcayo.cat/tilcayo-cat-game-1200x630.png",
+      "thumbnailUrl": "https://tilcayo.cat/tilcayo-cat-og-v2.jpg",
       "contentRating": "Everyone",
       "offers": {
         "@type": "Offer",
@@ -257,6 +257,7 @@
         </div>
         <div id="holes" class="holes" role="group" aria-label="Mouse holes"></div>
         <div id="toast" class="toast" data-kind="" aria-hidden="true"></div>
+        <div id="combo" class="combo" data-level="0" aria-hidden="true"><span class="combo__num"><small>×</small><span id="comboNum">0</span></span><span class="combo__label">combo</span><span class="combo__bar"><span id="comboFill"></span></span></div>
         <span class="firefly" style="left:12%;top:20%;--d:9s;--delay:0s;--dx:40px;--dy:-30px" aria-hidden="true"></span>
         <span class="firefly" style="left:78%;top:34%;--d:11s;--delay:2s;--dx:-30px;--dy:-50px" aria-hidden="true"></span>
         <span class="firefly" style="left:30%;top:62%;--d:8s;--delay:4s;--dx:26px;--dy:-24px" aria-hidden="true"></span>
@@ -264,14 +265,40 @@
         <span class="firefly" style="left:88%;top:70%;--d:10s;--delay:6s;--dx:-20px;--dy:-60px" aria-hidden="true"></span>
       </div>
       <div class="vignette" aria-hidden="true"></div>
+      <div id="fx" class="fx" aria-hidden="true"></div>
       <div class="frost" aria-hidden="true"></div>
     </section>
 
     <div id="overlay" class="overlay" role="dialog" aria-modal="true" aria-labelledby="overlayTitle">
       <div class="overlay__card">
+        <div id="confetti" class="confetti" aria-hidden="true"></div>
+        <p id="kicker" class="overlay__kicker">A new cat discovered after 100+ years</p>
         <h1 id="overlayTitle" class="overlay__title">Tilcayo Cat Game</h1>
-        <p class="online" data-online hidden><span class="online__dot" aria-hidden="true"></span><span class="online__text"></span></p>
-        <p id="overlayText" class="overlay__text">A moonlit night in the Yungas. You are a tilcayo, the new cat species discovered after 100+ years. Tap the mice as they pop out. The lawn grows from 2×2 to 5×5 and the mice get faster over time. <strong>You start with 5 s; each catch +0.8 s, each empty slap −0.3 s, and slapping a porcupine −2 s.</strong></p>
+        <div class="pills">
+          <p class="online" data-online hidden><span class="online__dot" aria-hidden="true"></span><span class="online__text"></span></p>
+          <p id="streak" class="streak" hidden><span aria-hidden="true">🔥</span> <span id="streakText"></span></p>
+        </div>
+        <p id="challenge" class="challenge" hidden></p>
+        <section id="result" class="result" hidden aria-live="polite">
+          <div class="result__score"><span id="resultNum" class="result__num">0</span><span id="resultUnit" class="result__unit">mice</span></div>
+          <div id="rankBadge" class="rank" style="--r1:#fff;--r2:#888">
+            <span id="rankEmoji" class="rank__emoji" aria-hidden="true"></span>
+            <span class="rank__text"><small id="rankLabel">Rank</small><b id="rankName"></b></span>
+          </div>
+          <div class="progress" role="progressbar" aria-labelledby="progressText" aria-valuemin="0" aria-valuemax="100">
+            <div id="progressFill" class="progress__fill"></div>
+          </div>
+          <p id="progressText" class="progress__text"></p>
+          <ul id="resultChips" class="chips"></ul>
+          <p id="heat" class="heat" aria-label="Catches per 10 seconds"></p>
+        </section>
+        <p id="overlayText" class="overlay__text">You are the tilcayo. <strong>Tap the mice before the clock runs out</strong> — each catch +0.8 s, each empty slap −0.3 s, a porcupine −2 s. Chain fast catches for <strong>combos</strong>, climb the ranks and dare your friends.</p>
+        <div class="overlay__actions">
+          <button id="playBtn" class="btn btn--primary" type="button">Play</button>
+          <button id="shareBtn" class="btn btn--share" type="button" hidden><span aria-hidden="true">📸</span> Share my card</button>
+          <a class="btn btn--duel" href="/play">1v1 online</a>
+        </div>
+        <p class="overlay__hint">Press <kbd>Space</kbd> to play</p>
         <ul class="powers" aria-label="Power-ups">
           <li class="powers__item" data-kind="auto"><span class="powers__icon"></span><span><b>Auto-catch</b><small>6 s of automatic paws</small></span></li>
           <li class="powers__item" data-kind="fulltime"><span class="powers__icon"></span><span><b>Full time</b><small>clock back to 5 s</small></span></li>
@@ -281,13 +308,21 @@
           <h2 id="sealsTitle" class="seals__title">Seals <span id="sealsCount" class="seals__count">0/6</span></h2>
           <ul id="sealsList" class="seals__list"></ul>
         </section>
-        <p id="overlayStats" class="overlay__stats" hidden></p>
-        <div class="overlay__actions">
-          <button id="playBtn" class="btn btn--primary" type="button">Play</button>
-          <button id="shareBtn" class="btn" type="button" hidden>Share score</button>
-          <a class="btn btn--duel" href="/play">1v1 online</a>
-        </div>
         <a class="link-btn" href="/about">What is a tilcayo cat?</a>
+      </div>
+    </div>
+    <div id="shareSheet" class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle" hidden>
+      <div class="sheet__card">
+        <button id="sheetClose" class="sheet__close" type="button" aria-label="Close">×</button>
+        <h2 id="sheetTitle" class="sheet__title">Your brag card</h2>
+        <div class="sheet__preview"><div id="sheetSpinner" class="spinner"></div><img id="sheetImg" alt="Your score card" width="1080" height="1350" hidden></div>
+        <div class="sheet__actions">
+          <button id="shareImgBtn" class="btn btn--primary" type="button">Share image</button>
+          <a id="saveImgBtn" class="btn" download="tilcayo-cat-score.png" href="#">Save image</a>
+          <a id="postXBtn" class="btn btn--x" target="_blank" rel="noopener" href="https://x.com/intent/post">Post on 𝕏</a>
+          <button id="copyBtn" class="btn" type="button">Copy challenge</button>
+        </div>
+        <pre id="shareText" class="sheet__text"></pre>
       </div>
     </div>
   </main>
