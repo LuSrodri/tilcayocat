@@ -8,6 +8,8 @@
 - Platform: any modern web browser; designed for phones first, also works on desktop with the mouse.
 - Rules: the lawn starts as a 2×2 grid of holes and grows (3×3 at 10 s, 4×4 at 35 s, 5×5 at 75 s); mice speed up 10% at 25 s, 60 s and then every 15 s after 5×5. Tap a mouse to catch it (+1). You start with 5 seconds; every catch adds 0.8 seconds (capped at 5) and slapping an empty hole costs 0.3 seconds. A porcupine pokes out now and then: slap it and you lose 2 seconds (solo) or 15 points (1v1, never below 0). Mice stay up for less time and appear more often as the speed multiplier grows. Best score is stored locally on the device.
 - Power-ups pop out of holes now and then: Auto-catch (the cat catches every mouse automatically for 6 s), Full time (clock refilled to 5 s) and Freeze (clock, mice and spawns paused for 4 s).
+- Achievement seals: six collectible wax seals, kept on the device — Quick Paws (30 mice in one round), Night Watch (survive 90 seconds), Clean Paws (20 catches in a round with no empty slap and no porcupine), Power Hoarder (collect 6 power-ups), No Escape (12 catches in a row without a mouse escaping) and Lawn Duelist (win a 1v1 online match). They are shown on the start screen and in the 1v1 lobby.
+- A live counter on the start screen and in the 1v1 lobby shows how many people have the game open right now (a Cloudflare Durable Object holds one WebSocket per open page).
 - The ⓘ button opens https://tilcayo.cat/about, a page about the real tilcayo cat with photos, facts, sources and a donation link.
 
 ## About the tilcayo cat (Leopardus tilcayo)

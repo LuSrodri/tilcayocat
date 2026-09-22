@@ -1,6 +1,8 @@
 import "./style.css";
 import { Game, CATCH_WINDOW_MS, POWER_LABEL } from "./game";
 import { sfx, music, volume } from "./sound";
+import { SealTracker, mountSeals } from "./seals";
+import { mountOnline } from "./presence";
 
 function $<T extends HTMLElement>(id: string): T {
   const el = document.getElementById(id);
@@ -30,6 +32,14 @@ const stageEl = $("stage");
 
 let lastScore = 0;
 let toastTimer = 0;
+
+// ---- seals ------------------------------------------------------------------
+
+const seals = new SealTracker();
+mountSeals($("sealsList"), $("sealsCount"), toast);
+
+// how many cats have the game open right now
+mountOnline("solo");
 
 const game = new Game($("holes"), catEl, {
   onScore(score, best) {
@@ -75,6 +85,9 @@ const game = new Game($("holes"), catEl, {
     field.dataset.grid = String(grid);
     stageEl.textContent = `${grid}×${grid} · ×${speed.toFixed(2)}`;
     if (note) toast(note, note.startsWith("Speed") ? "speed" : "grid");
+  },
+  onEvent(ev) {
+    seals.feed(ev);
   },
   onGameOver(score, best, isNewBest) {
     music.stop();

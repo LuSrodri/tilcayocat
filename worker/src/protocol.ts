@@ -25,6 +25,13 @@ export interface MouseInfo {
   expiresAt: number;
 }
 
+// How many people have the game open right now (Presence object).
+export interface OnlineCount {
+  total: number;
+  solo: number;
+  duel: number;
+}
+
 export interface RoundResult {
   round: number;
   scores: [number, number];
@@ -46,6 +53,7 @@ export type ServerMessage =
   | { type: "full" }
   | { type: "matched"; code: string }
   | { type: "queued" }
+  | ({ type: "online" } & OnlineCount)
   | { type: "error"; message: string };
 
 export type ClientMessage = { type: "tap"; hole: number } | { type: "ping" };

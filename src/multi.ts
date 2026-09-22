@@ -1,14 +1,15 @@
 import "./style.css";
 import { createHoleEl, burst } from "./holes";
 import { sfx, music, volume } from "./sound";
+import { API, WS_BASE } from "./api";
+import { earn, mountSeals } from "./seals";
+import { mountOnline } from "./presence";
 import type { PlayerInfo, RoundResult, ServerMessage, Slot } from "../worker/src/protocol";
 import { GRID, ROUND_MS } from "../worker/src/protocol";
 
 // The 1v1 arena is server-driven: the MatchRoom Durable Object spawns the mice and resolves
 // every tap; this file only renders what the room says and sends taps.
 
-const API = location.hostname === "localhost" || location.hostname === "127.0.0.1" ? "http://localhost:8787/mp" : "/mp";
-const WS_BASE = API.startsWith("http") ? API.replace(/^http/, "ws") : `${location.protocol === "https:" ? "wss" : "ws"}://${location.host}${API}`;
 const NAME_KEY = "tilcayo.name";
 
 function $<T extends HTMLElement>(id: string): T {
@@ -39,6 +40,9 @@ for (let i = 0; i < GRID * GRID; i++) {
   holes.push(el);
   holesEl.append(el);
 }
+
+mountSeals($("sealsList"), $("sealsCount"), toast);
+mountOnline("duel");
 
 let ws: WebSocket | null = null;
 let queueWs: WebSocket | null = null;
@@ -498,6 +502,7 @@ function showFinal(winner: Slot | 0, wins: [number, number], rounds: RoundResult
     : `Best of three · rounds ${wins[0]}–${wins[1]} · ${totals[0]} × ${totals[1]} mice in total.`;
   $("rankingTable").innerHTML = rankingTable(rounds, totals, wins);
   fillNames(wins[0] === wins[1] ? (totals[0] >= totals[1] ? [1, 2] : [2, 1]) : wins[0] > wins[1] ? [1, 2] : [2, 1]);
+  if (won && !forfeit) earn("duelist");
   $("againBtn").hidden = false;
   $("shareBtn").hidden = !("share" in navigator || "clipboard" in navigator);
   $("resultCountdown").hidden = true;

@@ -60,7 +60,11 @@ export class Lobby extends DurableObject<Env> {
   }
 
   async webSocketClose(ws: WebSocket, code: number, reason: string): Promise<void> {
-    ws.close(code, reason);
+    try {
+      ws.close(code >= 1000 && code !== 1005 && code !== 1006 ? code : 1000, reason);
+    } catch {
+      /* already closed */
+    }
   }
 
   async recordResult(winner: string | null, loser: string | null, drawn: string[]): Promise<void> {

@@ -40,12 +40,23 @@ interface Hole {
 
 export type CatState = "idle" | "catch" | "angry" | "sad";
 
+// Round events, consumed by the seal tracker (see seals.ts).
+export type GameEvent =
+  | { type: "start" }
+  | { type: "time"; elapsed: number }
+  | { type: "catch"; score: number }
+  | { type: "escape" }
+  | { type: "whiff" }
+  | { type: "prick" }
+  | { type: "power"; kind: PowerKind };
+
 export interface GameCallbacks {
   onScore(score: number, best: number): void;
   onTimer(remainingMs: number): void;
   onPower(kind: PowerKind | null, remainingMs: number, totalMs: number): void;
   onStage(grid: number, speed: number, note: string): void;
   onGameOver(score: number, best: number, isNewBest: boolean): void;
+  onEvent(ev: GameEvent): void;
 }
 
 export class Game {
@@ -68,6 +79,7 @@ export class Game {
   private speed = 1;
   private stageIdx = 0;
   private nextLateSpeedAt = 0;
+  private lastSecond = 0;
 
   constructor(
     private readonly holesEl: HTMLElement,
@@ -99,12 +111,14 @@ export class Game {
     this.catEl.classList.add("is-idle");
     this.setCat("idle");
     cancelAnimationFrame(this.raf);
+    this.cb.onEvent({ type: "start" });
     this.raf = requestAnimationFrame(this.tick);
   }
 
   private reset(): void {
     this.score = 0;
     this.elapsed = 0;
+    this.lastSecond = 0;
     this.speed = 1;
     this.stageIdx = 0;
     this.nextLateSpeedAt = STAGES[STAGES.length - 1]!.at + LATE_SPEED_EVERY_MS;
@@ -196,6 +210,11 @@ export class Game {
     if (!frozen) {
       this.elapsed += dt;
       this.advance(now);
+      const second = Math.floor(this.elapsed / 1000);
+      if (second !== this.lastSecond) {
+        this.lastSecond = second;
+        this.cb.onEvent({ type: "time", elapsed: this.elapsed });
+      }
     }
 
     if (this.power && now >= this.powerUntil) this.setPower(null);
@@ -281,6 +300,7 @@ export class Game {
     hole.el.classList.add("is-escaped");
     setTimeout(() => hole.el.classList.remove("is-escaped"), 500);
     this.setCat("angry", 650);
+    this.cb.onEvent({ type: "escape" });
   }
 
   // Swap the cat sprite; a duration makes it fall back to idle afterwards.
@@ -323,6 +343,7 @@ export class Game {
     this.deadline -= MISS_PENALTY_MS;
     this.burst(hole, "is-whiff", `−${(MISS_PENALTY_MS / 1000).toFixed(1)}s`, 450);
     this.setCat("angry", 450);
+    this.cb.onEvent({ type: "whiff" });
   }
 
   // Ouch: the porcupine stays put and the clock takes the hit.
@@ -332,6 +353,7 @@ export class Game {
     this.burst(hole, "is-whiff is-prick", `−${PORCUPINE_PENALTY_MS / 1000}s`, 650);
     this.setCat("angry", 900);
     if (navigator.vibrate) navigator.vibrate([30, 40, 30]);
+    this.cb.onEvent({ type: "prick" });
   }
 
   private catchMouse(hole: Hole): void {
@@ -349,6 +371,7 @@ export class Game {
     sfx.catch();
     if (navigator.vibrate) navigator.vibrate(12);
     this.cb.onScore(this.score, Math.max(this.best, this.score));
+    this.cb.onEvent({ type: "catch", score: this.score });
   }
 
   private collect(hole: Hole, kind: PowerKind): void {
@@ -357,6 +380,7 @@ export class Game {
     this.burst(hole, "is-caught is-collected", POWER_LABEL[kind], 700);
     sfx.powerCollect();
     if (navigator.vibrate) navigator.vibrate([10, 20, 10]);
+    this.cb.onEvent({ type: "power", kind });
     if (kind === "fulltime") {
       this.deadline = performance.now() + CATCH_WINDOW_MS;
       this.cb.onPower("fulltime", 0, 0);

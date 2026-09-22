@@ -6,9 +6,28 @@ A mobile-first browser game at [tilcayo.cat](https://tilcayo.cat). You are a til
 
 The ⓘ button opens `/about`, a sourced profile of the real cat with photos and a donation link to Senda Verde.
 
+## Seals
+
+Six wax seals are earned by playing and kept on the device (`localStorage`); the start screen and the 1v1 lobby show the shelf, and earning one pops a toast.
+
+| seal | how to earn it |
+| --- | --- |
+| Quick Paws | catch 30 mice in one round |
+| Night Watch | survive 90 seconds in one round |
+| Clean Paws | 20 catches in a round without an empty slap or a porcupine |
+| Power Hoarder | collect 6 power-ups |
+| No Escape | 12 catches in a row without letting a mouse escape |
+| Lawn Duelist | win a 1v1 online match (a rival who walks out does not count) |
+
+`src/seals.ts` holds the definitions, the shelf rendering and the tracker; the solo game feeds it round events (`GameEvent` in `src/game.ts`) and `/play` grants the duel seal.
+
+## Cats online
+
+Every open page holds one WebSocket into a single `Presence` Durable Object (`worker/src/presence.ts`), tagged `solo` or `duel`. The object has nothing to store — the tally is its list of live sockets — and it broadcasts the new count whenever somebody arrives or leaves. `GET /mp/online` returns the same numbers as JSON.
+
 ## 1v1 online (`/play`)
 
-Two players share one 5×5 lawn for 60-second rounds, best of three, no power-ups. The room is a Cloudflare Durable Object (`worker/src/match.ts`) that spawns the mice, resolves taps (first tap wins) and keeps the score; a single `Lobby` object (`worker/src/lobby.ts`) pairs quick-match players and stores the global ranking in SQLite. The Worker is routed at `tilcayo.cat/mp/*`.
+Two players share one 5×5 lawn for 60-second rounds, best of three, no power-ups. The room is a Cloudflare Durable Object (`worker/src/match.ts`) that spawns the mice, resolves taps (first tap wins) and keeps the score; a single `Lobby` object (`worker/src/lobby.ts`) pairs quick-match players and stores the global ranking in SQLite, and a single `Presence` object counts everyone online. The Worker is routed at `tilcayo.cat/mp/*`.
 
 ```
 cd worker && npm i

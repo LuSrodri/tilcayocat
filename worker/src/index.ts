@@ -1,12 +1,14 @@
 import { MatchRoom } from "./match";
 import { Lobby } from "./lobby";
+import { Presence } from "./presence";
 import { cleanName } from "./protocol";
 
-export { MatchRoom, Lobby };
+export { MatchRoom, Lobby, Presence };
 
 export interface Env {
   MATCH: DurableObjectNamespace<MatchRoom>;
   LOBBY: DurableObjectNamespace<Lobby>;
+  PRESENCE: DurableObjectNamespace<Presence>;
 }
 
 const CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -35,6 +37,16 @@ export default {
     if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: CORS });
 
     if (path === "/create") return json({ code: makeCode() });
+
+    if (path === "/online") {
+      const counts = await env.PRESENCE.getByName("presence").count();
+      return json(counts);
+    }
+
+    if (path === "/presence") {
+      if (request.headers.get("Upgrade") !== "websocket") return new Response("Expected WebSocket", { status: 426 });
+      return env.PRESENCE.getByName("presence").fetch(request);
+    }
 
     if (path === "/leaderboard") {
       const rows = await env.LOBBY.getByName("lobby").top(10);

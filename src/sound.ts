@@ -66,6 +66,13 @@ export const sfx = {
   powerCollect(): void {
     [523, 659, 784, 1047].forEach((f, i) => setTimeout(() => tone(f, 0.16, "triangle", 0.1), i * 70));
   },
+  seal(): void {
+    [659, 880, 1109].forEach((f, i) => setTimeout(() => tone(f, 0.14, "triangle", 0.09), i * 80));
+    setTimeout(() => {
+      tone(1319, 0.5, "sine", 0.1);
+      tone(1760, 0.5, "triangle", 0.045);
+    }, 260);
+  },
   stage(): void {
     [784, 988, 1175].forEach((f, i) => setTimeout(() => tone(f, 0.12, "square", 0.05), i * 60));
   },

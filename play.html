@@ -191,6 +191,7 @@
         <!-- lobby -->
         <div id="panelLobby" class="panel">
           <h1 id="overlayTitle" class="overlay__title">1v1 Online</h1>
+          <p class="online" data-online hidden><span class="online__dot" aria-hidden="true"></span><span class="online__text"></span></p>
           <p class="overlay__text">Two tilcayos, one lawn. <strong>60-second rounds, best of three</strong>, no power-ups. Whoever catches more mice takes the round — and slapping a porcupine costs 15 points.</p>
           <label class="field-row"><span class="hud__label">Your name</span><input id="nameInput" class="input" type="text" maxlength="14" autocomplete="nickname" placeholder="Tilcayo" spellcheck="false"></label>
           <div class="overlay__actions">
@@ -206,12 +207,17 @@
             <h2 id="leaderTitle" class="leader__title">Top tilcayos</h2>
             <ol id="leaderList" class="leader__list"><li class="leader__empty">No matches yet. Be the first!</li></ol>
           </section>
+          <section class="seals" aria-labelledby="sealsTitle">
+            <h2 id="sealsTitle" class="seals__title">Seals <span id="sealsCount" class="seals__count">0/6</span></h2>
+            <ul id="sealsList" class="seals__list"></ul>
+          </section>
           <a class="link-btn" href="/">← Solo mode</a>
         </div>
         <!-- waiting -->
         <div id="panelWait" class="panel" hidden>
           <h2 class="overlay__title">Waiting for a rival…</h2>
           <p class="overlay__text" id="waitText">Share this code or link with a friend.</p>
+          <p class="online" data-online hidden><span class="online__dot" aria-hidden="true"></span><span class="online__text"></span></p>
           <div id="codeBox" class="code-box"><span id="codeText" class="code-box__code">—</span><button id="copyBtn" class="btn" type="button">Copy link</button></div>
           <div class="spinner" aria-hidden="true"></div>
           <button id="cancelBtn" class="link-btn" type="button">Cancel</button>

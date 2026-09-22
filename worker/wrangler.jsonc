@@ -8,8 +8,12 @@
   "durable_objects": {
     "bindings": [
       { "name": "MATCH", "class_name": "MatchRoom" },
-      { "name": "LOBBY", "class_name": "Lobby" }
+      { "name": "LOBBY", "class_name": "Lobby" },
+      { "name": "PRESENCE", "class_name": "Presence" }
     ]
   },
-  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["MatchRoom", "Lobby"] }]
+  "migrations": [
+    { "tag": "v1", "new_sqlite_classes": ["MatchRoom", "Lobby"] },
+    { "tag": "v2", "new_sqlite_classes": ["Presence"] }
+  ]
 }

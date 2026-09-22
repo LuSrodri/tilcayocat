@@ -105,7 +105,7 @@ export class MatchRoom extends DurableObject<Env> {
   }
 
   async webSocketClose(ws: WebSocket, code: number, reason: string): Promise<void> {
-    ws.close(code, reason);
+    close(ws, code, reason);
     const att = ws.deserializeAttachment() as Attachment | null;
     if (!att) return;
     this.broadcast({ type: "players", players: this.players() });
@@ -321,6 +321,15 @@ export class MatchRoom extends DurableObject<Env> {
         }
       }
     }
+  }
+}
+
+// 1005/1006 are reserved: echoing them back throws and would skip whatever follows the call.
+function close(ws: WebSocket, code: number, reason: string): void {
+  try {
+    ws.close(code >= 1000 && code !== 1005 && code !== 1006 ? code : 1000, reason);
+  } catch {
+    /* already closed */
   }
 }
 

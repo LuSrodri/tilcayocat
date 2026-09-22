@@ -667,6 +667,7 @@ body {
 .toast[data-kind="freeze"] { background: linear-gradient(135deg, #fff, var(--ice)); box-shadow: 0 0 30px rgba(143, 233, 255, .7), 0 8px 20px rgba(0,0,0,.4); }
 .toast[data-kind="grid"] { background: linear-gradient(135deg, #fff, var(--teal)); box-shadow: 0 0 30px rgba(62, 242, 208, .7), 0 8px 20px rgba(0,0,0,.4); }
 .toast[data-kind="speed"] { background: linear-gradient(135deg, #ffd0e6, var(--magenta)); box-shadow: 0 0 30px rgba(255, 95, 184, .7), 0 8px 20px rgba(0,0,0,.4); }
+.toast[data-kind="seal"] { background: linear-gradient(135deg, #fff3c4, var(--gold) 45%, var(--accent)); box-shadow: 0 0 34px rgba(255, 216, 74, .75), 0 8px 20px rgba(0,0,0,.4); }
 .toast[data-kind="fulltime"] { background: linear-gradient(135deg, #c8ffd4, var(--ok)); box-shadow: 0 0 30px rgba(88, 226, 122, .7), 0 8px 20px rgba(0,0,0,.4); }
 .toast.is-on { animation: toast 1.4s cubic-bezier(.2,1.2,.4,1) forwards; }
 @keyframes toast {
@@ -796,6 +797,7 @@ body {
   display: inline-block;
   transition: transform .12s ease, box-shadow .12s ease, filter .12s ease;
 }
+.btn[hidden] { display: none; }
 .btn:active { transform: translateY(2px); }
 .btn:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
 .btn--primary {
@@ -821,6 +823,114 @@ body {
   padding: 8px;
   min-height: 44px;
   display: inline-block;
+}
+
+/* ============================================================ ONLINE COUNTER */
+.online {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin: 0 0 12px;
+  padding: 5px 12px 5px 10px;
+  border-radius: 999px;
+  background: rgba(88, 226, 122, .12);
+  border: 1px solid rgba(88, 226, 122, .35);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink-soft);
+  font-variant-numeric: tabular-nums;
+}
+.online[hidden] { display: none; }
+.online__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--ok);
+  box-shadow: 0 0 8px var(--ok);
+  animation: online-pulse 2s ease-in-out infinite;
+}
+/* the socket dropped: keep the last tally, but stop claiming it is live */
+.online[data-live="0"] { background: rgba(255, 255, 255, .06); border-color: var(--line); }
+.online[data-live="0"] .online__dot { background: var(--ink-soft); box-shadow: none; animation: none; }
+@keyframes online-pulse { 50% { opacity: .35; scale: .75; } }
+
+/* ============================================================ SEALS */
+.seals { margin: 0 0 14px; text-align: left; }
+.seals__title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 8px;
+  font-family: var(--font-display);
+  font-size: 13px;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  color: var(--gold);
+}
+.seals__count {
+  margin-left: auto;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, .08);
+  font-size: 11px;
+  color: var(--ink-soft);
+  font-variant-numeric: tabular-nums;
+}
+.seals__list { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.seal {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 9px 5px 7px;
+  border-radius: 14px;
+  background: var(--paper-2);
+  text-align: center;
+}
+/* a blob of coloured wax with the seal's mark stamped into it */
+.seal__medal {
+  position: relative;
+  isolation: isolate;
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  color: #2a1206;
+  background: radial-gradient(circle at 32% 26%, #fff, var(--seal) 38%, var(--seal-deep) 100%);
+  box-shadow: inset 0 2px 3px rgba(255, 255, 255, .5), inset 0 -4px 8px rgba(60, 20, 0, .35), 0 4px 10px rgba(0, 0, 0, .45);
+}
+.seal__medal::before {
+  content: "";
+  position: absolute;
+  inset: -3px;
+  z-index: -1;
+  border-radius: 50%;
+  background: repeating-conic-gradient(from 0deg, var(--seal-deep) 0 9deg, var(--seal) 9deg 18deg);
+  /* ridges only around the rim, so the stamped mark stays readable */
+  -webkit-mask: radial-gradient(circle, transparent 0 66%, #000 67%);
+  mask: radial-gradient(circle, transparent 0 66%, #000 67%);
+  opacity: .9;
+}
+.seal__medal svg { width: 22px; height: 22px; }
+.seal__name { font-size: 11px; line-height: 1.15; }
+.seal__goal { font-size: 9.5px; line-height: 1.2; color: var(--ink-soft); }
+.seal.is-locked .seal__medal {
+  color: rgba(255, 255, 255, .45);
+  background: radial-gradient(circle at 32% 26%, rgba(255, 255, 255, .2), rgba(255, 255, 255, .07) 60%, rgba(0, 0, 0, .25));
+  box-shadow: inset 0 1px 2px rgba(255, 255, 255, .15), 0 3px 8px rgba(0, 0, 0, .35);
+}
+.seal.is-locked .seal__medal::before { background: rgba(255, 255, 255, .09); opacity: 1; }
+.seal.is-locked .seal__name { color: var(--ink-soft); }
+.seal.is-new { background: rgba(255, 216, 74, .14); }
+.seal.is-new .seal__medal { animation: seal-pop .7s cubic-bezier(.2, 1.4, .4, 1); }
+@keyframes seal-pop {
+  0% { scale: .3; rotate: -25deg; }
+  60% { scale: 1.18; rotate: 6deg; }
+  100% { scale: 1; rotate: 0deg; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .seal.is-new .seal__medal, .online__dot { animation: none; }
 }
 
 /* ============================================================ ABOUT PAGE */
