@@ -46,6 +46,7 @@
   <link rel="manifest" href="/manifest.webmanifest">
   <link rel="sitemap" type="application/xml" href="/sitemap.xml">
   <link rel="author" href="/humans.txt">
+  <link rel="alternate" type="text/plain" href="/llms.txt" title="LLM-readable summary">
 
   <!-- Open Graph -->
   <meta property="og:type" content="website">
@@ -59,7 +60,7 @@
   <meta property="og:image:type" content="image/jpeg">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
-  <meta property="og:updated_time" content="2026-09-22T18:00:00+00:00">
+  <meta property="og:updated_time" content="2026-09-25T12:00:00+00:00">
   <meta property="og:image:alt" content="Tilcayo Cat Game: a painted tilcayo cat (Leopardus tilcayo) pouncing on a startled mouse under a full moon and aurora">
 
   <!-- Twitter / X -->
@@ -82,8 +83,15 @@
       "description": "Tilcayo Cat Game: a free mobile-first browser game about the tilcayo cat (Leopardus tilcayo), the new cat species discovered after more than 100 years.",
       "inLanguage": "en",
       "datePublished": "2026-09-17",
-      "dateModified": "2026-09-18",
+      "dateModified": "2026-09-25",
       "keywords": "tilcayo cat, Leopardus tilcayo, new cat species, cat game, Bolivia, Yungas, tiger cat",
+      "hasPart": [
+        { "@id": "https://tilcayo.cat/#webpage" },
+        { "@id": "https://tilcayo.cat/play#webpage" },
+        { "@id": "https://tilcayo.cat/how-to-play#webpage" },
+        { "@id": "https://tilcayo.cat/cat-games#webpage" },
+        { "@id": "https://tilcayo.cat/about#webpage" }
+      ],
       "about": {
         "@id": "https://tilcayo.cat/about#tilcayo"
       },
@@ -113,7 +121,13 @@
       },
       "inLanguage": "en",
       "datePublished": "2026-09-17",
-      "dateModified": "2026-09-22"
+      "dateModified": "2026-09-25",
+      "significantLink": [
+        "https://tilcayo.cat/how-to-play",
+        "https://tilcayo.cat/cat-games",
+        "https://tilcayo.cat/about",
+        "https://tilcayo.cat/play"
+      ]
     },
     {
       "@type": "Organization",
@@ -147,7 +161,7 @@
       "alternateName": "Tilcayo Cat Game",
       "url": "https://tilcayo.cat/",
       "image": "https://tilcayo.cat/tilcayo-cat-og-v2.jpg",
-      "description": "You are a tilcayo cat on a moonlit lawn with 25 mouse holes. Tap the mice to catch them, grab power-ups (auto-catch, full time, freeze), and keep the 5-second clock from running out.",
+      "description": "Free browser game starring the tilcayo cat (Leopardus tilcayo), the first new wild cat species in over 100 years. Tap the mice as they pop out of a lawn that grows from 2×2 to 5×5 holes, grab power-ups (auto-catch, full time, freeze), dodge the porcupine, chain combos and climb 7 hunter ranks before the 5-second clock runs out. Includes a 1v1 online mode.",
       "genre": [
         "Arcade",
         "Casual",
@@ -161,15 +175,31 @@
       "applicationCategory": "GameApplication",
       "operatingSystem": "Any",
       "browserRequirements": "Requires JavaScript",
-      "playMode": "SinglePlayer",
+      "playMode": [
+        "SinglePlayer",
+        "MultiPlayer"
+      ],
       "numberOfPlayers": {
         "@type": "QuantitativeValue",
-        "value": 1
+        "minValue": 1,
+        "maxValue": 2
+      },
+      "hasPart": {
+        "@id": "https://tilcayo.cat/play#duel"
+      },
+      "subjectOf": {
+        "@id": "https://tilcayo.cat/how-to-play#webpage"
+      },
+      "screenshot": "https://tilcayo.cat/tilcayo-cat-og-v2.jpg",
+      "countriesSupported": "Worldwide",
+      "potentialAction": {
+        "@type": "PlayAction",
+        "target": "https://tilcayo.cat/"
       },
       "inLanguage": "en",
       "isAccessibleForFree": true,
       "datePublished": "2026-09-17",
-      "dateModified": "2026-09-18",
+      "dateModified": "2026-09-25",
       "keywords": "tilcayo cat game, catch the mice, whack-a-mole, reflex game, new cat species",
       "thumbnailUrl": "https://tilcayo.cat/tilcayo-cat-og-v2.jpg",
       "contentRating": "Everyone",
@@ -192,7 +222,7 @@
 </head>
 <body>
   <noscript>
-    <p class="noscript">Tilcayo Cat needs JavaScript to run. Enable it to play — or <a href="/about">read about the tilcayo cat</a>, the first new wild cat species in over a century.</p>
+    <p class="noscript">Tilcayo Cat needs JavaScript to run. Enable it to play — or read <a href="/how-to-play">how to play</a> and <a href="/about">about the tilcayo cat</a>, the first new wild cat species in over a century.</p>
   </noscript>
 
   <main id="app" class="app">
@@ -308,7 +338,7 @@
           <h2 id="sealsTitle" class="seals__title">Seals <span id="sealsCount" class="seals__count">0/6</span></h2>
           <ul id="sealsList" class="seals__list"></ul>
         </section>
-        <a class="link-btn" href="/about">What is a tilcayo cat?</a>
+        <nav class="overlay__links" aria-label="More"><a class="link-btn" href="/how-to-play">How to play</a><a class="link-btn" href="/about">What is a tilcayo cat?</a></nav>
       </div>
     </div>
     <div id="shareSheet" class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle" hidden>

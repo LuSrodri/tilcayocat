@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
   <title>About the Tilcayo Cat — Leopardus tilcayo, the New Wild Cat Species</title>
   <meta name="description" content="Everything about the tilcayo cat (Leopardus tilcayo): the first new wild cat species described in over 100 years, its Bolivian Yungas home, size, markings, the discovery at Senda Verde and how to help.">
-  <meta name="keywords" content="tilcayo cat, Leopardus tilcayo, tilcayo game, new cat species, Bolivia wild cat, tiger cat, mouse catching game, mobile browser game, whack-a-mole cat">
+  <meta name="keywords" content="tilcayo cat, Leopardus tilcayo, tilcayo, new cat species, new wild cat 2026, Bolivia wild cat, Yungas, tiger cat, oncilla, Senda Verde">
   <meta name="author" content="tilcayo.cat">
   <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
   <meta name="googlebot" content="index, follow">
@@ -40,6 +40,7 @@
   <link rel="manifest" href="/manifest.webmanifest">
   <link rel="sitemap" type="application/xml" href="/sitemap.xml">
   <link rel="author" href="/humans.txt">
+  <link rel="alternate" type="text/plain" href="/llms.txt" title="LLM-readable summary">
 
   <!-- Open Graph -->
   <meta property="og:type" content="article">
@@ -53,9 +54,9 @@
   <meta property="og:image:type" content="image/jpeg">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
-  <meta property="og:updated_time" content="2026-09-18T21:00:00+00:00">
+  <meta property="og:updated_time" content="2026-09-25T12:00:00+00:00">
   <meta property="article:published_time" content="2026-09-17T22:00:00+00:00">
-  <meta property="article:modified_time" content="2026-09-18T21:00:00+00:00">
+  <meta property="article:modified_time" content="2026-09-25T12:00:00+00:00">
   <meta property="og:image:alt" content="Tilcayo Cat Game: a painted tilcayo cat (Leopardus tilcayo) pouncing on a startled mouse under a full moon and aurora">
 
   <!-- Twitter / X -->
@@ -91,7 +92,7 @@
       },
       "inLanguage": "en",
       "datePublished": "2026-09-17",
-      "dateModified": "2026-09-18",
+      "dateModified": "2026-09-25",
       "speakable": {
         "@type": "SpeakableSpecification",
         "cssSelector": [
@@ -99,6 +100,15 @@
           ".about__lead",
           ".facts"
         ]
+      },
+      "citation": [
+        { "@id": "https://doi.org/10.1016/j.cub.2026.08.059" },
+        "https://www.discoverwildlife.com/animal-facts/mammals/tilcayo-cat-bolivian-yungus",
+        "https://www.scientificamerican.com/article/see-the-first-new-species-of-cat-discovered-in-more-than-a-century-its-adorable/",
+        "https://en.wikipedia.org/wiki/Tilcayo"
+      ],
+      "publisher": {
+        "@id": "https://tilcayo.cat/#organization"
       },
       "breadcrumb": {
         "@type": "BreadcrumbList",
@@ -219,16 +229,49 @@
         },
         {
           "@type": "PropertyValue",
+          "name": "Tail length",
+          "value": "about 25–26.5 cm (10 in)"
+        },
+        {
+          "@type": "PropertyValue",
+          "name": "IUCN status",
+          "value": "Not evaluated"
+        },
+        {
+          "@type": "PropertyValue",
+          "name": "Known individuals",
+          "value": "1 (Senda Verde Animal Refuge, Bolivia)"
+        },
+        {
+          "@type": "PropertyValue",
           "name": "Activity",
           "value": "Nocturnal"
         }
       ],
       "description": "A small spotted wild cat native to the Bolivian Yungas cloud forest, formally described in September 2026 in Current Biology as the first new wild cat species in more than a century. It belongs to the tiger cat group, is smaller than a domestic cat (about 45 cm body length and 1.3 kg), and is distinguished from the oncilla by larger spot markings, a longer and more slender tail, and muted fur colour.",
+      "scientificName": "Leopardus tilcayo",
+      "sameAs": [
+        "https://en.wikipedia.org/wiki/Tilcayo",
+        "https://www.wikidata.org/wiki/Q141490808",
+        "https://species.wikimedia.org/wiki/Leopardus_tilcayo",
+        "https://www.inaturalist.org/taxa/1712052",
+        "https://zoobank.org/NomenclaturalActs/E91EB0AF-416E-4B27-97D2-643BE62DD936"
+      ],
       "subjectOf": [
         {
           "@type": "ScholarlyArticle",
-          "name": "Tiger cats species delimitation (Current Biology, 2026)",
-          "url": "https://www.cell.com/current-biology/fulltext/S0960-9822(26)01110-3"
+          "@id": "https://doi.org/10.1016/j.cub.2026.08.059",
+          "name": "Phylogenomics and museomics reveal five distinct species of tiger cats in South America",
+          "url": "https://www.cell.com/current-biology/fulltext/S0960-9822(26)01110-3",
+          "sameAs": "https://doi.org/10.1016/j.cub.2026.08.059",
+          "datePublished": "2026-09",
+          "isPartOf": { "@type": "Periodical", "name": "Current Biology" },
+          "author": [
+            { "@type": "Person", "name": "Jonas Lescroart" },
+            { "@type": "Person", "name": "Paola Nogales-Ascarrunz" },
+            { "@type": "Person", "name": "Enzo Aliaga-Rossel" },
+            { "@type": "Person", "name": "Eduardo Eizirik" }
+          ]
         }
       ]
     },
@@ -236,46 +279,12 @@
       "@type": "FAQPage",
       "@id": "https://tilcayo.cat/about#faq",
       "mainEntity": [
-        {
-          "@type": "Question",
-          "name": "What is a tilcayo cat?",
-          "acceptedAnswer": {
-            "@type": "Answer",
-            "text": "The tilcayo cat (Leopardus tilcayo) is a newly described species of small wild cat from Bolivia's Yungas cloud forest. Formally described in September 2026, it is the first new wild cat species identified in more than 100 years."
-          }
-        },
-        {
-          "@type": "Question",
-          "name": "How big is a tilcayo cat?",
-          "acceptedAnswer": {
-            "@type": "Answer",
-            "text": "It is smaller than an average house cat: roughly 45 cm (18 in) from head to the base of the tail and about 1.3 kg (3 lb)."
-          }
-        },
-        {
-          "@type": "Question",
-          "name": "How do you play Tilcayo Cat?",
-          "acceptedAnswer": {
-            "@type": "Answer",
-            "text": "Tap the mice as they pop out of the holes in the grass. The lawn starts at 2×2 and grows to 5×5, and the mice speed up 10% at a time. You start with 5 seconds; every catch adds 0.8 seconds (up to 5) and slapping an empty hole costs 0.3 seconds. If the timer reaches zero, the game ends."
-          }
-        },
-        {
-          "@type": "Question",
-          "name": "Where does the tilcayo cat live?",
-          "acceptedAnswer": {
-            "@type": "Answer",
-            "text": "In the Bolivian Yungas, a cloud-forest region on the eastern slopes of the Andes. The only known individual lives at the Senda Verde Animal Refuge in the Yungas."
-          }
-        },
-        {
-          "@type": "Question",
-          "name": "What are the power-ups in Tilcayo Cat Game?",
-          "acceptedAnswer": {
-            "@type": "Answer",
-            "text": "Three power-ups pop out of the holes now and then. Auto-catch makes the tilcayo catch every mouse automatically for 6 seconds. Full time refills the clock to 5 seconds. Freeze pauses the clock, freezes the mice in place and stops new ones for 4 seconds."
-          }
-        }
+        { "@type": "Question", "name": "What is a tilcayo cat?", "acceptedAnswer": { "@type": "Answer", "text": "The tilcayo cat (Leopardus tilcayo) is a newly described species of small wild cat from Bolivia's Yungas cloud forest. Formally described in September 2026, it is the first new wild cat species identified in more than 100 years." } },
+        { "@type": "Question", "name": "Is the tilcayo cat real?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. It was formally described in September 2026 in the journal Current Biology by a team including Paola Nogales-Ascarrunz, Jonas Lescroart and Eduardo Eizirik, based on the genomes of 38 cats." } },
+        { "@type": "Question", "name": "How big is a tilcayo cat?", "acceptedAnswer": { "@type": "Answer", "text": "It is smaller than an average house cat: roughly 45 cm (18 in) from head to the base of the tail, a tail of about 25 cm (10 in), and about 1.3 kg (3 lb)." } },
+        { "@type": "Question", "name": "Where does the tilcayo cat live?", "acceptedAnswer": { "@type": "Answer", "text": "In the Bolivian Yungas, a cloud-forest region on the eastern slopes of the Andes. The only known individual lives at the Senda Verde Animal Refuge in the Yungas." } },
+        { "@type": "Question", "name": "How is it different from an oncilla?", "acceptedAnswer": { "@type": "Answer", "text": "It looks similar, but the tilcayo has larger rosette markings, a longer and more slender tail and a more muted coat. Its DNA shows it split from its closest tiger-cat relative about 1.4 million years ago." } },
+        { "@type": "Question", "name": "Is the tilcayo cat endangered?", "acceptedAnswer": { "@type": "Answer", "text": "Nobody knows yet. It has not been assessed by the IUCN and only one individual is known, so researchers are setting camera traps across the Yungas to find wild tilcayos and estimate how many there are." } }
       ]
     }
   ]
@@ -291,9 +300,11 @@
 
   <main class="about-page">
     <article class="about__body" id="about">
+      <nav class="crumbs" aria-label="Breadcrumb"><a href="/">Tilcayo Cat Game</a> › <span aria-current="page">About the tilcayo cat</span></nav>
       <header class="about__header about__header--page">
         <h1 id="aboutTitle">The tilcayo cat</h1>
-        <p class="about__latin"><em>Leopardus tilcayo</em> · Bolivian Yungas cloud forest</p>
+        <p class="about__latin"><em>Leopardus tilcayo</em> Nogales-Ascarrunz, Aliaga-Rossel, Lescroart &amp; Eizirik, 2026 · Bolivian Yungas cloud forest</p>
+        <p class="about__updated">Updated <time datetime="2026-09-25">September 25, 2026</time> · pronounced <i>til-KYE-oh</i></p>
       </header>
 
       <div class="gallery">
@@ -314,37 +325,70 @@
       </div>
       <p class="gallery__credit">Photos: Fernando Faciole / National Geographic.</p>
 
-      <p class="about__lead"><strong>The first new wild cat species described in more than 100 years.</strong> In September 2026 an international team published a study in <em>Current Biology</em> formally naming <em>Leopardus tilcayo</em>, a small spotted cat from the Yungas cloud forests on the eastern slopes of the Bolivian Andes.</p>
+      <p class="about__lead"><strong>The tilcayo cat (<em>Leopardus tilcayo</em>) is a small spotted wild cat from Bolivia's Yungas cloud forest and the first new wild cat species described in more than 100 years</strong> — the first since the Pampas cat in 1923. An international team named it in September 2026 in <em>Current Biology</em>, after a genetic study showed that South America's tiger cats are at least five separate species.</p>
 
-      <h3>Quick facts</h3>
+      <h2>Quick facts</h2>
       <ul class="facts">
         <li><b>Group:</b> tiger cats (genus <em>Leopardus</em>), South America's small spotted wild cats</li>
         <li><b>Size:</b> about 45 cm (18 in) head-to-body and roughly 1.3 kg (3 lb) — smaller than a house cat</li>
         <li><b>Look:</b> rust-orange coat with large leopard-like rosettes, two dark stripes down the forehead, a long slender tail and a muted fur colour</li>
         <li><b>Home:</b> Yungas cloud forest, Bolivia, in the Andes–Amazon transition zone</li>
+        <li><b>Tail:</b> about 25–26.5 cm (10 in)</li>
         <li><b>Lineage:</b> DNA suggests it split from its closest tiger-cat relative around 1.4 million years ago</li>
+        <li><b>Known individuals:</b> one, a ten-year-old male at Senda Verde Animal Refuge</li>
+        <li><b>Conservation status:</b> not yet assessed by the IUCN</li>
+        <li><b>Described in:</b> Lescroart et al., “Phylogenomics and museomics reveal five distinct species of tiger cats in South America”, <em>Current Biology</em> (2026)</li>
       </ul>
 
-      <h3>A discovery by chance</h3>
+      <h2>A discovery by chance</h2>
       <p>Around 2017 a local family handed a small spotted cat to the Senda Verde Animal Refuge in the Yungas. Wild-cat conservationist and National Geographic Explorer Paola Nogales Ascarrunz met him while volunteering there and noticed he did not match any known tiger cat. Genetic analysis of 38 cats — including 26 tiger cats — led by Nogales Ascarrunz, Jonas Lescroart (University of Antwerp) and Eduardo Eizirik (PUCRS, Brazil) showed the tiger cats are at least five distinct species, one of them entirely new.</p>
       <p>That ten-year-old male is still the only known individual of the species. Researchers are now placing camera traps across the Yungas to find tilcayos in the wild, which are easily mistaken for oncillas or margays.</p>
 
-      <h3>Why "tilcayo"?</h3>
+      <h2>Why "tilcayo"?</h2>
       <p>"Tilcayo" is the name local communities already used for the cat. The scientists kept it to honour that ancestral knowledge and the communities' connection to the animal.</p>
 
-      <h3>Why it matters</h3>
+      <h2>Why it matters</h2>
       <p>Finding a new mammal is rare; a new cat is rarer still. The team hopes the description drives conservation of the Yungas forests, one of the least-studied and most species-rich regions of the Neotropics.</p>
 
+      <h2>Tilcayo cat FAQ</h2>
+      <div class="faq">
+        <details open>
+          <summary>What is a tilcayo cat?</summary>
+          <p>The tilcayo cat (<em>Leopardus tilcayo</em>) is a newly described species of small wild cat from Bolivia's Yungas cloud forest. Formally described in September 2026, it is the first new wild cat species identified in more than 100 years.</p>
+        </details>
+        <details>
+          <summary>Is the tilcayo cat real?</summary>
+          <p>Yes. It was formally described in September 2026 in the journal <em>Current Biology</em> by a team including Paola Nogales-Ascarrunz, Jonas Lescroart and Eduardo Eizirik, based on the genomes of 38 cats.</p>
+        </details>
+        <details>
+          <summary>How big is a tilcayo cat?</summary>
+          <p>It is smaller than an average house cat: roughly 45 cm (18 in) from head to the base of the tail, a tail of about 25 cm (10 in), and about 1.3 kg (3 lb).</p>
+        </details>
+        <details>
+          <summary>Where does the tilcayo cat live?</summary>
+          <p>In the Bolivian Yungas, a cloud-forest region on the eastern slopes of the Andes. The only known individual lives at the Senda Verde Animal Refuge in the Yungas.</p>
+        </details>
+        <details>
+          <summary>How is it different from an oncilla?</summary>
+          <p>It looks similar, but the tilcayo has larger rosette markings, a longer and more slender tail and a more muted coat. Its DNA shows it split from its closest tiger-cat relative about 1.4 million years ago.</p>
+        </details>
+        <details>
+          <summary>Is the tilcayo cat endangered?</summary>
+          <p>Nobody knows yet. It has not been assessed by the IUCN and only one individual is known, so researchers are setting camera traps across the Yungas to find wild tilcayos and estimate how many there are.</p>
+        </details>
+      </div>
+
       <aside class="donate">
-        <h3>Help the tilcayo's home</h3>
+        <h2>Help the tilcayo's home</h2>
         <p>The only known tilcayo in captivity lives at Senda Verde, in the Bolivian Yungas. He is the cat that led scientists to the discovery of the species. The refuge cares for hundreds of rescued animals and runs on donations.</p>
         <a class="btn btn--primary donate__btn" href="https://sendaverde.org/donate/" target="_blank" rel="noopener noreferrer">Donate to Senda Verde</a>
       </aside>
 
-      <h3>Sources</h3>
+      <h2>Sources</h2>
       <ul class="sources">
         <li><a href="https://www.cell.com/current-biology/fulltext/S0960-9822(26)01110-3" target="_blank" rel="noopener noreferrer">Current Biology — species description (2026)</a></li>
         <li><a href="https://www.discoverwildlife.com/animal-facts/mammals/tilcayo-cat-bolivian-yungus" target="_blank" rel="noopener noreferrer">BBC Discover Wildlife — New species of wild cat discovered in Bolivia's cloud forest</a></li>
+        <li><a href="https://en.wikipedia.org/wiki/Tilcayo" target="_blank" rel="noopener noreferrer">Wikipedia — Tilcayo</a></li>
         <li><a href="https://www.scientificamerican.com/article/see-the-first-new-species-of-cat-discovered-in-more-than-a-century-its-adorable/" target="_blank" rel="noopener noreferrer">Scientific American — See the first new species of cat discovered in more than a century</a></li>
       </ul>
       <p class="about__note">The game's artwork is an original illustration inspired by these photographs.</p>
@@ -353,11 +397,12 @@
 
     <aside class="about__cta">
       <a class="btn btn--primary" href="/">Play Tilcayo Cat Game</a>
+      <p><a class="link-btn" href="/how-to-play">How to play</a></p>
     </aside>
   </main>
 
   <footer class="page__foot">
-    <a href="/">Home</a> · <a href="/about">About the tilcayo</a> · <a href="https://sendaverde.org/donate/" target="_blank" rel="noopener noreferrer">Donate to Senda Verde</a> · <a href="mailto:rodrigueslucass@outlook.com.br">Contact</a>
+    <a href="/">Play</a> · <a href="/play">1v1 online</a> · <a href="/how-to-play">How to play</a> · <a href="/cat-games">Cat games compared</a> · <a href="/about">About the tilcayo</a> · <a href="https://sendaverde.org/donate/" target="_blank" rel="noopener noreferrer">Donate to Senda Verde</a> · <a href="mailto:rodrigueslucass@outlook.com.br">Contact</a>
   </footer>
 
   <script type="module" src="/src/about.ts"></script>

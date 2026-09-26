@@ -46,6 +46,7 @@
   <link rel="manifest" href="/manifest.webmanifest">
   <link rel="sitemap" type="application/xml" href="/sitemap.xml">
   <link rel="author" href="/humans.txt">
+  <link rel="alternate" type="text/plain" href="/llms.txt" title="LLM-readable summary">
 
   <!-- Open Graph -->
   <meta property="og:type" content="website">
@@ -81,8 +82,16 @@
       "isPartOf": { "@id": "https://tilcayo.cat/#website" },
       "description": "Play Tilcayo Cat 1v1 online: two tilcayo cats share one 5×5 lawn, 60-second rounds, best of three, with a global ranking.",
       "inLanguage": "en",
+      "about": { "@id": "https://tilcayo.cat/#game" },
       "datePublished": "2026-09-19",
-      "dateModified": "2026-09-19"
+      "dateModified": "2026-09-25",
+      "breadcrumb": {
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          { "@type": "ListItem", "position": 1, "name": "Tilcayo Cat Game", "item": "https://tilcayo.cat/" },
+          { "@type": "ListItem", "position": 2, "name": "1v1 online", "item": "https://tilcayo.cat/play" }
+        ]
+      }
     },
     {
       "@type": "VideoGame",
@@ -95,7 +104,10 @@
       "gamePlatform": ["Web browser", "Mobile", "Desktop"],
       "applicationCategory": "GameApplication",
       "isAccessibleForFree": true,
-      "inLanguage": "en"
+      "inLanguage": "en",
+      "description": "Real-time 1v1 mode: two tilcayo cats share one 5×5 lawn, 60-second rounds, best of three, no power-ups, first tap wins the mouse, porcupine costs 15 points. Quick match or private room code, global ranking.",
+      "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD", "availability": "https://schema.org/InStock" },
+      "publisher": { "@id": "https://tilcayo.cat/#organization" }
     }
   ]
 }
@@ -211,7 +223,7 @@
             <h2 id="sealsTitle" class="seals__title">Seals <span id="sealsCount" class="seals__count">0/6</span></h2>
             <ul id="sealsList" class="seals__list"></ul>
           </section>
-          <a class="link-btn" href="/">← Solo mode</a>
+          <nav class="overlay__links" aria-label="More"><a class="link-btn" href="/">← Solo mode</a><a class="link-btn" href="/how-to-play#1v1-online">Rules</a></nav>
         </div>
         <!-- waiting -->
         <div id="panelWait" class="panel" hidden>

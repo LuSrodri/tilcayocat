@@ -10,7 +10,9 @@ export default defineConfig({
       input: {
         main: resolve(__dirname, "index.html"),
         about: resolve(__dirname, "about.html"),
-        play: resolve(__dirname, "play.html")
+        play: resolve(__dirname, "play.html"),
+        howToPlay: resolve(__dirname, "how-to-play.html"),
+        catGames: resolve(__dirname, "cat-games.html")
       }
     }
   }

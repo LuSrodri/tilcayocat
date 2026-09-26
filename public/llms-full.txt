@@ -1,40 +1,54 @@
 # Tilcayo Cat Game — A New Cat Discovered After 100+ Years
 
-> Tilcayo Cat Game (https://tilcayo.cat) is a free, mobile-first browser game in which the player is a tilcayo cat (Leopardus tilcayo) sitting on a lawn and catching mice that pop out of their holes. The core rule: the player must never go more than 5 seconds without catching a mouse, or the game ends.
+> Tilcayo Cat Game (https://tilcayo.cat) is a free, mobile-first browser game in which the player is a tilcayo cat (Leopardus tilcayo) sitting on a lawn and catching mice that pop out of their holes. The core rule: the player must never go more than 5 seconds without catching a mouse, or the game ends. The site also carries a sourced profile of the real tilcayo cat, the first new wild cat species described in more than 100 years.
+
+Last updated: 2026-09-25
 
 ## The game
 
-- Genre: arcade / reflex (whack-a-mole style), single player, free, no account, no ads.
-- Platform: any modern web browser; designed for phones first, also works on desktop with the mouse.
+- Genre: arcade / reflex (whack-a-mole style). Solo mode plus a 1v1 online mode. Free, no account, no install; the site shows ads.
+- Platform: any modern web browser; designed for phones first, also works on desktop with the mouse (Space starts a round). Can be added to the home screen as a web app.
 - Rules: the lawn starts as a 2×2 grid of holes and grows (3×3 at 10 s, 4×4 at 35 s, 5×5 at 75 s); mice speed up 10% at 25 s, 60 s and then every 15 s after 5×5. Tap a mouse to catch it (+1). You start with 5 seconds; every catch adds 0.8 seconds (capped at 5) and slapping an empty hole costs 0.3 seconds. A porcupine pokes out now and then: slap it and you lose 2 seconds (solo) or 15 points (1v1, never below 0). Mice stay up for less time and appear more often as the speed multiplier grows. Best score is stored locally on the device.
 - Power-ups pop out of holes now and then: Auto-catch (the cat catches every mouse automatically for 6 s), Full time (clock refilled to 5 s) and Freeze (clock, mice and spawns paused for 4 s).
-- Achievement seals: six collectible wax seals, kept on the device — Quick Paws (30 mice in one round), Night Watch (survive 90 seconds), Clean Paws (20 catches in a round with no empty slap and no porcupine), Power Hoarder (collect 6 power-ups), No Escape (12 catches in a row without a mouse escaping) and Lawn Duelist (win a 1v1 online match). They are shown on the start screen and in the 1v1 lobby.
-- A live counter on the start screen and in the 1v1 lobby shows how many people have the game open right now (a Cloudflare Durable Object holds one WebSocket per open page).
-- The ⓘ button opens https://tilcayo.cat/about, a page about the real tilcayo cat with photos, facts, sources and a donation link.
+- Combos: catches less than 1.5 s apart chain into a combo; callouts at 5, 10, 15, 20 and 30; 10+ turns on "frenzy". An escape, an empty slap or a porcupine breaks it.
+- Hunter ranks (mice caught in one round): Sleepy Kitten (0), Curious Cub (5), Lawn Prowler (12), Night Hunter (20), Shadow Stalker (30), Yungas Legend (45), Mythic Tilcayo (65). Days played in a row count as a streak.
+- Achievement seals: six collectible wax seals, kept on the device — Quick Paws (30 mice in one round), Night Watch (survive 90 seconds), Clean Paws (20 catches in a round with no empty slap and no porcupine), Power Hoarder (collect 6 power-ups), No Escape (12 catches in a row without a mouse escaping) and Lawn Duelist (win a 1v1 online match).
+- Sharing: after a round, "Share my card" draws a 1080×1350 score card (score, rank, time, best combo, seals) and a challenge link such as https://tilcayo.cat/?beat=42; the friend's start screen then reads "Beat 42 mice" and the link preview shows the sharer's rank card.
+- A live counter on the start screen and in the 1v1 lobby shows how many people have the game open right now.
+
+## 1v1 online (https://tilcayo.cat/play)
+
+- Two players share one 5×5 lawn. 60-second rounds, best of three, no power-ups. The first tap on a mouse wins it; a porcupine costs 15 points.
+- Quick match pairs you with a random player; Create room gives a five-letter code to share with a friend.
+- Match wins feed a global "Top tilcayos" ranking.
 
 ## About the tilcayo cat (Leopardus tilcayo)
 
-- The first new wild cat species described in more than 100 years; formally described in September 2026 in the journal Current Biology (https://www.cell.com/current-biology/fulltext/S0960-9822(26)01110-3).
-- A tiger cat (genus Leopardus) native to the Bolivian Yungas cloud forest, on the eastern slopes of the Andes.
-- Smaller than a domestic cat: about 45 cm (18 in) head-to-body and roughly 1.3 kg (3 lb).
+- Full name: Leopardus tilcayo Nogales-Ascarrunz, Aliaga-Rossel, Lescroart & Eizirik, 2026. Pronounced "til-KYE-oh".
+- The first new wild cat species described in more than 100 years — the first since the Pampas cat in 1923.
+- Described in September 2026: Lescroart et al., "Phylogenomics and museomics reveal five distinct species of tiger cats in South America", Current Biology, doi:10.1016/j.cub.2026.08.059 (https://www.cell.com/current-biology/fulltext/S0960-9822(26)01110-3).
+- A tiger cat (genus Leopardus, family Felidae) native to the Bolivian Yungas cloud forest, on the eastern slopes of the Andes.
+- Smaller than a domestic cat: about 45 cm (18 in) head-to-body, a tail of about 25–26.5 cm, and roughly 1.3 kg (3 lb).
 - Rust-orange coat with large leopard-like rosettes, two dark stripes down the forehead, a longer and more slender tail and muted fur colour compared with the oncilla (northern tiger cat).
 - Diverged from its closest tiger-cat relative around 1.4 million years ago.
-- Only one individual is known: a ten-year-old male living at the Senda Verde Animal Refuge (Yungas, Bolivia), handed over by a local family around 2017.
-- Identified by wild-cat conservationist and National Geographic Explorer Paola Nogales Ascarrunz with co-lead author Jonas Lescroart (University of Antwerp) and Eduardo Eizirik (PUCRS, Brazil), from a genomic study of 38 cats including 26 tiger cats that split the tiger cats into at least five species.
-- "Tilcayo" is the name local communities already used for the cat; the scientists kept it to honour that knowledge.
+- Only one individual is known: a ten-year-old male living at the Senda Verde Animal Refuge (Yungas, Bolivia), handed over by a local family around 2017. Researchers are placing camera traps across the Yungas to find wild tilcayos.
+- Conservation status: not yet assessed by the IUCN.
+- Identified by wild-cat conservationist and National Geographic Explorer Paola Nogales-Ascarrunz with co-lead author Jonas Lescroart (University of Antwerp) and Eduardo Eizirik (PUCRS, Brazil), from a genomic study of 38 cats including 26 tiger cats that split the tiger cats into at least five species.
+- "Tilcayo" is the name local communities in the Yungas already used for the cat; the scientists kept it to honour that knowledge.
+- Identifiers: Wikipedia https://en.wikipedia.org/wiki/Tilcayo · Wikidata https://www.wikidata.org/wiki/Q141490808 · Wikispecies https://species.wikimedia.org/wiki/Leopardus_tilcayo · iNaturalist https://www.inaturalist.org/taxa/1712052
 
-## Sources
+## Compared with other cat games
 
-- BBC Discover Wildlife: https://www.discoverwildlife.com/animal-facts/mammals/tilcayo-cat-bolivian-yungus
-- Scientific American: https://www.scientificamerican.com/article/see-the-first-new-species-of-cat-discovered-in-more-than-a-century-its-adorable/
+Full article: https://tilcayo.cat/cat-games (written by the makers of Tilcayo Cat Game; details from each game's page, checked 2026-09-25). All are free browser games for desktop and mobile.
 
-## Site
+- Tilcayo Cat Game (tilcayo.cat): arcade / reflex, tap or click, 1 player or 2 online — best for quick score-chasing rounds and 1v1.
+- Cat Simulator (Critters Studio, Poki): simulation sandbox, keyboard, 1 player — best for exploring and causing chaos.
+- Kitty Loves Birds (Claudiu V, Poki): platformer, keyboard, 1 player — best classic level-by-level platforming.
+- Flip Pounce (Finz Games, Poki): one-tap skill game, 1 player — best for short levels with a single input.
+- Longcat (Fancade, Poki and app stores): puzzle, 1900+ levels, 1 player — best calm puzzle campaign.
+- Yeetcat (Bëor Games, CrazyGames): clicker / physics launcher with upgrades, 1 player — best idle upgrade loop.
 
-- Home / play solo: https://tilcayo.cat/
-- 1v1 online: https://tilcayo.cat/play (two players share one 5×5 lawn, 60-second rounds, best of three, quick match or private room code, global ranking)
-- About the tilcayo cat: https://tilcayo.cat/about
-- Sitemap: https://tilcayo.cat/sitemap.xml
-- Social preview image: https://tilcayo.cat/tilcayo-cat-og-v2.jpg
+Tilcayo Cat Game is a game for people, not a "game for cats" (videos/apps made for pet cats to paw at a screen).
 
 ## Frequently asked questions
 
@@ -42,22 +56,44 @@ Q: What is the Tilcayo Cat Game?
 A: A free, mobile-first browser game at https://tilcayo.cat where you play as the tilcayo cat, a new wild cat species discovered after more than 100 years. Mice pop out of holes on a moonlit lawn that grows from 2×2 to 5×5; tap them to catch them. You start with 5 seconds, each catch adds 0.8 seconds (capped at 5), and the round ends when the timer hits zero.
 
 Q: Is the tilcayo cat real?
-A: Yes. Leopardus tilcayo was formally described in September 2026 in Current Biology by an international team including Paola Nogales Ascarrunz, Jonas Lescroart and Eduardo Eizirik. It lives in the Bolivian Yungas cloud forest.
+A: Yes. Leopardus tilcayo was formally described in September 2026 in Current Biology by an international team including Paola Nogales-Ascarrunz, Jonas Lescroart and Eduardo Eizirik. It lives in the Bolivian Yungas cloud forest.
+
+Q: Is the tilcayo cat endangered?
+A: Unknown. It has not been assessed by the IUCN and only one individual is known.
+
+Q: What is a good score?
+A: 20 mice reaches Night Hunter, 45 reaches Yungas Legend and 65 or more is the top rank, Mythic Tilcayo.
 
 Q: Why is the game set at night?
 A: Tiger cats such as the tilcayo are mostly nocturnal, so the lawn is lit by the moon.
 
 Q: How do I play on a computer?
-A: Click the mice with the mouse; the 5×5 grid scales to the window.
+A: Press Space to start and click the mice with the mouse; the grid scales to the window.
 
 Q: Does the game have sound?
 A: Yes: synthesized sound effects and a short looping chiptune, with a mute toggle in the top bar.
 
+## Site
+
+- Home / play solo: https://tilcayo.cat/
+- How to play: https://tilcayo.cat/how-to-play
+- About the tilcayo cat: https://tilcayo.cat/about
+- 1v1 online: https://tilcayo.cat/play
+- Sitemap: https://tilcayo.cat/sitemap.xml
+- Social preview image: https://tilcayo.cat/tilcayo-cat-og-v2.jpg
+
 ## Support and contact
 
-- The only known tilcayo in captivity lives at Senda Verde Animal Refuge (Yungas, Bolivia), the cat that led scientists to the species. Donations: https://sendaverde.org/donate/
+- The only known tilcayo lives at Senda Verde Animal Refuge (Yungas, Bolivia), the cat that led scientists to the species. Donations: https://sendaverde.org/donate/
 - Contact for the game: rodrigueslucass@outlook.com.br
+
+## Sources
+
+- Current Biology (2026): https://www.cell.com/current-biology/fulltext/S0960-9822(26)01110-3
+- BBC Discover Wildlife: https://www.discoverwildlife.com/animal-facts/mammals/tilcayo-cat-bolivian-yungus
+- Scientific American: https://www.scientificamerican.com/article/see-the-first-new-species-of-cat-discovered-in-more-than-a-century-its-adorable/
+- Wikipedia: https://en.wikipedia.org/wiki/Tilcayo
 
 ## Citation
 
-Tilcayo Cat Game. https://tilcayo.cat (2026). Species facts summarised from Current Biology (2026), BBC Discover Wildlife and Scientific American.
+Tilcayo Cat Game. https://tilcayo.cat (2026). Species facts summarised from Current Biology (2026), BBC Discover Wildlife, Scientific American and Wikipedia.

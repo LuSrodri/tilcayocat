@@ -65,6 +65,6 @@ npm run deploy   # wrangler deploy
 | `npm run social` | regenerate the Open Graph card, the per-rank challenge cards and the share-card backdrop from `art-src/keyart.png` and `art-src/card-bg.png` |
 | `npm run deploy` | build and publish to Cloudflare Pages |
 
-## SEO / GEO
+## SEO / GEO / AEO
 
-`index.html` carries canonical, Open Graph, Twitter card, geo and theme metadata plus a JSON-LD graph (WebSite, Organization, VideoGame/WebApplication, Taxon, FAQPage). `public/` adds `robots.txt`, `sitemap.xml`, `llms.txt`, `humans.txt`, a web manifest and Cloudflare `_headers` (security + caching). The www → apex redirect is a zone Redirect Rule.
+Every page carries canonical, Open Graph, X card and a JSON-LD graph sharing `@id`s across pages: WebSite, Organization and VideoGame on `/`; VideoGame (1v1) and BreadcrumbList on `/play`; Taxon (with `sameAs` to Wikipedia, Wikidata, iNaturalist, ZooBank), ScholarlyArticle and FAQPage on `/about`; FAQPage and the ranks ItemList on `/how-to-play`; Article, an ItemList of VideoGames and FAQPage on `/cat-games` (comparison with other cat browser games — re-check the other games' pages before editing it). FAQ markup always mirrors a visible FAQ on the same page. `public/` adds `robots.txt` (search and AI crawlers allowed, `/mp/` excluded), `sitemap.xml`, `llms.txt` / `llms-full.txt`, `humans.txt`, a web manifest and Cloudflare `_headers` (security + caching). The www → apex redirect is a zone Redirect Rule. When game rules or species facts change, update the visible page, its JSON-LD and both `llms` files together.

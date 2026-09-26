@@ -1,43 +1,38 @@
 # Tilcayo Cat Game — A New Cat Discovered After 100+ Years
 
-> Tilcayo Cat Game (https://tilcayo.cat) is a free, mobile-first browser game in which the player is a tilcayo cat (Leopardus tilcayo) sitting on a lawn and catching mice that pop out of their holes. The core rule: the player must never go more than 5 seconds without catching a mouse, or the game ends.
+> Tilcayo Cat Game (https://tilcayo.cat) is a free, mobile-first browser game in which the player is a tilcayo cat (Leopardus tilcayo) catching mice that pop out of holes on a moonlit lawn. The core rule: never go more than 5 seconds without catching a mouse, or the round ends. The site also has a sourced profile of the real tilcayo cat, the first new wild cat species described in more than 100 years (September 2026).
 
-## The game
+Last updated: 2026-09-25
 
-- Genre: arcade / reflex (whack-a-mole style), single player, free, no account, no ads.
-- Platform: any modern web browser; designed for phones first, also works on desktop with the mouse.
-- Rules: the lawn starts as a 2×2 grid of holes and grows (3×3 at 10 s, 4×4 at 35 s, 5×5 at 75 s); mice speed up 10% at 25 s, 60 s and then every 15 s after 5×5. Tap a mouse to catch it (+1). You start with 5 seconds; every catch adds 0.8 seconds (capped at 5) and slapping an empty hole costs 0.3 seconds. A porcupine pokes out now and then: slap it and you lose 2 seconds (solo) or 15 points (1v1, never below 0). Mice stay up for less time and appear more often as the speed multiplier grows. Best score is stored locally on the device.
-- Power-ups pop out of holes now and then: Auto-catch (the cat catches every mouse automatically for 6 s), Full time (clock refilled to 5 s) and Freeze (clock, mice and spawns paused for 4 s).
-- Achievement seals: six collectible wax seals, kept on the device — Quick Paws (30 mice in one round), Night Watch (survive 90 seconds), Clean Paws (20 catches in a round with no empty slap and no porcupine), Power Hoarder (collect 6 power-ups), No Escape (12 catches in a row without a mouse escaping) and Lawn Duelist (win a 1v1 online match). They are shown on the start screen and in the 1v1 lobby.
-- A live counter on the start screen and in the 1v1 lobby shows how many people have the game open right now (a Cloudflare Durable Object holds one WebSocket per open page).
-- The ⓘ button opens https://tilcayo.cat/about, a page about the real tilcayo cat with photos, facts, sources and a donation link.
+## Pages
 
-## About the tilcayo cat (Leopardus tilcayo)
+- [Play solo](https://tilcayo.cat/): the game itself, start screen with rules, seals and a live count of players online
+- [How to play](https://tilcayo.cat/how-to-play): full rules, power-ups, porcupine, combos, the 7 hunter ranks, the 6 seals, 1v1 rules, tips and FAQ
+- [About the tilcayo cat](https://tilcayo.cat/about): facts, photos, discovery story, FAQ, sources and a donation link for the only known tilcayo's refuge
+- [Cat games compared](https://tilcayo.cat/cat-games): Tilcayo Cat Game vs Cat Simulator, Kitty Loves Birds, Flip Pounce, Longcat and Yeetcat — genre, controls, multiplayer, who each is for
+- [1v1 online](https://tilcayo.cat/play): two players, one shared 5×5 lawn, 60-second rounds, best of three, global ranking
+- [Full text for LLMs](https://tilcayo.cat/llms-full.txt): everything above in one file
 
-- The first new wild cat species described in more than 100 years; formally described in September 2026 in the journal Current Biology (https://www.cell.com/current-biology/fulltext/S0960-9822(26)01110-3).
-- A tiger cat (genus Leopardus) native to the Bolivian Yungas cloud forest, on the eastern slopes of the Andes.
-- Smaller than a domestic cat: about 45 cm (18 in) head-to-body and roughly 1.3 kg (3 lb).
-- Rust-orange coat with large leopard-like rosettes, two dark stripes down the forehead, a longer and more slender tail and muted fur colour compared with the oncilla (northern tiger cat).
-- Diverged from its closest tiger-cat relative around 1.4 million years ago.
-- Only one individual is known: a ten-year-old male living at the Senda Verde Animal Refuge (Yungas, Bolivia), handed over by a local family around 2017.
-- Identified by wild-cat conservationist and National Geographic Explorer Paola Nogales Ascarrunz with co-lead author Jonas Lescroart (University of Antwerp) and Eduardo Eizirik (PUCRS, Brazil), from a genomic study of 38 cats including 26 tiger cats that split the tiger cats into at least five species.
-- "Tilcayo" is the name local communities already used for the cat; the scientists kept it to honour that knowledge.
+## The game in brief
 
-## Support and contact
+- Genre: arcade / reflex (whack-a-mole style). Free, no account, no install; ad-supported. Works on phones, tablets and desktop browsers.
+- Clock: start with 5 s; each catch +0.8 s (capped at 5 s); empty slap −0.3 s; porcupine −2 s (−15 points in 1v1).
+- Lawn grows 2×2 → 3×3 (10 s) → 4×4 (35 s) → 5×5 (75 s); mice speed up 10% at 25 s, 60 s, then every 15 s on 5×5.
+- Power-ups: Auto-catch (6 s of automatic catches), Full time (clock back to 5 s), Freeze (everything paused 4 s).
+- Combos: catches under 1.5 s apart chain; 10+ is "frenzy".
+- Hunter ranks by mice in one round: Sleepy Kitten 0, Curious Cub 5, Lawn Prowler 12, Night Hunter 20, Shadow Stalker 30, Yungas Legend 45, Mythic Tilcayo 65.
+- Sharing: a score card image plus a challenge link (https://tilcayo.cat/?beat=42) that shows friends the score to beat.
 
-- Donate to Senda Verde Animal Refuge, home of the only known tilcayo: https://sendaverde.org/donate/
-- Contact: rodrigueslucass@outlook.com.br
+## The real tilcayo cat in brief
 
-## Sources
+- Leopardus tilcayo Nogales-Ascarrunz, Aliaga-Rossel, Lescroart & Eizirik, 2026 — a tiger cat (genus Leopardus) from the Bolivian Yungas cloud forest.
+- First new wild cat species described since the Pampas cat in 1923.
+- Described in Lescroart et al., "Phylogenomics and museomics reveal five distinct species of tiger cats in South America", Current Biology (2026), doi:10.1016/j.cub.2026.08.059.
+- About 45 cm head-to-body, 25 cm tail, 1.3 kg — smaller than a house cat. Rust-orange coat, large rosettes, two dark forehead stripes.
+- Only one known individual: a ten-year-old male at Senda Verde Animal Refuge, Bolivia. Not yet assessed by the IUCN.
+- Identifiers: Wikipedia https://en.wikipedia.org/wiki/Tilcayo · Wikidata Q141490808 · iNaturalist 1712052.
 
-- BBC Discover Wildlife: https://www.discoverwildlife.com/animal-facts/mammals/tilcayo-cat-bolivian-yungus
-- Scientific American: https://www.scientificamerican.com/article/see-the-first-new-species-of-cat-discovered-in-more-than-a-century-its-adorable/
+## Contact
 
-## Site
-
-- Home / play solo: https://tilcayo.cat/
-- 1v1 online: https://tilcayo.cat/play (two players share one 5×5 lawn, 60-second rounds, best of three, quick match or private room code, global ranking)
-- About the tilcayo cat: https://tilcayo.cat/about
-- Sitemap: https://tilcayo.cat/sitemap.xml
-- Social preview image: https://tilcayo.cat/tilcayo-cat-og-v2.jpg
-- Full version of this file: https://tilcayo.cat/llms-full.txt
+- rodrigueslucass@outlook.com.br
+- Donate to Senda Verde Animal Refuge: https://sendaverde.org/donate/

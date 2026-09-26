@@ -809,6 +809,7 @@ body {
 .btn--primary:hover { filter: brightness(1.08); }
 .btn--primary:active { box-shadow: 0 2px 0 #8a4418; transform: translateY(4px); }
 
+.overlay__links { display: flex; flex-wrap: wrap; justify-content: center; column-gap: 4px; }
 .link-btn {
   appearance: none;
   border: 0;
@@ -986,7 +987,22 @@ body.page {
 }
 .about__latin { margin: 6px 0 0; color: var(--ink-soft); font-size: 15px; }
 .about__lead { font-size: 17px; }
-.about h3 { margin: 26px 0 8px; font-family: var(--font-display); font-size: 16px; font-weight: 700; color: var(--teal); }
+.about-page h2 { margin: 28px 0 8px; font-family: var(--font-display); font-size: 17px; font-weight: 700; color: var(--teal); }
+.about-page h3 { margin: 18px 0 6px; font-size: 15px; font-weight: 700; color: var(--ink); }
+.crumbs { margin: 0 0 12px; font-size: 13px; color: var(--ink-soft); }
+.about-page .crumbs a { color: var(--ink-soft); }
+.about__updated { margin: 4px 0 0; font-size: 12px; color: var(--ink-soft); }
+.table-wrap { overflow-x: auto; margin: 0 0 14px; }
+.table-wrap .table { margin: 0; min-width: 640px; }
+.table { width: 100%; border-collapse: collapse; margin: 0 0 14px; font-size: 14px; }
+.table th, .table td { padding: 8px 10px; text-align: left; border-bottom: 1px solid var(--line); vertical-align: top; }
+.table thead th { font-size: 12px; text-transform: uppercase; letter-spacing: .04em; color: var(--ink-soft); }
+.table tbody th { font-weight: 700; white-space: nowrap; }
+.faq { display: grid; gap: 8px; margin: 0 0 12px; }
+.faq details { border: 1px solid var(--line); border-radius: 12px; padding: 10px 14px; background: rgba(255, 255, 255, .03); }
+.faq summary { cursor: pointer; font-weight: 700; }
+.faq details p { margin: 8px 0 0; }
+.about-page code, .about-page kbd { font-size: .92em; padding: 1px 5px; border-radius: 5px; background: var(--paper-2); }
 .about p, .about-page p { margin: 0 0 12px; }
 .facts, .sources { padding-left: 20px; margin: 0 0 12px; }
 .facts li, .sources li { margin-bottom: 8px; }
@@ -1025,7 +1041,7 @@ body.page {
   background: linear-gradient(135deg, rgba(255, 159, 46, .18), rgba(255, 95, 184, .12));
   border: 1px solid rgba(255, 159, 46, .4);
 }
-.donate h3 { margin: 0 0 6px; color: var(--gold); }
+.donate h2 { margin: 0 0 6px; color: var(--gold); }
 .donate p { margin: 0 0 12px; }
 .about-page .donate__btn { color: #1a0d05; text-decoration: none; padding-inline: 26px; font-size: 14px; }
 
