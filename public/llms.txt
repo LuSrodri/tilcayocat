@@ -11,6 +11,7 @@ Last updated: 2026-09-25
 - [About the tilcayo cat](https://tilcayo.cat/about): facts, photos, discovery story, FAQ, sources and a donation link for the only known tilcayo's refuge
 - [Cat games compared](https://tilcayo.cat/cat-games): Tilcayo Cat Game vs Cat Simulator, Kitty Loves Birds, Flip Pounce, Longcat and Yeetcat — genre, controls, multiplayer, who each is for
 - [1v1 online](https://tilcayo.cat/play): two players, one shared 5×5 lawn, 60-second rounds, best of three, global ranking
+- [Terms & Conditions](https://tilcayo.cat/terms) and [Privacy Policy](https://tilcayo.cat/privacy)
 - [Full text for LLMs](https://tilcayo.cat/llms-full.txt): everything above in one file
 
 ## The game in brief

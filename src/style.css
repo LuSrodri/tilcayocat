@@ -809,6 +809,8 @@ body {
 .btn--primary:hover { filter: brightness(1.08); }
 .btn--primary:active { box-shadow: 0 2px 0 #8a4418; transform: translateY(4px); }
 
+.legal { margin: 0; font-size: 11px; color: var(--ink-soft); }
+.legal a { color: var(--ink-soft); }
 .overlay__links { display: flex; flex-wrap: wrap; justify-content: center; column-gap: 4px; }
 .link-btn {
   appearance: none;

@@ -12,7 +12,9 @@ export default defineConfig({
         about: resolve(__dirname, "about.html"),
         play: resolve(__dirname, "play.html"),
         howToPlay: resolve(__dirname, "how-to-play.html"),
-        catGames: resolve(__dirname, "cat-games.html")
+        catGames: resolve(__dirname, "cat-games.html"),
+        terms: resolve(__dirname, "terms.html"),
+        privacy: resolve(__dirname, "privacy.html")
       }
     }
   }
