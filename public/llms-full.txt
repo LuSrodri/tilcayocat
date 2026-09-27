@@ -8,17 +8,18 @@ Last updated: 2026-09-25
 
 - Genre: arcade / reflex (whack-a-mole style). Solo mode plus a 1v1 online mode. Free, no account, no install; the site shows ads.
 - Platform: any modern web browser; designed for phones first, also works on desktop with the mouse (Space starts a round). Can be added to the home screen as a web app.
-- Rules: the lawn starts as a 2×2 grid of holes and grows (3×3 at 10 s, 4×4 at 35 s, 5×5 at 75 s); mice speed up 10% at 25 s, 60 s and then every 15 s after 5×5. Tap a mouse to catch it (+1). You start with 5 seconds; every catch adds 0.8 seconds (capped at 5) and slapping an empty hole costs 0.3 seconds. A porcupine pokes out now and then: slap it and you lose 2 seconds (solo) or 15 points (1v1, never below 0). Mice stay up for less time and appear more often as the speed multiplier grows. Best score is stored locally on the device.
+- Rules: a 3D lawn at dusk. It starts with 4 holes and a new one opens every 4.5 seconds, middle first, until all 25 are dug; a bar at the top shows when. Mice speed up smoothly (about 10% every 30 s). Tap a mouse to catch it (+1): the cat swipes its paw down on it. You start with 5 seconds; every catch adds 0.8 seconds (capped at 5) and slapping an empty hole costs 0.3 seconds. A porcupine pokes out now and then, and a green snake that stays up longer and eats any mouse that pops out right next to it. Slapping either makes the cat lick its paw and stop hunting: 2 s for the porcupine, 3 s for the snake (solo and 1v1).
+- Daily Challenge: every day has a mouse of the day, one of 100 fancy mice (10 hats × 10 accessories) that cycle every 100 days. After every 10 mice caught it appears and hops between holes. Catch 10 of it in one round to finish the challenge and add it to the album; the full album earns the Mouse Collector seal. A tilcayo fact (25 in all) is shown after each round. Mice stay up for less time and appear more often as the speed multiplier grows. Best score is stored locally on the device.
 - Power-ups pop out of holes now and then: Auto-catch (the cat catches every mouse automatically for 6 s), Full time (clock refilled to 5 s) and Freeze (clock, mice and spawns paused for 4 s).
-- Combos: catches less than 1.5 s apart chain into a combo; callouts at 5, 10, 15, 20 and 30; 10+ turns on "frenzy". An escape, an empty slap or a porcupine breaks it.
+- Combos: catches less than 1.5 s apart chain into a combo; callouts at 5, 10, 15, 20 and 30; 10+ turns on "frenzy". An escape, an empty slap, a porcupine or a snake breaks it.
 - Hunter ranks (mice caught in one round): Sleepy Kitten (0), Curious Cub (5), Lawn Prowler (12), Night Hunter (20), Shadow Stalker (30), Yungas Legend (45), Mythic Tilcayo (65). Days played in a row count as a streak.
-- Achievement seals: six collectible wax seals, kept on the device — Quick Paws (30 mice in one round), Night Watch (survive 90 seconds), Clean Paws (20 catches in a round with no empty slap and no porcupine), Power Hoarder (collect 6 power-ups), No Escape (12 catches in a row without a mouse escaping) and Lawn Duelist (win a 1v1 online match).
-- Sharing: after a round, "Share my card" draws a 1080×1350 score card (score, rank, time, best combo, seals) and a challenge link such as https://tilcayo.cat/?beat=42; the friend's start screen then reads "Beat 42 mice" and the link preview shows the sharer's rank card.
+- Achievement seals: seven collectible wax seals, kept on the device — Quick Paws (30 mice in one round), Night Watch (survive 90 seconds), Clean Paws (20 catches in a round with no empty slap and no porcupine), Power Hoarder (collect 6 power-ups), No Escape (12 catches in a row without a mouse escaping) Lawn Duelist (win a 1v1 online match) and Mouse Collector (finish all 100 daily challenges).
+- Sharing: after a round, "Share" copies a Wordle-style result: points, one 🐭 per mouse of the day caught out of 10, and the time. Older challenge links such as https://tilcayo.cat/?beat=42 still show the score to beat.
 - A live counter on the start screen and in the 1v1 lobby shows how many people have the game open right now.
 
 ## 1v1 online (https://tilcayo.cat/play)
 
-- Two players share one 5×5 lawn. 60-second rounds, best of three, no power-ups. The first tap on a mouse wins it; a porcupine costs 15 points.
+- Two players share one 5×5 lawn. 60-second rounds, best of three, no power-ups. The first tap on a mouse wins it; the mouse of the day is worth 3; a porcupine or snake makes that player's cat lick its paw for 2 or 3 s.
 - Quick match pairs you with a random player; Create room gives a five-letter code to share with a friend.
 - Match wins feed a global "Top tilcayos" ranking.
 
@@ -53,7 +54,7 @@ Tilcayo Cat Game is a game for people, not a "game for cats" (videos/apps made f
 ## Frequently asked questions
 
 Q: What is the Tilcayo Cat Game?
-A: A free, mobile-first browser game at https://tilcayo.cat where you play as the tilcayo cat, a new wild cat species discovered after more than 100 years. Mice pop out of holes on a moonlit lawn that grows from 2×2 to 5×5; tap them to catch them. You start with 5 seconds, each catch adds 0.8 seconds (capped at 5), and the round ends when the timer hits zero.
+A: A free, mobile-first browser game at https://tilcayo.cat where you play as the tilcayo cat, a new wild cat species discovered after more than 100 years. Mice pop out of holes on a 3D lawn that grows from 4 to 25 holes; tap them to catch them. You start with 5 seconds, each catch adds 0.8 seconds (capped at 5), and the round ends when the timer hits zero.
 
 Q: Is the tilcayo cat real?
 A: Yes. Leopardus tilcayo was formally described in September 2026 in Current Biology by an international team including Paola Nogales-Ascarrunz, Jonas Lescroart and Eduardo Eizirik. It lives in the Bolivian Yungas cloud forest.

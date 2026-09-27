@@ -9,7 +9,7 @@
   <meta name="author" content="tilcayo.cat">
   <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
   <meta name="googlebot" content="index, follow">
-  <meta name="theme-color" content="#0a0e1c">
+  <meta name="theme-color" content="#2a1f33">
   <meta name="color-scheme" content="dark">
   <meta name="application-name" content="Tilcayo Cat">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -29,16 +29,11 @@
 
   <meta name="google-adsense-account" content="ca-pub-4463881368194285">
   <!-- AdSense only on tilcayo.cat itself: portals that embed the game (CrazyGames) allow only their own SDK ads. -->
-  <script>if (window.top === window.self) { const s = document.createElement("script"); s.async = true; s.crossOrigin = "anonymous"; s.src = "https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4463881368194285"; document.head.appendChild(s); }</script>
+  <script>if (window.top === window.self) { const ads = () => { const s = document.createElement("script"); s.async = true; s.crossOrigin = "anonymous"; s.src = "https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4463881368194285"; document.head.appendChild(s); }; const later = () => setTimeout(() => ("requestIdleCallback" in window ? requestIdleCallback(ads, { timeout: 3000 }) : ads()), 1500); if (document.readyState === "complete") later(); else addEventListener("load", later, { once: true }); }</script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,500;12..96,700&family=Unbounded:wght@600;800&display=swap">
-  <link rel="preload" as="image" href="/img/cat.webp" type="image/webp" fetchpriority="high">
-  <link rel="preload" as="image" href="/img/cat-catch.webp" type="image/webp">
-  <link rel="preload" as="image" href="/img/cat-angry.webp" type="image/webp">
-  <link rel="preload" as="image" href="/img/paw.webp" type="image/webp">
-  <link rel="preload" as="image" href="/img/hole-back.webp" type="image/webp">
-  <link rel="preload" as="image" href="/img/hole-front.webp" type="image/webp">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,500;12..96,700&family=Fredoka:wght@500;600;700&display=swap" media="print" onload="this.media='all'">
+  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,500;12..96,700&family=Fredoka:wght@500;600;700&display=swap"></noscript>
   <link rel="canonical" href="https://tilcayo.cat/">
   <link rel="alternate" hreflang="en" href="https://tilcayo.cat/">
   <link rel="alternate" hreflang="x-default" href="https://tilcayo.cat/">
@@ -163,7 +158,7 @@
       "alternateName": "Tilcayo Cat Game",
       "url": "https://tilcayo.cat/",
       "image": "https://tilcayo.cat/tilcayo-cat-og-v2.jpg",
-      "description": "Free browser game starring the tilcayo cat (Leopardus tilcayo), the first new wild cat species in over 100 years. Tap the mice as they pop out of a lawn that grows from 2×2 to 5×5 holes, grab power-ups (auto-catch, full time, freeze), dodge the porcupine, chain combos and climb 7 hunter ranks before the 5-second clock runs out. Includes a 1v1 online mode.",
+      "description": "Free browser game starring the tilcayo cat (Leopardus tilcayo), the first new wild cat species in over 100 years. Tap the mice on a cozy 3D lawn that grows from 4 to 25 holes, catch the mouse of the day for the Daily Challenge, dodge the porcupine and the green snake, grab power-ups and climb 7 hunter ranks before the 5-second clock runs out. Includes a 1v1 online mode.",
       "genre": [
         "Arcade",
         "Casual",
@@ -222,144 +217,123 @@
 }
   </script>
 </head>
-<body>
+<body class="game">
   <noscript>
     <p class="noscript">Tilcayo Cat needs JavaScript to run. Enable it to play — or read <a href="/how-to-play">how to play</a> and <a href="/about">about the tilcayo cat</a>, the first new wild cat species in over a century.</p>
   </noscript>
 
   <main id="app" class="app">
-    <header class="hud" aria-label="Game status">
-      <div class="hud__row">
-        <div class="hud__score">
-          <span class="hud__label">Mice</span>
-          <span id="score" class="hud__value hud__value--score" aria-live="polite">0</span>
-        </div>
-        <div class="hud__best">
-          <span class="hud__label">Best</span>
-          <span id="best" class="hud__value">0</span>
-        </div>
+    <div class="topbar">
+    <header id="hud" class="hud" aria-label="Game status">
+      <div class="hud__main">
+        <span id="score" class="hud__score" aria-live="polite">0</span>
+        <span class="hud__unit">mice</span>
       </div>
-      <div class="hud__stage"><span class="hud__label">Lawn · speed</span><span id="stage" class="hud__stage-value">2×2 · ×1.00</span></div>
       <div class="hud__timer" role="timer" aria-label="Time left to catch the next mouse">
-        <div id="timerBar" class="timer"><div id="timerFill" class="timer__fill"></div><div class="timer__shine"></div></div>
-        <span id="timerText" class="timer__text">5.0s</span>
+        <div id="timerBar" class="timer"><div id="timerFill" class="timer__fill"></div></div>
       </div>
+      <div id="hudDaily" class="hud__daily" hidden><img id="hudDailyImg" alt="" width="22" height="22"><b id="hudDailyNum">0</b>/10</div>
       <div id="powerBadge" class="power-badge" data-kind="" hidden aria-live="polite">
         <span id="powerRing" class="power-badge__ring" style="--p:1"><span class="power-badge__icon"></span></span>
-        <span class="power-badge__text"><span id="powerName" class="power-badge__name">Auto-catch</span><span id="powerTime" class="power-badge__time">6s</span></span>
+        <span id="powerTime" class="power-badge__time">6s</span>
       </div>
     </header>
+      <div id="roundBar" class="roundbar" aria-label="Lawn progress">
+      <span class="roundbar__count" title="Open holes"><i aria-hidden="true"></i><b id="holesOpen">4</b></span>
+      <div class="roundbar__track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-label="Progress to the full lawn">
+        <div id="roundFill" class="roundbar__fill"></div>
+        <div id="roundTicks" class="roundbar__ticks" aria-hidden="true"></div>
+      </div>
+      <span id="roundNext" class="roundbar__next">8s</span>
+    </div>
     <div class="hud__actions">
       <button id="soundBtn" class="info-btn" type="button" aria-label="Mute sound" aria-pressed="false">
-        <svg class="ico-on" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4z" fill="currentColor"/><path d="M16 8.5a4.5 4.5 0 0 1 0 7M18.5 6a8 8 0 0 1 0 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-        <svg class="ico-off" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4z" fill="currentColor"/><path d="M16 9l5 6M21 9l-5 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        <svg class="ico-on" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4z" fill="currentColor"/><path d="M16 8.5a4.5 4.5 0 0 1 0 7M18.5 6a8 8 0 0 1 0 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        <svg class="ico-off" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4z" fill="currentColor"/><path d="M16 9l5 6M21 9l-5 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
       </button>
-      <a id="infoBtn" class="info-btn" href="/about" aria-label="About the tilcayo cat">
-        <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="7.5" r="1.4" fill="currentColor"/><path d="M10.5 11h2v6h1.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      </a>
+    </div>
     </div>
 
     <section id="field" class="field" aria-label="Lawn with mouse holes">
-      <div class="sky">
-        <picture class="sky__art">
-          <source media="(max-width: 700px)" srcset="/img/sky-sm.webp" type="image/webp">
-          <source srcset="/img/sky.webp" type="image/webp">
-          <img src="/img/sky.jpg" alt="" width="1800" height="600" decoding="async" fetchpriority="low">
-        </picture>
-        <div class="sky__stars" aria-hidden="true"></div>
-      </div>
-      <div class="lawn">
-        <div class="moonlight" aria-hidden="true"></div>
-        <div class="cloud-shadow" aria-hidden="true"></div>
-        <div id="cat" class="cat" data-state="idle">
-          <span class="cat__shadow" aria-hidden="true"></span>
-          <span class="cat__aura" aria-hidden="true"></span>
-          <picture class="cat__img cat__img--idle">
-            <source srcset="/img/cat.webp" type="image/webp">
-            <img src="/img/cat.png" alt="Tilcayo cat sitting on the grass, watching the mouse holes" width="720" height="1142" draggable="false" fetchpriority="high">
-          </picture>
-          <picture class="cat__img cat__img--catch">
-            <source srcset="/img/cat-catch.webp" type="image/webp">
-            <img src="/img/cat-catch.png" alt="Tilcayo cat holding a caught mouse in its mouth" width="720" height="1126" draggable="false" loading="eager" decoding="async">
-          </picture>
-          <picture class="cat__img cat__img--angry">
-            <source srcset="/img/cat-angry.webp" type="image/webp">
-            <img src="/img/cat-angry.png" alt="Angry tilcayo cat hissing after the mouse escaped" width="720" height="1136" draggable="false" loading="eager" decoding="async">
-          </picture>
-        </div>
-        <div id="holes" class="holes" role="group" aria-label="Mouse holes"></div>
-        <div id="toast" class="toast" data-kind="" aria-hidden="true"></div>
-        <div id="combo" class="combo" data-level="0" aria-hidden="true"><span class="combo__num"><small>×</small><span id="comboNum">0</span></span><span class="combo__label">combo</span><span class="combo__bar"><span id="comboFill"></span></span></div>
-        <span class="firefly" style="left:12%;top:20%;--d:9s;--delay:0s;--dx:40px;--dy:-30px" aria-hidden="true"></span>
-        <span class="firefly" style="left:78%;top:34%;--d:11s;--delay:2s;--dx:-30px;--dy:-50px" aria-hidden="true"></span>
-        <span class="firefly" style="left:30%;top:62%;--d:8s;--delay:4s;--dx:26px;--dy:-24px" aria-hidden="true"></span>
-        <span class="firefly" style="left:60%;top:80%;--d:12s;--delay:1s;--dx:-36px;--dy:-40px" aria-hidden="true"></span>
-        <span class="firefly" style="left:88%;top:70%;--d:10s;--delay:6s;--dx:-20px;--dy:-60px" aria-hidden="true"></span>
-      </div>
+      <div id="toast" class="toast" data-kind="" aria-hidden="true"></div>
+      <div id="combo" class="combo" data-level="0" aria-hidden="true"><span class="combo__num"><small>×</small><span id="comboNum">0</span></span><span class="combo__label">combo</span><span class="combo__bar"><span id="comboFill"></span></span></div>
+      <div id="ready" class="ready" hidden aria-hidden="true">Ready…</div>
       <div class="vignette" aria-hidden="true"></div>
-      <div id="fx" class="fx" aria-hidden="true"></div>
       <div class="frost" aria-hidden="true"></div>
+      <div id="loading" class="loading" aria-hidden="true"><span class="spinner"></span></div>
+
     </section>
 
     <div id="overlay" class="overlay" role="dialog" aria-modal="true" aria-labelledby="overlayTitle">
-      <div class="overlay__card">
+      <div class="overlay__card" id="overlayCard">
         <div id="confetti" class="confetti" aria-hidden="true"></div>
-        <p id="kicker" class="overlay__kicker">A new cat discovered after 100+ years</p>
-        <h1 id="overlayTitle" class="overlay__title">Tilcayo Cat Game</h1>
-        <div class="pills">
-          <p class="online" data-online hidden><span class="online__dot" aria-hidden="true"></span><span class="online__text"></span></p>
-          <p id="streak" class="streak" hidden><span aria-hidden="true">🔥</span> <span id="streakText"></span></p>
-        </div>
-        <p id="challenge" class="challenge" hidden></p>
-        <section id="result" class="result" hidden aria-live="polite">
-          <div class="result__score"><span id="resultNum" class="result__num">0</span><span id="resultUnit" class="result__unit">mice</span></div>
-          <div id="rankBadge" class="rank" style="--r1:#fff;--r2:#888">
-            <span id="rankEmoji" class="rank__emoji" aria-hidden="true"></span>
-            <span class="rank__text"><small id="rankLabel">Rank</small><b id="rankName"></b></span>
+
+        <!-- start / results -->
+        <div id="homeView" class="view">
+          <p id="kicker" class="overlay__kicker">A new cat discovered after 100+ years</p>
+          <h1 id="overlayTitle" class="overlay__title">Tilcayo Cat</h1>
+          <p id="challenge" class="challenge" hidden></p>
+
+          <section id="result" class="result" hidden aria-live="polite">
+            <div class="result__score"><span id="resultNum" class="result__num">0</span><span id="resultUnit" class="result__unit">mice</span></div>
+            <p class="result__line"><span id="rankChip" class="rank-chip"></span><span id="resultPoints"></span></p>
+            <p id="factText" class="fact"></p>
+          </section>
+
+          <p id="intro" class="intro">Tap the mice. Don't slap the porcupine or the snake: sore paws need licking.</p>
+
+          <button id="dailyCard" class="daily" type="button" aria-label="Today's Daily Challenge">
+            <img id="dailyImg" class="daily__img" alt="" width="64" height="64">
+            <span class="daily__body">
+              <span class="daily__label">Mouse of the day #<span class="dailyNo"></span></span>
+              <b id="dailyName" class="daily__name"></b>
+              <span id="dailySquares" class="daily-squares"></span>
+            </span>
+          </button>
+
+          <div class="overlay__actions">
+            <button id="playBtn" class="btn btn--primary" type="button">Play</button>
+            <button id="shareBtn" class="btn btn--share" type="button" hidden>Share</button>
           </div>
-          <div class="progress" role="progressbar" aria-labelledby="progressText" aria-valuemin="0" aria-valuemax="100">
-            <div id="progressFill" class="progress__fill"></div>
-          </div>
-          <p id="progressText" class="progress__text"></p>
-          <ul id="resultChips" class="chips"></ul>
-          <p id="heat" class="heat" aria-label="Catches per 10 seconds"></p>
-        </section>
-        <p id="overlayText" class="overlay__text">You are the tilcayo. <strong>Tap the mice before the clock runs out</strong> — each catch +0.8 s, each empty slap −0.3 s, a porcupine −2 s. Chain fast catches for <strong>combos</strong>, climb the ranks and dare your friends.</p>
-        <div class="overlay__actions">
-          <button id="playBtn" class="btn btn--primary" type="button">Play</button>
-          <button id="shareBtn" class="btn btn--share" type="button" hidden><span aria-hidden="true">📸</span> Share my card</button>
-          <a class="btn btn--duel" href="/play">1v1 online</a>
+          <nav class="chips-nav" aria-label="More">
+            <a class="pill" href="/play">1v1</a>
+            <button id="albumBtn" class="pill" type="button">Album <b id="albumCount">0</b>/100</button>
+            <button id="sealsBtn" class="pill" type="button">Seals <b id="sealsCount">0/7</b></button>
+          </nav>
+          <p class="overlay__foot"><a href="/how-to-play">How to play</a> · <a href="/about">The real tilcayo</a> · <a href="/terms">Terms</a> · <a href="/privacy">Privacy</a></p>
         </div>
-        <p class="overlay__hint">Press <kbd>Space</kbd> to play</p>
-        <ul class="powers" aria-label="Power-ups">
-          <li class="powers__item" data-kind="auto"><span class="powers__icon"></span><span><b>Auto-catch</b><small>6 s of automatic paws</small></span></li>
-          <li class="powers__item" data-kind="fulltime"><span class="powers__icon"></span><span><b>Full time</b><small>clock back to 5 s</small></span></li>
-          <li class="powers__item" data-kind="freeze"><span class="powers__icon"></span><span><b>Freeze</b><small>everything stops for 4 s</small></span></li>
-        </ul>
-        <section class="seals" aria-labelledby="sealsTitle">
-          <h2 id="sealsTitle" class="seals__title">Seals <span id="sealsCount" class="seals__count">0/6</span></h2>
+
+        <!-- album -->
+        <div id="albumView" class="view" hidden>
+          <button class="back" type="button" data-back>‹ Back</button>
+          <h2 class="view__title">Album</h2>
+          <p class="view__sub">Finish a Daily Challenge to keep its mouse. <span id="albumName"></span></p>
+          <ol id="albumGrid" class="album"></ol>
+        </div>
+
+        <!-- seals -->
+        <div id="sealsView" class="view" hidden>
+          <button class="back" type="button" data-back>‹ Back</button>
+          <h2 class="view__title">Seals</h2>
           <ul id="sealsList" class="seals__list"></ul>
-        </section>
-        <nav class="overlay__links" aria-label="More"><a class="link-btn" href="/how-to-play">How to play</a><a class="link-btn" href="/about">What is a tilcayo cat?</a></nav>
-        <p class="legal"><a href="/terms">Terms</a> · <a href="/privacy">Privacy</a></p>
+        </div>
       </div>
     </div>
+
     <div id="shareSheet" class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle" hidden>
       <div class="sheet__card">
         <button id="sheetClose" class="sheet__close" type="button" aria-label="Close">×</button>
-        <h2 id="sheetTitle" class="sheet__title">Your brag card</h2>
-        <div class="sheet__preview"><div id="sheetSpinner" class="spinner"></div><img id="sheetImg" alt="Your score card" width="1080" height="1350" hidden></div>
-        <div class="sheet__actions">
-          <button id="shareImgBtn" class="btn btn--primary" type="button">Share image</button>
-          <a id="saveImgBtn" class="btn" download="tilcayo-cat-score.png" href="#">Save image</a>
-          <a id="postXBtn" class="btn btn--x" target="_blank" rel="noopener" href="https://x.com/intent/post">Post on 𝕏</a>
-          <button id="copyBtn" class="btn" type="button">Copy challenge</button>
-        </div>
+        <h2 id="sheetTitle" class="sheet__title">Share your hunt</h2>
         <pre id="shareText" class="sheet__text"></pre>
+        <div class="sheet__actions">
+          <button id="copyBtn" class="btn btn--primary" type="button">Copy</button>
+          <button id="shareNativeBtn" class="btn" type="button">Share…</button>
+          <a id="postXBtn" class="btn btn--x" target="_blank" rel="noopener" href="https://x.com/intent/post">Post on 𝕏</a>
+        </div>
       </div>
     </div>
   </main>
 
-  <script type="module" src="/src/main.ts"></script>
+<script type="module" src="/src/main.ts"></script>
 </body>
 </html>

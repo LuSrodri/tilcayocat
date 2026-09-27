@@ -1,11 +1,19 @@
 import { DurableObject } from "cloudflare:workers";
 import {
-  COUNTDOWN_MS, GRID, INTERMISSION_MS, MAX_ROUNDS, PORCUPINE_PENALTY, ROUNDS_TO_WIN, ROUND_MS,
-  type ClientMessage, type MouseInfo, type PlayerInfo, type RoundResult, type ServerMessage, type Slot
+  COUNTDOWN_MS, GRID, INTERMISSION_MS, MAX_ROUNDS, ROUNDS_TO_WIN, ROUND_MS,
+  PORCUPINE_LICK_MS, SNAKE_LICK_MS, FANCY_EVERY, FANCY_POINTS, FANCY_KINDS, neighbours,
+  type ClientMessage, type Critter, type MouseInfo, type PlayerInfo, type RoundResult, type ServerMessage, type Slot
 } from "./protocol";
 import type { Env } from "./index";
 
 type Phase = "waiting" | "countdown" | "round" | "intermission" | "final";
+
+// Server-side bookkeeping on top of what clients see.
+interface Live extends MouseInfo {
+  upAt: number;
+  hopsLeft: number;
+  nextBiteAt: number;
+}
 
 interface Attachment {
   slot: Slot;
@@ -22,7 +30,8 @@ interface Persisted {
 }
 
 // One MatchRoom per room code. The room is authoritative: it spawns the mice, resolves taps
-// (first tap wins) and keeps the score. Two players share the same 5×5 lawn for 60-second
+// (first tap wins) and keeps the score. Porcupines and snakes make the slapping cat sit out
+// licking its paw; snakes also eat mice next to them; every 10th mouse calls out a fancy one. Two players share the same 5×5 lawn for 60-second
 // rounds, best of three. In-memory state only matters during a round, when timers keep the
 // object awake; everything needed to resume after hibernation lives in storage/attachments.
 export class MatchRoom extends DurableObject<Env> {
@@ -37,7 +46,10 @@ export class MatchRoom extends DurableObject<Env> {
     });
   }
   private scores: [number, number] = [0, 0];
-  private mice = new Map<number, MouseInfo>();
+  private mice = new Map<number, Live>();
+  private lickUntil: [number, number] = [0, 0];
+  private plainCaught = 0;
+  private nextSnakeAt = 0;
   private byHole = new Map<number, number>();
   private nextMouseId = 1;
   private roundStart = 0;
@@ -143,6 +155,9 @@ export class MatchRoom extends DurableObject<Env> {
     this.roundEnd = this.roundStart + ROUND_MS;
     this.nextSpawnAt = this.roundStart + 400;
     this.nextFoeAt = this.roundStart + 6000 + Math.random() * 5000;
+    this.nextSnakeAt = this.roundStart + 14000 + Math.random() * 6000;
+    this.lickUntil = [0, 0];
+    this.plainCaught = 0;
     this.broadcast({
       type: "round", round: this.state.round, startsAt: this.roundStart, endsAt: this.roundEnd,
       now: Date.now(), scores: this.scores, wins: this.state.wins
@@ -165,12 +180,12 @@ export class MatchRoom extends DurableObject<Env> {
       this.endRound();
       return;
     }
-    for (const m of this.mice.values()) {
-      if (now >= m.expiresAt) {
-        this.mice.delete(m.id);
-        this.byHole.delete(m.hole);
-        this.broadcast({ type: "hide", id: m.id });
-      }
+    for (const m of [...this.mice.values()]) {
+      if (m.kind === "snake" && now >= m.nextBiteAt) this.snakeBite(m, now);
+      if (now < m.expiresAt || !this.mice.has(m.id)) continue;
+      if (m.kind === "fancy" && m.hopsLeft > 0 && this.hop(m, now)) continue;
+      this.remove(m);
+      this.broadcast({ type: "hide", id: m.id });
     }
     if (now >= this.nextSpawnAt) {
       const p = this.pace(now);
@@ -182,39 +197,94 @@ export class MatchRoom extends DurableObject<Env> {
       if (![...this.mice.values()].some((m) => m.kind === "porcupine")) this.spawn(now, 2200, "porcupine");
       this.nextFoeAt = now + 8000 + Math.random() * 6000;
     }
+    if (now >= this.nextSnakeAt) {
+      if (![...this.mice.values()].some((m) => m.kind === "snake")) this.spawn(now, 4800, "snake");
+      this.nextSnakeAt = now + 14000 + Math.random() * 6000;
+    }
   }
 
-  private spawn(now: number, upTime: number, kind: "mouse" | "porcupine"): void {
+  private freeHoles(except = -1): number[] {
     const free: number[] = [];
-    for (let h = 0; h < GRID * GRID; h++) if (!this.byHole.has(h)) free.push(h);
+    for (let h = 0; h < GRID * GRID; h++) if (!this.byHole.has(h) && h !== except) free.push(h);
+    return free;
+  }
+
+  private spawn(now: number, upTime: number, kind: Critter): void {
+    const free = this.freeHoles();
     if (!free.length) return;
     const hole = free[Math.floor(Math.random() * free.length)]!;
     const jitter = kind === "mouse" ? 0.8 + Math.random() * 0.4 : 1;
-    const mouse: MouseInfo = { id: this.nextMouseId++, hole, kind, expiresAt: now + upTime * jitter };
+    const mouse: Live = {
+      id: this.nextMouseId++, hole, kind, expiresAt: now + upTime * jitter, upAt: now,
+      hopsLeft: kind === "fancy" ? 4 + Math.floor(Math.random() * 3) : 0, nextBiteAt: now + 650
+    };
+    if (kind === "fancy") mouse.variant = dailyVariant();
     this.mice.set(mouse.id, mouse);
     this.byHole.set(hole, mouse.id);
-    this.broadcast({ type: "spawn", mouse, now });
+    const { id, expiresAt, variant } = mouse;
+    this.broadcast({ type: "spawn", mouse: { id, hole, kind, expiresAt, variant }, now });
+  }
+
+  private remove(m: Live): void {
+    this.mice.delete(m.id);
+    if (this.byHole.get(m.hole) === m.id) this.byHole.delete(m.hole);
+  }
+
+  // The fancy mouse leaps to another free hole a few times before it runs off.
+  private hop(m: Live, now: number): boolean {
+    const free = this.freeHoles(m.hole);
+    if (!free.length) return false;
+    const to = free[Math.floor(Math.random() * free.length)]!;
+    const from = m.hole;
+    this.byHole.delete(from);
+    m.hole = to;
+    m.hopsLeft -= 1;
+    m.upAt = now + 300;
+    m.expiresAt = now + 300 + 800;
+    this.byHole.set(to, m.id);
+    this.broadcast({ type: "hop", id: m.id, from, to, expiresAt: m.expiresAt });
+    return true;
+  }
+
+  // The snake gulps a mouse standing right next to it (after a short grace to race it).
+  private snakeBite(snake: Live, now: number): void {
+    for (const n of neighbours(snake.hole)) {
+      const id = this.byHole.get(n);
+      const v = id === undefined ? undefined : this.mice.get(id);
+      if (!v || (v.kind !== "mouse" && v.kind !== "fancy") || now - v.upAt < 380) continue;
+      this.remove(v);
+      snake.nextBiteAt = now + 700;
+      this.broadcast({ type: "eaten", id: v.id, hole: v.hole, snakeHole: snake.hole });
+      return;
+    }
   }
 
   private tap(slot: Slot, hole: number): void {
     if (this.state.phase !== "round") return;
     if (!Number.isInteger(hole) || hole < 0 || hole >= GRID * GRID) return;
+    const now = Date.now();
+    // a cat licking its paw can't hunt
+    if (now < this.lickUntil[slot - 1]) return;
     const id = this.byHole.get(hole);
     if (id === undefined) {
       this.broadcast({ type: "whiff", hole, by: slot });
       return;
     }
     const critter = this.mice.get(id)!;
-    if (critter.kind === "porcupine") {
-      // the porcupine stays; the player pays
-      this.scores[slot - 1] = Math.max(0, this.scores[slot - 1] - PORCUPINE_PENALTY);
-      this.broadcast({ type: "ouch", id, hole, by: slot, scores: this.scores });
+    if (critter.kind === "porcupine" || critter.kind === "snake") {
+      // the critter stays; the player sits out
+      const ms = critter.kind === "snake" ? SNAKE_LICK_MS : PORCUPINE_LICK_MS;
+      this.lickUntil[slot - 1] = now + ms;
+      this.broadcast({ type: "ouch", id, hole, by: slot, kind: critter.kind, ms });
       return;
     }
-    this.mice.delete(id);
-    this.byHole.delete(hole);
-    this.scores[slot - 1] += 1;
-    this.broadcast({ type: "catch", id, hole, by: slot, scores: this.scores });
+    this.remove(critter);
+    const gain = critter.kind === "fancy" ? FANCY_POINTS : 1;
+    this.scores[slot - 1] += gain;
+    this.broadcast({ type: "catch", id, hole, by: slot, scores: this.scores, gain });
+    if (critter.kind === "mouse" && ++this.plainCaught % FANCY_EVERY === 0 && ![...this.mice.values()].some((m) => m.kind === "fancy")) {
+      this.spawn(now, 1050, "fancy");
+    }
   }
 
   private endRound(): void {
@@ -322,6 +392,12 @@ export class MatchRoom extends DurableObject<Env> {
       }
     }
   }
+}
+
+// Today's mouse of the day (UTC calendar; day #1 is launch day, 2026-09-17), same list as the site.
+function dailyVariant(): number {
+  const day = Math.floor((Date.now() - Date.UTC(2026, 8, 17)) / 86_400_000);
+  return ((day % FANCY_KINDS) + FANCY_KINDS) % FANCY_KINDS;
 }
 
 // 1005/1006 are reserved: echoing them back throws and would skip whatever follows the call.

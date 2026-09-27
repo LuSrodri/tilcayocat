@@ -16,10 +16,11 @@
 
   <meta name="google-adsense-account" content="ca-pub-4463881368194285">
   <!-- AdSense only on tilcayo.cat itself: portals that embed the game (CrazyGames) allow only their own SDK ads. -->
-  <script>if (window.top === window.self) { const s = document.createElement("script"); s.async = true; s.crossOrigin = "anonymous"; s.src = "https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4463881368194285"; document.head.appendChild(s); }</script>
+  <script>if (window.top === window.self) { const ads = () => { const s = document.createElement("script"); s.async = true; s.crossOrigin = "anonymous"; s.src = "https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4463881368194285"; document.head.appendChild(s); }; const later = () => setTimeout(() => ("requestIdleCallback" in window ? requestIdleCallback(ads, { timeout: 3000 }) : ads()), 1500); if (document.readyState === "complete") later(); else addEventListener("load", later, { once: true }); }</script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,500;12..96,700&family=Unbounded:wght@600;800&display=swap">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,500;12..96,700&family=Fredoka:wght@500;600;700&display=swap" media="print" onload="this.media='all'">
+  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,500;12..96,700&family=Fredoka:wght@500;600;700&display=swap"></noscript>
   <link rel="canonical" href="https://tilcayo.cat/cat-games">
   <link rel="alternate" hreflang="en" href="https://tilcayo.cat/cat-games">
   <link rel="alternate" hreflang="x-default" href="https://tilcayo.cat/cat-games">

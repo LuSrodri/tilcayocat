@@ -6,7 +6,10 @@ export default defineConfig({
     target: "es2022",
     cssMinify: true,
     assetsInlineLimit: 0,
+    // three.js is shared by the solo game and the 1v1 arena; keep it in its own cacheable chunk
+    chunkSizeWarningLimit: 700,
     rollupOptions: {
+      output: { manualChunks: { three: ["three"] } },
       input: {
         main: resolve(__dirname, "index.html"),
         about: resolve(__dirname, "about.html"),

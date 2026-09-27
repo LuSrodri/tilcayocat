@@ -98,6 +98,45 @@ export const sfx = {
   stage(): void {
     [784, 988, 1175].forEach((f, i) => setTimeout(() => tone(f, 0.12, "square", 0.05), i * 60));
   },
+  // a soft thump and a sprinkle of dirt when a new hole opens
+  dig(): void {
+    tone(140, 0.12, "triangle", 0.12, 70);
+    setTimeout(() => tone(880, 0.08, "sine", 0.05, 1320), 90);
+  },
+  hop(): void {
+    tone(700, 0.1, "sine", 0.06, 1400);
+  },
+  // the fancy mouse arrives with a little music-box flourish
+  fancy(): void {
+    [1047, 1319, 1568, 2093].forEach((f, i) => setTimeout(() => tone(f, 0.12, "sine", 0.06), i * 60));
+  },
+  fancyCatch(): void {
+    [784, 1047, 1319, 1568, 2093].forEach((f, i) => setTimeout(() => tone(f, 0.16, "triangle", 0.08), i * 55));
+  },
+  hiss(): void {
+    const ac = context();
+    if (!ac) return;
+    const len = 0.45;
+    const buffer = ac.createBuffer(1, Math.ceil(ac.sampleRate * len), ac.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < data.length; i++) data[i] = (Math.random() * 2 - 1) * Math.sin((i / data.length) * Math.PI);
+    const src = ac.createBufferSource();
+    src.buffer = buffer;
+    const bp = ac.createBiquadFilter();
+    bp.type = "bandpass";
+    bp.frequency.value = 5200;
+    const amp = ac.createGain();
+    amp.gain.value = 0.09;
+    src.connect(bp).connect(amp).connect(out());
+    src.start();
+  },
+  gulp(): void {
+    tone(420, 0.09, "sine", 0.12, 160);
+    setTimeout(() => tone(260, 0.12, "sine", 0.1, 110), 90);
+  },
+  lick(): void {
+    [0, 180, 360].forEach((d) => setTimeout(() => tone(1500, 0.05, "sine", 0.04, 900), d));
+  },
   over(): void {
     tone(440, 0.25, "triangle", 0.12, 220);
     setTimeout(() => tone(330, 0.4, "triangle", 0.12, 110), 200);
@@ -121,7 +160,7 @@ const BASS = [
   43, 0, 0, 0, 50, 0, 0, 0, 45, 0, 0, 0, 52, 0, 0, 0,
   47, 0, 0, 0, 55, 0, 0, 0, 48, 0, 0, 0, 55, 0, 0, 0
 ];
-const BPM = 132;
+const BPM = 116;
 const STEP = 60 / BPM / 4;
 
 let musicTimer = 0;
@@ -154,7 +193,7 @@ function schedule(): void {
     const i = step % LEAD.length;
     const lead = LEAD[i]!;
     const bass = BASS[i]!;
-    if (lead) tone(midi(lead), STEP * 0.9, "square", 0.035, undefined, nextTime);
+    if (lead) tone(midi(lead), STEP * 1.4, "triangle", 0.05, undefined, nextTime);
     if (bass) tone(midi(bass), STEP * 3.2, "triangle", 0.07, undefined, nextTime);
     if (i % 4 === 2) hat(nextTime);
     nextTime += STEP;

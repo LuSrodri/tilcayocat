@@ -1,9 +1,10 @@
 import type { GameEvent } from "./game";
 import { sfx } from "./sound";
+import { albumAdd, albumSize, FANCY_COUNT } from "./fancy";
 
-// Achievement seals: six wax seals the player collects, one of them only reachable in the 1v1
-// arena. They live on the device (localStorage), like the best score.
-export type SealId = "swift" | "nightwatch" | "clean" | "hoard" | "streak" | "duelist";
+// Achievement seals: seven wax seals the player collects, one of them only reachable in the 1v1
+// arena and one for filling the fancy-mouse album. They live on the device (localStorage), like the best score.
+export type SealId = "swift" | "nightwatch" | "clean" | "hoard" | "streak" | "duelist" | "collector";
 
 export interface Seal {
   id: SealId;
@@ -52,13 +53,20 @@ const CUP_ICON =
   `<path d="M10.9 13h2.2v3.4h-2.2z" fill="currentColor"/>` +
   `<path d="M7.6 20.6h8.8" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>`;
 
+const HAT_ICON =
+  `<svg viewBox="0 0 24 24" aria-hidden="true">` +
+  `<path d="M7 3.5h10v11H7z" fill="currentColor"/><rect x="2.5" y="14" width="19" height="3.2" rx="1.6" fill="currentColor"/>` +
+  `<path d="M7.4 11.4h9.2" stroke="rgba(0,0,0,.35)" stroke-width="2"/>` +
+  `<circle cx="8.5" cy="20.4" r="1.3" fill="currentColor"/><circle cx="15.5" cy="20.4" r="1.3" fill="currentColor"/></svg>`;
+
 export const SEALS: Seal[] = [
   { id: "swift", name: "Quick Paws", goal: `${SWIFT_MICE} mice in one round`, tint: ["#ffe27a", "#e0641f"], icon: PAW_ICON },
   { id: "nightwatch", name: "Night Watch", goal: `Survive ${NIGHT_MS / 1000} s`, tint: ["#bff3ff", "#2f6bb3"], icon: MOON_ICON },
   { id: "clean", name: "Clean Paws", goal: `${CLEAN_MICE} catches, no misses`, tint: ["#ffffff", "#8b93b8"], icon: SPARK_ICON },
   { id: "hoard", name: "Power Hoarder", goal: `Grab ${HOARD_POWERS} power-ups`, tint: ["#b6ffd8", "#12a06a"], icon: BOLT_ICON },
   { id: "streak", name: "No Escape", goal: `${STREAK_CATCHES} in a row, no escapes`, tint: ["#ffc0e6", "#b02a7a"], icon: CHAIN_ICON },
-  { id: "duelist", name: "Lawn Duelist", goal: "Win a 1v1 online match", tint: ["#cffff3", "#0d7a6b"], icon: CUP_ICON }
+  { id: "duelist", name: "Lawn Duelist", goal: "Win a 1v1 online match", tint: ["#cffff3", "#0d7a6b"], icon: CUP_ICON },
+  { id: "collector", name: "Mouse Collector", goal: `All ${FANCY_COUNT} mice of the day`, tint: ["#fff0b3", "#b5179e"], icon: HAT_ICON }
 ];
 
 const EARNED_KEY = "tilcayo.seals";
@@ -86,7 +94,14 @@ export function earn(id: SealId): boolean {
   return true;
 }
 
-// Draw the shelf: six medals, locked ones greyed out with their goal as the hint.
+/** A finished Daily Challenge puts its mouse in the album; the full album earns the collector seal. */
+export function collectFancy(variant: number): boolean {
+  const fresh = albumAdd(variant);
+  if (albumSize() >= FANCY_COUNT) earn("collector");
+  return fresh;
+}
+
+// Draw the shelf: seven medals, locked ones greyed out with their goal as the hint.
 export function renderSeals(list: HTMLElement, count?: HTMLElement | null, fresh?: SealId | null): void {
   list.replaceChildren(
     ...SEALS.map((seal) => {
@@ -143,7 +158,8 @@ export class SealTracker {
         break;
       case "whiff":
       case "prick":
-        // an empty slap or a porcupine spoils the round's clean sheet
+      case "bite":
+        // an empty slap, a porcupine or a snake spoils the round's clean sheet
         this.clean = false;
         break;
       case "power":

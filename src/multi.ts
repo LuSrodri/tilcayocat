@@ -1,14 +1,16 @@
 import "./style.css";
-import { createHoleEl, burst } from "./holes";
+import { Lawn, webgl2Available } from "./engine/lawn";
 import { sfx, music, volume } from "./sound";
 import { API, WS_BASE } from "./api";
 import { earn, mountSeals } from "./seals";
 import { mountOnline } from "./presence";
+import { fancyKind } from "./fancy";
+import { guard } from "./guard";
 import type { PlayerInfo, RoundResult, ServerMessage, Slot } from "../worker/src/protocol";
 import { GRID, ROUND_MS } from "../worker/src/protocol";
 
-// The 1v1 arena is server-driven: the MatchRoom Durable Object spawns the mice and resolves
-// every tap; this file only renders what the room says and sends taps.
+// The 1v1 arena is server-driven: the MatchRoom Durable Object spawns the critters and resolves
+// every tap; this file only renders what the room says (on the same 3D lawn as solo) and sends taps.
 
 const NAME_KEY = "tilcayo.name";
 
@@ -18,30 +20,49 @@ function $<T extends HTMLElement>(id: string): T {
   return el as T;
 }
 
-const holesEl = $("holes");
 const field = $("field");
 const overlay = $("overlay");
+const overlayCard = overlay.querySelector<HTMLElement>(".overlay__card")!;
 const panels = { lobby: $("panelLobby"), wait: $("panelWait"), result: $("panelResult") };
 const nameInput = $<HTMLInputElement>("nameInput");
 const codeInput = $<HTMLInputElement>("codeInput");
 const lobbyError = $("lobbyError");
 const countdownEl = $("countdown");
-const cats: Record<Slot, HTMLElement> = { 1: $("cat1"), 2: $("cat2") };
-
-const holes: HTMLButtonElement[] = [];
-for (let i = 0; i < GRID * GRID; i++) {
-  const el = createHoleEl(i);
-  el.dataset.what = "mouse";
-  el.addEventListener("pointerdown", (ev) => {
-    ev.preventDefault();
-    sfx.unlock();
-    if (ws && ws.readyState === WebSocket.OPEN && phase === "round") ws.send(JSON.stringify({ type: "tap", hole: i }));
-  });
-  holes.push(el);
-  holesEl.append(el);
+const hudEl = document.querySelector<HTMLElement>(".hud")!;
+if (!webgl2Available()) {
+  // very old browsers: say so instead of showing a broken lawn
+  const box = document.getElementById("loading")!;
+  box.innerHTML = `<p class="nogl">The 3D lawn needs a browser with WebGL 2.<br>Try updating your browser, or read <a href="/about">about the tilcayo cat</a>.</p>`;
+  document.getElementById("overlay")!.hidden = true;
+  throw new Error("WebGL 2 unavailable");
 }
 
-mountSeals($("sealsList"), $("sealsCount"), toast);
+const ALL_HOLES = Array.from({ length: GRID * GRID }, (_, i) => i);
+
+const lawn = new Lawn({
+  container: field,
+  cats: 2,
+  insets: () => {
+    const f = field.getBoundingClientRect();
+    const h = hudEl.getBoundingClientRect();
+    // leave room above the cats for their name tags
+    return { top: Math.max(0, h.bottom - f.top + 34), bottom: 12, left: 8, right: 8 };
+  }
+});
+void lawn.ready.then(() => {
+  $("loading").hidden = true;
+  lawn.setActive(ALL_HOLES, false);
+  lawn.setTag(1, $("tag1"));
+  lawn.setTag(2, $("tag2"));
+});
+lawn.onTap((hole) => {
+  sfx.unlock();
+  if (phase !== "round" || lawn.isLicking(me)) return;
+  if (ws && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify({ type: "tap", hole }));
+});
+
+// the lobby has no seal shelf; earning one still gets its toast and fanfare
+mountSeals(document.createElement("ul"), document.createElement("span"), toast);
 mountOnline("duel");
 
 let ws: WebSocket | null = null;
@@ -54,8 +75,8 @@ let roundEndsAt = 0;
 let clockTimer = 0;
 let toastTimer = 0;
 let names: [string, string] = ["You", "Opponent"];
-const catTimers: Record<Slot, number> = { 1: 0, 2: 0 };
 const mouseHole = new Map<number, number>();
+const fancyOf = new Map<number, number>();
 
 // ---- lobby ------------------------------------------------------------------
 
@@ -79,9 +100,12 @@ function showPanel(which: keyof typeof panels): void {
   for (const [k, el] of Object.entries(panels)) el.hidden = k !== which;
   overlay.hidden = false;
   overlay.classList.remove("is-leaving");
+  lawn.setCalm(true);
+  guard(overlayCard);
 }
 
 function hideOverlay(): void {
+  lawn.setCalm(false);
   overlay.classList.add("is-leaving");
   setTimeout(() => (overlay.hidden = true), 250);
 }
@@ -236,6 +260,7 @@ function handle(msg: ServerMessage): void {
       clockOffset = msg.now - Date.now();
       resetArena();
       $("hudRound").textContent = String(msg.round);
+      $("roundFill").style.transform = "scaleX(0)";
       hideOverlay();
       toast(`Round ${msg.round}`, "grid");
       runCountdown(msg.startsAt);
@@ -254,22 +279,39 @@ function handle(msg: ServerMessage): void {
       break;
     }
     case "spawn": {
-      mouseHole.set(msg.mouse.id, msg.mouse.hole);
-      const el = holes[msg.mouse.hole]!;
-      el.dataset.what = msg.mouse.kind;
-      el.classList.add("is-up");
-      if (msg.mouse.kind === "porcupine") sfx.grunt();
-      else sfx.squeak();
+      const m = msg.mouse;
+      mouseHole.set(m.id, m.hole);
+      if (m.kind === "fancy" && m.variant !== undefined) fancyOf.set(m.id, m.variant);
+      lawn.raise(m.hole, m.kind, m.variant ?? null);
+      if (m.kind === "porcupine") sfx.grunt();
+      else if (m.kind === "snake") sfx.hiss();
+      else if (m.kind === "fancy") {
+        sfx.fancy();
+        toast("Fancy mouse! +3", "fancy");
+      } else sfx.squeak();
+      break;
+    }
+    case "hop": {
+      mouseHole.set(msg.id, msg.to);
+      lawn.hop(msg.from, msg.to);
+      sfx.hop();
+      break;
+    }
+    case "eaten": {
+      mouseHole.delete(msg.id);
+      fancyOf.delete(msg.id);
+      lawn.eat(msg.snakeHole, msg.hole);
+      sfx.gulp();
       break;
     }
     case "ouch": {
-      const el = holes[msg.hole]!;
-      el.dataset.by = String(msg.by);
-      burst(el, "is-whiff is-prick", "−15", 650);
-      setScores(msg.scores);
-      catState(msg.by, "angry", 900);
-      if (msg.by === me) {
+      lawn.slap(msg.hole, msg.by, msg.kind === "snake" ? "bite" : "prick", msg.kind === "snake" ? "Chomp!" : "Ouch!");
+      const by = msg.by;
+      setTimeout(() => lawn.lick(by, msg.ms - 300), 300);
+      if (by === me) {
         sfx.ouch();
+        setTimeout(() => sfx.lick(), 500);
+        toast(msg.kind === "snake" ? "Snake bite! Lick lick…" : "Prickly! Lick lick…", "ouch");
         if (navigator.vibrate) navigator.vibrate([30, 40, 30]);
       }
       break;
@@ -277,23 +319,26 @@ function handle(msg: ServerMessage): void {
     case "hide": {
       const h = mouseHole.get(msg.id);
       mouseHole.delete(msg.id);
-      if (h !== undefined) {
-        holes[h]!.classList.remove("is-up");
-        resetWhat(holes[h]!);
-      }
+      fancyOf.delete(msg.id);
+      if (h !== undefined) lawn.lower(h);
       break;
     }
     case "catch": {
       mouseHole.delete(msg.id);
-      const el = holes[msg.hole]!;
-      el.classList.remove("is-up");
-      resetWhat(el);
-      el.dataset.by = String(msg.by);
-      burst(el, "is-caught", "+1", 550);
+      const variant = fancyOf.get(msg.id);
+      fancyOf.delete(msg.id);
+      lawn.slap(msg.hole, msg.by, "catch", "");
+      const label = `+${msg.gain}`;
+      const kind = msg.gain > 1 ? "fancy" : msg.by === me ? "catch" : "rival";
+      setTimeout(() => lawn.pop(msg.hole, label, kind), 160);
       setScores(msg.scores);
-      catState(msg.by, "catch", 800);
+      lawn.cat(msg.by, "catch", 800);
       if (msg.by === me) {
         sfx.catch();
+        if (variant !== undefined) {
+          sfx.fancyCatch();
+          toast(fancyKind(variant).name, "fancy");
+        }
         if (navigator.vibrate) navigator.vibrate(12);
       } else {
         sfx.miss();
@@ -301,10 +346,8 @@ function handle(msg: ServerMessage): void {
       break;
     }
     case "whiff": {
-      const el = holes[msg.hole]!;
-      el.dataset.by = String(msg.by);
-      burst(el, "is-whiff", "miss", 420);
-      catState(msg.by, "angry", 420);
+      lawn.slap(msg.hole, msg.by, "whiff", msg.by === me ? "miss" : "");
+      lawn.cat(msg.by, "angry", 420);
       break;
     }
     case "roundEnd": {
@@ -335,14 +378,14 @@ function applyPlayers(players: PlayerInfo[]): void {
   for (const p of players) {
     names[p.slot - 1] = p.name;
     $(`hudName${p.slot}`).textContent = p.slot === me ? `${p.name} (you)` : p.name;
-    $(`tagName${p.slot}`).textContent = p.name;
-    cats[p.slot].classList.toggle("is-absent", !p.connected);
+    $(`tagName${p.slot}`).textContent = p.slot === me ? `${p.name} (you)` : p.name;
+    lawn.setCatPresent(p.slot, p.connected);
   }
   if (players.length < 2) {
     const other: Slot = me === 1 ? 2 : 1;
     $(`hudName${other}`).textContent = "…";
     $(`tagName${other}`).textContent = "…";
-    cats[other].classList.add("is-absent");
+    lawn.setCatPresent(other, false);
   }
   document.body.dataset.me = String(me);
 }
@@ -353,25 +396,13 @@ function resetArena(): void {
   clearMice();
   setScores([0, 0]);
   $("hudClock").textContent = String(ROUND_MS / 1000);
-  for (const s of [1, 2] as Slot[]) {
-    cats[s].dataset.state = "idle";
-    cats[s].classList.remove("is-sad");
-  }
+  for (const s of [1, 2] as Slot[]) lawn.cat(s, "idle");
 }
 
 function clearMice(): void {
   mouseHole.clear();
-  for (const el of holes) {
-    el.classList.remove("is-up");
-    resetWhat(el);
-  }
-}
-
-// the sprite swap must wait until the critter has sunk back into the hole
-function resetWhat(el: HTMLElement): void {
-  setTimeout(() => {
-    if (!el.classList.contains("is-up")) el.dataset.what = "mouse";
-  }, 200);
+  fancyOf.clear();
+  lawn.clear();
 }
 
 function setScores(scores: [number, number]): void {
@@ -392,18 +423,6 @@ function setWins(wins: [number, number]): void {
   for (const s of [1, 2] as Slot[]) {
     $(`hudWins${s}`).innerHTML = [0, 1].map((i) => `<i class="${i < wins[s - 1] ? "is-won" : ""}"></i>`).join("");
   }
-}
-
-function catState(slot: Slot, state: "catch" | "angry" | "idle", ms: number): void {
-  const el = cats[slot];
-  window.clearTimeout(catTimers[slot]);
-  el.dataset.state = state;
-  if (state === "catch") {
-    el.classList.remove("is-pounce");
-    void el.offsetWidth;
-    el.classList.add("is-pounce");
-  }
-  catTimers[slot] = window.setTimeout(() => (el.dataset.state = "idle"), ms);
 }
 
 function runCountdown(startsAt: number): void {
@@ -427,10 +446,11 @@ function startClock(): void {
   const step = (): void => {
     const left = Math.max(0, roundEndsAt - (Date.now() + clockOffset));
     $("hudClock").textContent = String(Math.ceil(left / 1000));
+    $("roundFill").style.transform = `scaleX(${1 - left / ROUND_MS})`;
     field.dataset.zone = left < 10_000 ? "danger" : left < 20_000 ? "warn" : "ok";
   };
   step();
-  clockTimer = window.setInterval(step, 200);
+  clockTimer = window.setInterval(step, 100);
 }
 
 function stopClock(): void {
@@ -490,8 +510,8 @@ function showRoundResult(result: RoundResult, wins: [number, number], nextAt: nu
   } else {
     cd.textContent = "Final results in a moment…";
   }
-  catState(won ? me : me === 1 ? 2 : 1, "catch", 1500);
-  if (!won && result.winner !== 0) catState(me, "angry", 1500);
+  lawn.cat(won ? me : me === 1 ? 2 : 1, "catch", 1500);
+  if (!won && result.winner !== 0) lawn.cat(me, "angry", 1500);
 }
 
 function showFinal(winner: Slot | 0, wins: [number, number], rounds: RoundResult[], totals: [number, number], forfeit: boolean): void {
@@ -499,7 +519,7 @@ function showFinal(winner: Slot | 0, wins: [number, number], rounds: RoundResult
   $("resultTitle").textContent = winner === 0 ? "It's a draw" : won ? "You win the match!" : "You lose the match";
   $("resultText").textContent = forfeit
     ? won ? "Your rival left the lawn. Victory by forfeit." : "You left the lawn, so the round went to your rival."
-    : `Best of three · rounds ${wins[0]}–${wins[1]} · ${totals[0]} × ${totals[1]} mice in total.`;
+    : `Best of three · rounds ${wins[0]}–${wins[1]} · ${totals[0]} × ${totals[1]} points in total.`;
   $("rankingTable").innerHTML = rankingTable(rounds, totals, wins);
   fillNames(wins[0] === wins[1] ? (totals[0] >= totals[1] ? [1, 2] : [2, 1]) : wins[0] > wins[1] ? [1, 2] : [2, 1]);
   if (won && !forfeit) earn("duelist");
@@ -508,13 +528,14 @@ function showFinal(winner: Slot | 0, wins: [number, number], rounds: RoundResult
   $("resultCountdown").hidden = true;
   lastShareText = won
     ? `I beat ${names[me === 1 ? 1 : 0]} ${wins[me - 1]}–${wins[me === 1 ? 1 : 0]} in Tilcayo Cat 1v1 🐱🐭`
-    : `I lost to ${names[me === 1 ? 1 : 0]} in Tilcayo Cat 1v1 — rematch? 🐱🐭`;
+    : `I lost to ${names[me === 1 ? 1 : 0]} in Tilcayo Cat 1v1. Rematch? 🐱🐭`;
   showPanel("result");
   if (winner === 0) {
-    catState(1, "idle", 0);
+    lawn.cat(1, "idle");
+    lawn.cat(2, "idle");
   } else {
-    catState(winner, "catch", 4000);
-    catState(winner === 1 ? 2 : 1, "angry", 4000);
+    lawn.cat(winner, "catch", 4000);
+    lawn.cat(winner === 1 ? 2 : 1, "angry", 4000);
   }
   ws?.close();
   ws = null;
@@ -533,7 +554,6 @@ soundBtn.addEventListener("click", () => {
   volume.toggle();
   renderSound();
 });
-field.addEventListener("contextmenu", (ev) => ev.preventDefault());
 window.addEventListener("beforeunload", () => ws?.close());
 document.addEventListener("visibilitychange", () => {
   if (document.hidden) music.stop();

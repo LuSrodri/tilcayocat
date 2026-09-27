@@ -29,16 +29,11 @@
 
   <meta name="google-adsense-account" content="ca-pub-4463881368194285">
   <!-- AdSense only on tilcayo.cat itself: portals that embed the game (CrazyGames) allow only their own SDK ads. -->
-  <script>if (window.top === window.self) { const s = document.createElement("script"); s.async = true; s.crossOrigin = "anonymous"; s.src = "https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4463881368194285"; document.head.appendChild(s); }</script>
+  <script>if (window.top === window.self) { const ads = () => { const s = document.createElement("script"); s.async = true; s.crossOrigin = "anonymous"; s.src = "https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4463881368194285"; document.head.appendChild(s); }; const later = () => setTimeout(() => ("requestIdleCallback" in window ? requestIdleCallback(ads, { timeout: 3000 }) : ads()), 1500); if (document.readyState === "complete") later(); else addEventListener("load", later, { once: true }); }</script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,500;12..96,700&family=Unbounded:wght@600;800&display=swap">
-  <link rel="preload" as="image" href="/img/cat.webp" type="image/webp" fetchpriority="high">
-  <link rel="preload" as="image" href="/img/cat-catch.webp" type="image/webp">
-  <link rel="preload" as="image" href="/img/cat-angry.webp" type="image/webp">
-  <link rel="preload" as="image" href="/img/paw.webp" type="image/webp">
-  <link rel="preload" as="image" href="/img/hole-back.webp" type="image/webp">
-  <link rel="preload" as="image" href="/img/hole-front.webp" type="image/webp">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,500;12..96,700&family=Fredoka:wght@500;600;700&display=swap" media="print" onload="this.media='all'">
+  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,500;12..96,700&family=Fredoka:wght@500;600;700&display=swap"></noscript>
   <link rel="canonical" href="https://tilcayo.cat/play">
   <link rel="alternate" hreflang="en" href="https://tilcayo.cat/play">
   <link rel="alternate" hreflang="x-default" href="https://tilcayo.cat/play">
@@ -115,7 +110,7 @@
 }
   </script>
 </head>
-<body>
+<body class="game game--duel">
   <noscript><p class="noscript">The 1v1 mode needs JavaScript. <a href="/">Play solo</a> or <a href="/about">read about the tilcayo cat</a>.</p></noscript>
 
   <main id="app" class="app">
@@ -136,6 +131,7 @@
           <span class="duel-hud__wins" id="hudWins2" aria-label="Rounds won"></span>
         </div>
       </div>
+      <div class="duel-bar" aria-hidden="true"><div id="roundFill" class="duel-bar__fill"></div></div>
     </header>
     <div class="hud__actions">
       <button id="soundBtn" class="info-btn" type="button" aria-label="Mute sound" aria-pressed="false">
@@ -148,56 +144,12 @@
     </div>
 
     <section id="field" class="field" aria-label="Shared lawn">
-      <div class="sky">
-        <picture class="sky__art">
-          <source media="(max-width: 700px)" srcset="/img/sky-sm.webp" type="image/webp">
-          <source srcset="/img/sky.webp" type="image/webp">
-          <img src="/img/sky.jpg" alt="" width="1800" height="600" decoding="async" fetchpriority="low">
-        </picture>
-        <div class="sky__stars" aria-hidden="true"></div>
-      </div>
-      <div class="lawn lawn--duel">
-        <div class="moonlight" aria-hidden="true"></div>
-        <div class="cloud-shadow" aria-hidden="true"></div>
-        <div id="cat1" class="cat cat--duel cat--left" data-state="idle" data-slot="1">
-          <span class="cat__shadow" aria-hidden="true"></span>
-          <span class="cat__aura" aria-hidden="true"></span>
-          <span class="cat__tag"><span class="cat__tag-name" id="tagName1">Player 1</span><span class="cat__tag-score" id="tagScore1">0</span></span>
-          <picture class="cat__img cat__img--idle">
-            <source srcset="/img/cat.webp" type="image/webp">
-            <img src="/img/cat.png" alt="Tilcayo cat 1" width="720" height="1142" draggable="false">
-          </picture>
-          <picture class="cat__img cat__img--catch">
-            <source srcset="/img/cat-catch.webp" type="image/webp">
-            <img src="/img/cat-catch.png" alt="" width="720" height="1126" draggable="false" loading="eager" decoding="async">
-          </picture>
-          <picture class="cat__img cat__img--angry">
-            <source srcset="/img/cat-angry.webp" type="image/webp">
-            <img src="/img/cat-angry.png" alt="" width="720" height="1136" draggable="false" loading="eager" decoding="async">
-          </picture>
-        </div>
-        <div id="cat2" class="cat cat--duel cat--right" data-state="idle" data-slot="2">
-          <span class="cat__shadow" aria-hidden="true"></span>
-          <span class="cat__aura" aria-hidden="true"></span>
-          <span class="cat__tag"><span class="cat__tag-name" id="tagName2">Player 2</span><span class="cat__tag-score" id="tagScore2">0</span></span>
-          <picture class="cat__img cat__img--idle">
-            <source srcset="/img/cat.webp" type="image/webp">
-            <img src="/img/cat.png" alt="Tilcayo cat 2" width="720" height="1142" draggable="false">
-          </picture>
-          <picture class="cat__img cat__img--catch">
-            <source srcset="/img/cat-catch.webp" type="image/webp">
-            <img src="/img/cat-catch.png" alt="" width="720" height="1126" draggable="false" loading="eager" decoding="async">
-          </picture>
-          <picture class="cat__img cat__img--angry">
-            <source srcset="/img/cat-angry.webp" type="image/webp">
-            <img src="/img/cat-angry.png" alt="" width="720" height="1136" draggable="false" loading="eager" decoding="async">
-          </picture>
-        </div>
-        <div id="holes" class="holes" role="group" aria-label="Mouse holes" style="--grid:5"></div>
-        <div id="toast" class="toast" data-kind="" aria-hidden="true"></div>
-        <div id="countdown" class="countdown" aria-live="assertive" hidden></div>
-      </div>
+      <span id="tag1" class="cat__tag"><span class="cat__tag-name" id="tagName1">Player 1</span><span class="cat__tag-score" id="tagScore1">0</span></span>
+      <span id="tag2" class="cat__tag"><span class="cat__tag-name" id="tagName2">Player 2</span><span class="cat__tag-score" id="tagScore2">0</span></span>
+      <div id="toast" class="toast" data-kind="" aria-hidden="true"></div>
+      <div id="countdown" class="countdown" aria-live="assertive" hidden></div>
       <div class="vignette" aria-hidden="true"></div>
+      <div id="loading" class="loading" aria-hidden="true"><span class="spinner"></span></div>
     </section>
 
     <div id="overlay" class="overlay" role="dialog" aria-modal="true" aria-labelledby="overlayTitle">
@@ -206,7 +158,7 @@
         <div id="panelLobby" class="panel">
           <h1 id="overlayTitle" class="overlay__title">1v1 Online</h1>
           <p class="online" data-online hidden><span class="online__dot" aria-hidden="true"></span><span class="online__text"></span></p>
-          <p class="overlay__text">Two tilcayos, one lawn. <strong>60-second rounds, best of three</strong>, no power-ups. Whoever catches more mice takes the round — and slapping a porcupine costs 15 points.</p>
+          <p class="overlay__text overlay__text--center">Two tilcayos, one lawn. Best of three 60-second rounds.</p>
           <label class="field-row"><span class="hud__label">Your name</span><input id="nameInput" class="input" type="text" maxlength="14" autocomplete="nickname" placeholder="Tilcayo" spellcheck="false"></label>
           <div class="overlay__actions">
             <button id="quickBtn" class="btn btn--primary" type="button">Quick match</button>
@@ -220,10 +172,6 @@
           <section class="leader" aria-labelledby="leaderTitle">
             <h2 id="leaderTitle" class="leader__title">Top tilcayos</h2>
             <ol id="leaderList" class="leader__list"><li class="leader__empty">No matches yet. Be the first!</li></ol>
-          </section>
-          <section class="seals" aria-labelledby="sealsTitle">
-            <h2 id="sealsTitle" class="seals__title">Seals <span id="sealsCount" class="seals__count">0/6</span></h2>
-            <ul id="sealsList" class="seals__list"></ul>
           </section>
           <nav class="overlay__links" aria-label="More"><a class="link-btn" href="/">← Solo mode</a><a class="link-btn" href="/how-to-play#1v1-online">Rules</a></nav>
           <p class="legal"><a href="/terms">Terms</a> · <a href="/privacy">Privacy</a></p>
