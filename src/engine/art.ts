@@ -57,99 +57,33 @@ function rand(seed: number): () => number {
 }
 
 /**
- * Close-up grass that tiles across the lawn: tufts of blades in a few greens, clover leaves and
- * small daisies on a pale base. The ground multiplies it by its own colour (dark rim, warm
- * middle), so the tile stays light and only carries the detail. Every stroke is drawn on all
- * sides of the edge it crosses, so the tile repeats without seams.
+ * A calm, cartoon lawn surface: large soft patches of lighter and darker green on a pale base,
+ * nothing small or busy. The ground multiplies it by its own colour (warm middle, dark rim) and
+ * the 3D grass tufts on top carry all the fine detail. Tiles seamlessly.
  */
 export function grassTexture(): THREE.Texture {
-  const tex = canvasTexture("grass", 512, 512, (ctx) => {
+  const tex = canvasTexture("lawn", 512, 512, (ctx) => {
     const S = 512;
-    ctx.fillStyle = "#d8ecc4";
+    ctx.fillStyle = "#e4f0d8";
     ctx.fillRect(0, 0, S, S);
     const rnd = rand(21);
-    // draw something wherever it lands, plus its wrapped copies near the edges
-    const wrap = (x: number, y: number, r: number, draw: (x: number, y: number) => void): void => {
+    for (let i = 0; i < 46; i++) {
+      const x = rnd() * S;
+      const y = rnd() * S;
+      const r = 60 + rnd() * 120;
+      const light = rnd() < 0.5;
       for (const dx of [0, -S, S]) {
         for (const dy of [0, -S, S]) {
           const px = x + dx;
           const py = y + dy;
-          if (px > -r && px < S + r && py > -r && py < S + r) draw(px, py);
+          if (px < -r || px > S + r || py < -r || py > S + r) continue;
+          const g = ctx.createRadialGradient(px, py, 0, px, py, r);
+          g.addColorStop(0, light ? "rgba(255,255,236,.16)" : "rgba(70,120,60,.13)");
+          g.addColorStop(1, "rgba(0,0,0,0)");
+          ctx.fillStyle = g;
+          ctx.fillRect(px - r, py - r, r * 2, r * 2);
         }
       }
-    };
-    // soft patches of lighter and darker turf
-    for (let i = 0; i < 70; i++) {
-      const x = rnd() * S;
-      const y = rnd() * S;
-      const r = 20 + rnd() * 60;
-      const light = rnd() < 0.5;
-      wrap(x, y, r, (px, py) => {
-        const g = ctx.createRadialGradient(px, py, 0, px, py, r);
-        g.addColorStop(0, light ? "rgba(255,255,230,.35)" : "rgba(60,110,50,.22)");
-        g.addColorStop(1, "rgba(0,0,0,0)");
-        ctx.fillStyle = g;
-        ctx.fillRect(px - r, py - r, r * 2, r * 2);
-      });
-    }
-    // blades: short tapered strokes leaning a little, dark ones first, light tips on top
-    ctx.lineCap = "round";
-    const blades = (n: number, colors: string[], len: number, width: number): void => {
-      for (let i = 0; i < n; i++) {
-        const x = rnd() * S;
-        const y = rnd() * S;
-        const l = len * (0.6 + rnd() * 0.8);
-        const lean = (rnd() - 0.5) * l * 0.7;
-        ctx.strokeStyle = colors[Math.floor(rnd() * colors.length)]!;
-        ctx.lineWidth = width * (0.7 + rnd() * 0.6);
-        wrap(x, y, l + 4, (px, py) => {
-          ctx.beginPath();
-          ctx.moveTo(px, py);
-          ctx.quadraticCurveTo(px + lean * 0.3, py - l * 0.6, px + lean, py - l);
-          ctx.stroke();
-        });
-      }
-    };
-    blades(2600, ["rgba(70,120,55,.55)", "rgba(90,140,60,.5)", "rgba(55,100,50,.5)"], 14, 2.2);
-    blades(2200, ["rgba(150,200,110,.6)", "rgba(175,215,120,.55)", "rgba(120,175,90,.55)"], 11, 1.8);
-    blades(900, ["rgba(235,250,200,.55)", "rgba(255,255,225,.45)"], 7, 1.3);
-    // clover: three round leaves around a dot
-    for (let i = 0; i < 26; i++) {
-      const x = rnd() * S;
-      const y = rnd() * S;
-      const r = 4 + rnd() * 3;
-      const rot = rnd() * Math.PI * 2;
-      wrap(x, y, r * 3, (px, py) => {
-        for (let k = 0; k < 3; k++) {
-          const a = rot + (k / 3) * Math.PI * 2;
-          ctx.fillStyle = "rgba(85,140,70,.85)";
-          ctx.beginPath();
-          ctx.arc(px + Math.cos(a) * r, py + Math.sin(a) * r, r, 0, Math.PI * 2);
-          ctx.fill();
-          ctx.fillStyle = "rgba(200,235,160,.35)";
-          ctx.beginPath();
-          ctx.arc(px + Math.cos(a) * r - 1, py + Math.sin(a) * r - 1, r * 0.45, 0, Math.PI * 2);
-          ctx.fill();
-        }
-      });
-    }
-    // a few tiny daisies
-    for (let i = 0; i < 9; i++) {
-      const x = rnd() * S;
-      const y = rnd() * S;
-      wrap(x, y, 8, (px, py) => {
-        ctx.fillStyle = "rgba(255,255,255,.95)";
-        for (let k = 0; k < 6; k++) {
-          const a = (k / 6) * Math.PI * 2;
-          ctx.beginPath();
-          ctx.ellipse(px + Math.cos(a) * 3.2, py + Math.sin(a) * 3.2, 2.4, 1.4, a, 0, Math.PI * 2);
-          ctx.fill();
-        }
-        ctx.fillStyle = "#ffd23f";
-        ctx.beginPath();
-        ctx.arc(px, py, 1.8, 0, Math.PI * 2);
-        ctx.fill();
-      });
     }
   });
   tex.wrapS = tex.wrapT = THREE.RepeatWrapping;

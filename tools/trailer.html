@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Trailer studio</title>
+  <meta name="robots" content="noindex">
+  <style>
+    html, body { margin: 0; background: #111; color: #eee; font: 14px system-ui, sans-serif; }
+    .stage { position: absolute; left: 0; top: 0; width: 1440px; height: 1080px; overflow: hidden; }
+    #out { position: absolute; left: 0; top: 0; width: 1440px; height: 1080px; z-index: 5; }
+    #status { position: fixed; right: 8px; bottom: 8px; z-index: 9; background: #000a; padding: 6px 10px; border-radius: 6px; }
+  </style>
+</head>
+<body>
+  <!-- dev-only: renders the 4:3 trailer frame by frame (see tools/trailer.ts) -->
+  <div id="stage1" class="stage"></div>
+  <div id="stage2" class="stage"></div>
+  <canvas id="out" width="1440" height="1080"></canvas>
+  <div id="status">loading…</div>
+  <script type="module" src="./trailer.ts"></script>
+</body>
+</html>

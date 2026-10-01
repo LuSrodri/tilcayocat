@@ -538,9 +538,26 @@ export interface CatModel {
   ears: THREE.Object3D[];
   arm: THREE.Group;
   tongue: THREE.Object3D;
+  /** the open, happy mouth (catch) */
   mouth: THREE.Object3D;
+  /** the little "ω" cat mouth at rest, and a crooked frown for bad moods */
+  smile: THREE.Object3D;
+  frown: THREE.Object3D;
+  /** eyeballs with their lids; hidden while the cat squints happily */
+  eyes: THREE.Object3D[];
+  /** closed, happy "^ ^" eyes */
+  joy: THREE.Object3D;
+  /** tufts of darker fur above the eyes that frown or droop with the mood */
+  brows: THREE.Object3D[];
+  blush: THREE.Object3D;
   /** tail joints, root first; `userData.bend` holds each joint's resting curl */
   tail: THREE.Object3D[];
+}
+
+// A thin ink stroke along a curve, for drawn-on facial features.
+function stroke(points: [number, number, number][], radius: number, key: string): THREE.Mesh {
+  const g = geo(`stroke:${key}`, () => new THREE.TubeGeometry(new THREE.CatmullRomCurve3(points.map((p) => new THREE.Vector3(...p))), 24, radius, 6, false));
+  return new THREE.Mesh(g, flat(0x2e1a26));
 }
 
 export function buildCat(skin: SkinId = "grey"): CatModel {
@@ -550,7 +567,6 @@ export function buildCat(skin: SkinId = "grey"): CatModel {
   const cream = toon(look.cream);
   const nose = toon(look.nose);
   const mid = toon(hexNum(look.coat[1]));
-  const black = flat(0x1a1015);
   const white = flat(0xffffff);
 
   const root = new THREE.Group();
@@ -627,14 +643,50 @@ export function buildCat(skin: SkinId = "grey"): CatModel {
       head.add(part(sphere(0.008, 6, 4), flat(0x6a5560), { pos: [s * (0.07 + k * 0.025), -0.1 - (k % 2) * 0.03, 0.47 - k * 0.012], outline: false }));
     }
   }
-  const mouth = part(sphere(0.05), black, { pos: [0, -0.2, 0.4], scale: [1.2, 0.6, 0.5], outline: false });
+  const mouth = new THREE.Group();
+  mouth.add(part(sphere(0.06), flat(0x3a1420), { pos: [0, -0.175, 0.43], scale: [1.35, 0.95, 0.55] }));
+  mouth.add(part(sphere(0.04), toon(0xff7d9c), { pos: [0, -0.2, 0.455], scale: [1.2, 0.7, 0.5], outline: false }));
   mouth.visible = false;
   head.add(mouth);
+  const philtrum: [number, number, number][] = [[0, -0.078, 0.47], [0, -0.1, 0.476], [0, -0.122, 0.478]];
+  const smile = new THREE.Group();
+  smile.add(stroke(philtrum, 0.008, "philtrum"));
+  smile.add(stroke([[-0.105, -0.122, 0.455], [-0.052, -0.162, 0.472], [0, -0.122, 0.478], [0.052, -0.162, 0.472], [0.105, -0.122, 0.455]], 0.009, "omega"));
+  head.add(smile);
+  const frown = new THREE.Group();
+  frown.add(stroke(philtrum, 0.008, "philtrum"));
+  frown.add(stroke([[-0.075, -0.185, 0.458], [-0.03, -0.158, 0.472], [0.02, -0.16, 0.473], [0.07, -0.18, 0.46]], 0.009, "frown"));
+  frown.visible = false;
+  head.add(frown);
+  const blush = new THREE.Group();
+  for (const s of [-1, 1]) blush.add(part(sphere(0.06, 14, 10), toon(0xff8fa8), { pos: [s * 0.285, -0.07, 0.35], rot: [0, s * 0.62, 0], scale: [1, 0.55, 0.28], outline: false }));
+  blush.visible = false;
+  head.add(blush);
+  const browColor = look.pattern === "tabby" || look.pattern === "rosettes" ? look.marks
+    : look.pattern === "smoke" ? "#26232b" : look.pattern === "calico" ? "#37323a" : skin === "white" ? "#c9bfb6" : "#1f1c24";
+  const browMat = toon(hexNum(browColor));
+  const browGeo = geo("brow", () => new THREE.CapsuleGeometry(0.016, 0.085, 4, 8).rotateZ(Math.PI / 2));
+  const brows: THREE.Object3D[] = [];
+  for (const s of [-1, 1]) {
+    const b = part(browGeo, browMat, { pos: [s * 0.19, 0.2, 0.37], rot: [-0.35, s * 0.3, 0] });
+    b.userData.side = s;
+    b.visible = false;
+    brows.push(b);
+    head.add(b);
+  }
+  const joy = new THREE.Group();
+  for (const s of [-1, 1]) {
+    const cx = s * 0.19;
+    // drawn on the closed lid (lid radius 0.124 around the eye at z 0.34)
+    joy.add(stroke([[cx - 0.085, 0.02, 0.44], [cx - 0.04, 0.07, 0.462], [cx + 0.04, 0.07, 0.462], [cx + 0.085, 0.02, 0.44]], 0.013, `joy${s}`));
+  }
+  joy.visible = false;
+  head.add(joy);
   const tongue = part(sphere(0.045), toon(0xff7d9c), { pos: [0, -0.24, 0.4], scale: [0.9, 1.1, 0.6] });
   head.add(tongue);
   // whiskers, plus brow whiskers above the eyes
   const whisker = geo("whisker", () => new THREE.CylinderGeometry(0.004, 0.004, 0.42, 4).rotateZ(Math.PI / 2));
-  const brow = geo("brow-whisker", () => new THREE.CylinderGeometry(0.003, 0.003, 0.22, 4).rotateZ(Math.PI / 2));
+  const brow = geo("brow-whisker", () => new THREE.CylinderGeometry(0.003, 0.003, 0.14, 4).rotateZ(Math.PI / 2));
   const wMat = flat(skin === "white" ? 0xd8d0c8 : 0xfff6ea);
   for (const s of [-1, 1]) {
     for (const k of [0, 1, 2]) {
@@ -652,6 +704,7 @@ export function buildCat(skin: SkinId = "grey"): CatModel {
   }
   // eyes with toon lids (the lids carry the mood: half-closed = grumpy)
   const lids: THREE.Object3D[] = [];
+  const eyes: THREE.Object3D[] = [];
   const lidGeo = geo("lid", () => new THREE.SphereGeometry(0.118, 18, 10, 0, Math.PI * 2, 0, Math.PI / 2));
   for (const s of [-1, 1]) {
     const eye = new THREE.Group();
@@ -665,6 +718,8 @@ export function buildCat(skin: SkinId = "grey"): CatModel {
     lid.userData.side = s;
     eye.add(lid);
     lids.push(lid);
+    eye.userData.side = s;
+    eyes.push(eye);
     head.add(eye);
   }
   // ears: coat-coloured cone, pink inside with a tuft of fur, darker tip where the coat has one
@@ -685,7 +740,7 @@ export function buildCat(skin: SkinId = "grey"): CatModel {
     ears.push(ear);
     head.add(ear);
   });
-  return { skin, root, body, head, lids, ears, arm, tongue, mouth, tail };
+  return { skin, root, body, head, lids, ears, arm, tongue, mouth, smile, frown, eyes, joy, brows, blush, tail };
 }
 
 // Three little toe bumps along the front of a paw.
@@ -700,17 +755,37 @@ export type CatFace = "idle" | "catch" | "angry" | "sad" | "lick";
 
 /** Pose the face for a mood. */
 export function setCatFace(cat: CatModel, face: CatFace): void {
-  const lid = face === "catch" ? 1.2 : face === "angry" ? 0.75 : face === "sad" ? 0.85 : face === "lick" ? 1.25 : 0.45;
-  const tilt = face === "angry" ? 0.4 : face === "sad" ? -0.3 : face === "catch" ? 0 : 0.12;
+  const happy = face === "catch";
+  const lid = happy ? 1.34 : face === "angry" ? 0.78 : face === "sad" ? 0.9 : face === "lick" ? 1.25 : 0.42;
+  const tilt = face === "angry" ? 0.4 : face === "sad" ? -0.3 : 0.1;
+  setLids(cat, lid, tilt);
+  cat.joy.visible = happy;
+  cat.blush.visible = happy;
+  cat.mouth.visible = happy;
+  cat.smile.visible = face === "idle";
+  cat.frown.visible = face === "angry" || face === "sad";
+  cat.tongue.visible = face === "lick";
+  cat.tongue.position.set(0, -0.24, 0.44);
+  cat.tongue.scale.set(0.9, 1.1, 0.6);
+  for (const b of cat.brows) {
+    const s = b.userData.side as number;
+    b.visible = face === "angry" || face === "sad";
+    b.rotation.z = face === "angry" ? s * 0.5 : -s * 0.38;
+    b.position.y = face === "angry" ? 0.185 : 0.215;
+  }
+  const earTilt = face === "angry" ? 0.9 : face === "sad" ? 0.7 : 0.35;
+  cat.ears.forEach((e, i) => {
+    e.rotation.z = (i === 0 ? 1 : -1) * earTilt;
+    e.userData.tilt = earTilt;
+  });
+}
+
+/** Lid position (0.4 wide open … 1.3 shut) and tilt; used by moods and blinks. */
+export function setLids(cat: CatModel, lid: number, tilt: number): void {
   for (const l of cat.lids) {
     const s = l.userData.side as number;
     l.rotation.set(-Math.PI / 2 + (Math.PI / 2) * (1 - lid), 0, s * tilt);
   }
-  const earTilt = face === "angry" ? 0.9 : face === "sad" ? 0.7 : 0.35;
-  cat.ears.forEach((e, i) => (e.rotation.z = (i === 0 ? 1 : -1) * earTilt));
-  cat.mouth.visible = face === "catch" || face === "angry";
-  cat.tongue.visible = face === "idle" || face === "lick";
-  cat.tongue.position.z = face === "lick" ? 0.44 : 0.4;
 }
 
 // ---- mouse ----------------------------------------------------------------------------
@@ -943,7 +1018,7 @@ export function buildPaw(skin: SkinId = "grey"): THREE.Group {
   const coat = toon(0xffffff, coatTexture(skin), `coat:${skin}`);
   const cream = toon(look.cream);
   const bean = toon(look.bean);
-  g.add(part(geo("pawArm", () => new THREE.CapsuleGeometry(0.16, 0.42, 6, 14)), coat, { pos: [0, 0.46, 0] }));
+  g.add(part(geo("pawArm", () => new THREE.CapsuleGeometry(0.15, 0.24, 6, 14)), coat, { pos: [0, 0.36, 0] }));
   g.add(part(sphere(0.21), cream, { pos: [0, 0.14, 0.02], scale: [1.15, 0.78, 1.2] }));
   g.add(part(sphere(0.075), bean, { pos: [0, 0.02, -0.02], scale: [1.4, 0.45, 1.1], outline: false }));
   for (let i = 0; i < 4; i++) {
@@ -988,88 +1063,84 @@ function lizardTexture(): THREE.Texture {
   });
 }
 
-/** A bright yellow lizard, scrambling out of the hole with its front feet on the rim. */
+/**
+ * The yellow lizard (calango): built like the mouse so they belong together — a chubby round body
+ * popping out of the hole, a big round head with a wide snout and bulging eyes on top, little
+ * hands resting on the rim, a rounded crest, and a thick tail curling up out of the burrow.
+ */
 export function buildLizard(): THREE.Group {
   const skin = toon(0xffffff, lizardTexture(), "lizard");
-  const belly = toon(0xfff1a8);
-  const orange = toon(0xf08a24);
+  const belly = toon(0xfff3b8);
+  const crest = toon(0xf28a2a);
   const black = flat(0x1a1015);
   const white = flat(0xffffff);
   const g = new THREE.Group();
-  // body leaning out of the hole, belly towards the camera
-  const torso = new THREE.Group();
-  torso.rotation.x = 0.25;
-  g.add(torso);
-  torso.add(part(sphere(0.2), skin, { pos: [0, 0.3, 0], scale: [0.72, 1.7, 0.7] }));
-  torso.add(part(sphere(0.12, 16, 12), belly, { pos: [0, 0.27, 0.08], scale: [0.75, 1.9, 0.6], outline: false }));
-  // dorsal spines down the back
-  const spine = geo("liz-spine", () => new THREE.ConeGeometry(0.03, 0.08, 6));
-  for (let i = 0; i < 6; i++) torso.add(part(spine, orange, { pos: [0, 0.1 + i * 0.09, -0.13 + Math.sin(i * 0.4) * 0.01], rot: [-0.9, 0, 0], outline: false }));
-  // legs splayed out like a gecko's: front ones gripping the rim, hind ones bracing below
-  const upperGeo = geo("liz-leg", () => new THREE.CapsuleGeometry(0.04, 0.14, 4, 8));
-  const toeGeo = geo("liz-toe", () => new THREE.CapsuleGeometry(0.014, 0.06, 3, 6));
-  const padGeo = geo("liz-pad", () => new THREE.SphereGeometry(0.022, 8, 6));
-  for (const [y, z, size] of [[0.5, 0.04, 0.62], [0.1, 0.02, 0.58]] as const) {
-    const len = 1;
-    for (const s of [-1, 1]) {
-      // upper leg points out sideways, the forearm bends down to the ground
-      const hip = new THREE.Group();
-      hip.position.set(s * 0.12, y, z);
-      hip.rotation.set(0.3, 0, -s * 1.35);
-      hip.scale.setScalar(size);
-      hip.add(part(upperGeo, skin, { pos: [0, 0.1 * len, 0] }));
-      const knee = new THREE.Group();
-      knee.position.set(0, 0.2 * len, 0);
-      knee.rotation.z = -s * 1.25;
-      knee.add(part(upperGeo, skin, { pos: [0, 0.09 * len, 0], scale: [0.85, 0.9, 0.85] }));
-      for (const a of [-0.7, 0, 0.7]) {
-        const toe = part(toeGeo, skin, { pos: [Math.sin(a) * 0.05, 0.2 * len, Math.cos(a) * 0.015], rot: [0, 0, -a] });
-        toe.add(part(padGeo, orange, { pos: [0, 0.04, 0], outline: false }));
-        knee.add(toe);
-      }
-      hip.add(knee);
-      torso.add(hip);
-    }
+  // body, belly
+  g.add(part(sphere(0.25), skin, { pos: [0, 0.3, 0], scale: [0.95, 1.12, 0.9] }));
+  g.add(part(sphere(0.19), belly, { pos: [0, 0.29, 0.1], scale: [0.9, 1.15, 0.72], outline: false }));
+  // little three-fingered hands held up, like the mouse's
+  const finger = geo("liz-finger", () => new THREE.CapsuleGeometry(0.014, 0.035, 3, 6));
+  for (const s of [-1, 1]) {
+    const hand = new THREE.Group();
+    hand.position.set(s * 0.1, 0.42, 0.19);
+    hand.add(part(sphere(0.045), skin, { scale: [1, 0.85, 0.85] }));
+    for (const a of [-0.5, 0, 0.5]) hand.add(part(finger, skin, { pos: [Math.sin(a) * 0.04, 0.035, 0.015], rot: [0.3, 0, -a] }));
+    g.add(hand);
   }
-  // head: a long, rounded snout with bulging eyes at the sides
+  // head: round, with a wide snout
   const head = new THREE.Group();
   head.name = "head";
-  head.position.set(0, 0.68, 0.08);
+  head.position.set(0, 0.63, 0.02);
   g.add(head);
-  head.add(part(sphere(0.15, 22, 16), skin, { scale: [1, 0.72, 1.55] }));
-  head.add(part(sphere(0.11, 16, 10), belly, { pos: [0, -0.05, 0.06], scale: [0.95, 0.45, 1.6], outline: false }));
+  head.add(part(sphere(0.21, 24, 18), skin, { scale: [1.12, 0.9, 1.0] }));
+  head.add(part(sphere(0.15, 20, 14), skin, { pos: [0, -0.05, 0.13], scale: [1.18, 0.72, 0.95] }));
+  head.add(part(sphere(0.12, 16, 10), belly, { pos: [0, -0.1, 0.13], scale: [1.15, 0.45, 0.95], outline: false }));
+  // bulging eyes on top
   for (const s of [-1, 1]) {
     const eye = new THREE.Group();
-    eye.position.set(s * 0.1, 0.06, 0.05);
-    eye.add(part(sphere(0.055, 14, 10), skin));
-    eye.add(part(sphere(0.042, 14, 10), white, { pos: [s * 0.018, 0.008, 0.02], outline: false }));
-    eye.add(part(sphere(0.026, 10, 8), black, { pos: [s * 0.03, 0.01, 0.045], outline: false }));
-    eye.add(part(sphere(0.009, 6, 4), white, { pos: [s * 0.038, 0.022, 0.066], outline: false }));
+    eye.position.set(s * 0.12, 0.12, 0.06);
+    eye.add(part(sphere(0.085, 16, 12), skin));
+    eye.add(part(sphere(0.066, 16, 12), white, { pos: [0, 0.008, 0.035], outline: false }));
+    eye.add(part(sphere(0.04, 12, 8), black, { pos: [s * 0.004, 0.006, 0.08], outline: false }));
+    eye.add(part(sphere(0.014, 8, 6), white, { pos: [s * 0.012 + 0.012, 0.025, 0.112], outline: false }));
     head.add(eye);
-    // nostrils and a rosy cheek
-    head.add(part(sphere(0.011, 6, 4), black, { pos: [s * 0.035, 0.03, 0.225], outline: false }));
-    head.add(part(sphere(0.026, 10, 8), toon(0xffa070), { pos: [s * 0.12, -0.04, 0.08], scale: [0.5, 0.6, 1], outline: false }));
+    head.add(part(sphere(0.011, 6, 4), black, { pos: [s * 0.04, -0.02, 0.27], outline: false }));
+    head.add(part(sphere(0.035, 10, 8), toon(0xffa070), { pos: [s * 0.16, -0.06, 0.15], rot: [0, s * 0.6, 0], scale: [1, 0.6, 0.3], outline: false }));
   }
-  // a wide, cheerful smile
-  head.add(part(geo("liz-smile", () => new THREE.TorusGeometry(0.11, 0.008, 6, 20, Math.PI * 0.7)), black, {
-    pos: [0, -0.02, 0.12], rot: [1.3, 0, Math.PI + Math.PI * 0.15], scale: [0.9, 1.4, 1], outline: false
-  }));
-  const tongue = part(geo("liz-tongue", () => new THREE.BoxGeometry(0.02, 0.008, 0.1).translate(0, 0, 0.05)), toon(0xff5d8f), { pos: [0, -0.04, 0.22], outline: false });
+  // a wide, cheerful smile across the snout
+  const smile = new THREE.Mesh(
+    geo("liz-smile", () => new THREE.TubeGeometry(new THREE.CatmullRomCurve3([
+      new THREE.Vector3(-0.14, -0.05, 0.18), new THREE.Vector3(-0.07, -0.085, 0.255), new THREE.Vector3(0, -0.09, 0.27),
+      new THREE.Vector3(0.07, -0.085, 0.255), new THREE.Vector3(0.14, -0.05, 0.18)
+    ]), 20, 0.009, 6, false)),
+    black
+  );
+  head.add(smile);
+  const tongue = part(geo("liz-tongue", () => new THREE.BoxGeometry(0.02, 0.008, 0.1).translate(0, 0, 0.05)), toon(0xff5d8f), { pos: [0, -0.085, 0.25], outline: false });
   tongue.name = "tongue";
   tongue.scale.z = 0.01;
   head.add(tongue);
-  // tail curling out of the hole behind it
-  const curve = new THREE.CatmullRomCurve3([
-    new THREE.Vector3(0, 0.05, -0.12),
-    new THREE.Vector3(0.12, 0.12, -0.3),
-    new THREE.Vector3(0.3, 0.1, -0.32),
-    new THREE.Vector3(0.38, 0.22, -0.18)
-  ]);
+  // rounded crest down the back of the head and spine
+  for (let i = 0; i < 5; i++) {
+    const a = 0.5 + i * 0.32;
+    head.add(part(sphere(0.035 - i * 0.003, 10, 8), crest, { pos: [0, Math.cos(a) * 0.19, -Math.sin(a) * 0.2], scale: [0.6, 1, 1] }));
+  }
+  // a thick tail curling up out of the burrow behind it
   const tail = new THREE.Group();
   tail.name = "lizTail";
-  tail.add(part(geo("liz-tail", () => new THREE.TubeGeometry(curve, 24, 0.045, 8, false)), skin));
-  tail.add(part(sphere(0.045, 10, 8), skin, { pos: [0.38, 0.22, -0.18], outline: false }));
+  tail.position.set(0.05, 0.08, -0.18);
   g.add(tail);
+  let joint: THREE.Object3D = tail;
+  for (let i = 0; i < 10; i++) {
+    const seg = new THREE.Group();
+    seg.position.set(0, 0, i === 0 ? 0 : 0.06);
+    seg.rotation.set(-0.16 - i * 0.03, 0.22, 0);
+    const r = 0.075 - i * 0.0055;
+    seg.add(part(sphere(0.075, 12, 10), skin, { scale: [r / 0.075, r / 0.075, (r / 0.075) * 1.3] }));
+    joint.add(seg);
+    joint = seg;
+  }
+  tail.rotation.y = Math.PI * 0.85;
   return g;
 }
 

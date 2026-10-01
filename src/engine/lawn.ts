@@ -1,7 +1,8 @@
 import * as THREE from "three";
+import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import { loadArt, glowTexture, starTexture, heartTexture, shadowTexture, grassTexture, groundColor } from "./art";
 import {
-  toon, buildCat, setCatFace, buildMouse, buildPorcupine, buildPaw, buildCoin, buildSnake, buildLizard, fadeable, disposeClones,
+  toon, buildCat, setCatFace, setLids, buildMouse, buildPorcupine, buildPaw, buildCoin, buildSnake, buildLizard, fadeable, disposeClones,
   fancyThumb, catThumb, lizardThumb, wallTexture, PIT_DEPTH, SNAKE_SEGMENTS, type CatModel, type CatFace
 } from "./models";
 import type { SkinId } from "../shop";
@@ -100,11 +101,24 @@ interface CatView {
   lickFrom: number;
   lickUntil: number;
   swipeAt: number;
+  /** slapping paws currently out on the lawn (the arm hides while any is) */
+  pawsOut: number;
   pounce: number;
   /** where the cat is heading (it walks there when the lawn grows) */
   spot: THREE.Vector3;
   ring: HTMLElement;
   tag: HTMLElement | null;
+  /** the face currently shown (mood, or "lick" while licking) */
+  face: CatFace;
+  nextBlink: number;
+  blinkUntil: number;
+  nextTwitch: number;
+  twitchEar: number;
+  twitchUntil: number;
+  /** 0..1, how much the cat is in hunting mode (prey on the lawn) */
+  hunt: number;
+  headYaw: number;
+  headPitch: number;
 }
 
 interface Anim {
@@ -134,6 +148,9 @@ export class Lawn {
   private readonly spritePool: THREE.Sprite[] = [];
   private readonly fireflies: { s: THREE.Sprite; base: THREE.Vector3; ph: number; sp: number }[] = [];
   private tapHandler: ((hole: number) => void) | null = null;
+  // the cats glance at whatever just popped out of a hole
+  private readonly lookTarget = new THREE.Vector3();
+  private lookUntil = 0;
   private readonly skins: [SkinId, SkinId] = ["grey", "grey"];
   private wanted = new Set<number>();
   private hemi = new THREE.HemisphereLight(0xffe6cc, 0x3a4a34, 1.6);
@@ -234,7 +251,7 @@ export class Lawn {
     c.setOpacity = made.setOpacity;
     c.setOpacity(c.present ? 1 : 0.35);
     c.aura.visible = this.mood === "auto";
-    setCatFace(c.model, c.mood as CatFace);
+    setCatFace(c.model, c.face);
     if (this.built) this.dust(c.model.root.position, 12);
   }
 
@@ -280,8 +297,11 @@ export class Lawn {
   raise(hole: number, kind: Critter, variant: number | null = null): void {
     const h = this.holes[hole];
     if (!h) return;
+    this.lookTarget.copy(h.pos);
+    this.lookUntil = performance.now() + 1400;
     if (h.occ) this.drop(h);
     h.occ = this.makeOccupant(kind, variant, h);
+    this.rustle(h.pos, kind === "snake" || kind === "porcupine" ? 0.8 : 0.45);
   }
 
   /** Critter goes back down quietly. */
@@ -351,7 +371,11 @@ export class Lawn {
     const catPos = cat.model.root.position;
     const toCat = catPos.clone().sub(h.pos).setY(0).normalize();
     paw.quaternion.setFromUnitVectors(UP, toCat.clone().multiplyScalar(0.45).add(UP).normalize());
-    const from = catPos.clone().add(new THREE.Vector3(0, CAT_H * 0.5, 0.35));
+    // the paw leaves from the cat's own shoulder; the arm is hidden while it is out
+    cat.model.arm.updateWorldMatrix(true, false);
+    const from = cat.model.arm.getWorldPosition(new THREE.Vector3()).add(new THREE.Vector3(0, -0.15, 0.1));
+    cat.pawsOut += 1;
+    cat.model.arm.visible = false;
     const above = h.pos.clone().add(toCat.clone().multiplyScalar(0.35)).add(new THREE.Vector3(0, 1.25, 0.15));
     const ctrl = from.clone().lerp(above, 0.5).add(new THREE.Vector3(0, 0.9, 0));
     const hit = h.pos.clone().add(new THREE.Vector3(0, 0.06, 0.06));
@@ -359,6 +383,8 @@ export class Lawn {
     paw.scale.setScalar(0.35);
     cat.swipeAt = performance.now();
     cat.pounce = Math.max(cat.pounce, 0.7);
+    this.lookTarget.copy(h.pos);
+    this.lookUntil = Math.max(this.lookUntil, performance.now() + 700);
 
     const t0 = performance.now();
     let impacted = false;
@@ -404,6 +430,8 @@ export class Lawn {
           const k = (t - WIND - STRIKE - HOLD) / BACK;
           if (k >= 1) {
             this.scene.remove(paw);
+            cat.pawsOut = Math.max(0, cat.pawsOut - 1);
+            if (!cat.pawsOut) cat.model.arm.visible = true;
             return false;
           }
           const e = easeInOut(k);
@@ -559,6 +587,173 @@ export class Lawn {
     this.fitDirty = true;
   }
 
+  // ---- grass --------------------------------------------------------------------
+
+  // grass sways on the world clock (so Freeze stills it too)
+  private readonly grassTime = { value: 0 };
+  private readonly grassHits = { value: [0, 1, 2, 3].map(() => new THREE.Vector4(0, 0, -99, 0)) };
+  private nextHit = 0;
+
+  /** Push the grass around a spot outwards (a paw landing, a critter popping out). */
+  private rustle(at: THREE.Vector3, strength = 1): void {
+    this.grassHits.value[this.nextHit]!.set(at.x, at.z, this.wtime, strength);
+    this.nextHit = (this.nextHit + 1) % 4;
+  }
+  private grassMat: THREE.MeshLambertMaterial | null = null;
+
+  private grassMaterial(): THREE.MeshLambertMaterial {
+    if (this.grassMat) return this.grassMat;
+    const m = new THREE.MeshLambertMaterial({ vertexColors: true });
+    const time = this.grassTime;
+    const hits = this.grassHits;
+    m.onBeforeCompile = (sh) => {
+      sh.uniforms.uTime = time;
+      sh.uniforms.uHits = hits;
+      sh.vertexShader = `uniform float uTime;
+uniform vec4 uHits[4];
+` + sh.vertexShader.replace(
+        "#include <project_vertex>",
+        `// grass moves in world space: a wind wave rolling across the lawn, a flutter, and blades
+        // pushed away from wherever a paw lands or a critter pops out (uHits: x, z, time, strength)
+        mat4 inst = mat4(1.0);
+        #ifdef USE_INSTANCING
+          inst = instanceMatrix;
+        #endif
+        vec4 wpos = modelMatrix * inst * vec4(transformed, 1.0);
+        vec3 root = (modelMatrix * inst * vec4(0.0, 0.0, 0.0, 1.0)).xyz;
+        float tip = clamp(position.y / 0.2, 0.0, 1.0);
+        float bendK = tip * tip;
+        float ph = root.x * 2.1 + root.z * 1.3;
+        float gust = sin(uTime * 1.3 - root.x * 0.7) * 0.5 + 0.5;
+        wpos.x += (sin(uTime * 2.2 + ph) * 0.35 + gust * 0.9) * bendK * 0.045;
+        wpos.z += sin(uTime * 3.1 + ph * 1.7) * 0.01 * tip;
+        for (int i = 0; i < 4; i++) {
+          vec4 hit = uHits[i];
+          float age = uTime - hit.z;
+          if (age >= 0.0 && age < 1.6) {
+            vec2 d = root.xz - hit.xy;
+            float f = exp(-age * 3.2) * (1.0 - smoothstep(0.35, 1.4, length(d))) * hit.w;
+            wpos.xz += normalize(d + vec2(0.0001)) * f * 0.17 * bendK;
+            wpos.y -= f * 0.06 * bendK;
+          }
+        }
+        vec4 mvPosition = viewMatrix * wpos;
+        gl_Position = projectionMatrix * mvPosition;`
+      );
+    };
+    this.grassMat = m;
+    return m;
+  }
+
+  /**
+   * Tufts of 3-5 blades at the given spots. `lean(x, z)` can tip blades towards a point (the
+   * blades at a hole's lip hang over the opening).
+   */
+  private shadowMat: THREE.MeshBasicMaterial | null = null;
+
+  /**
+   * Soft contact shadows under grass and clovers, nudged and stretched away from the sun so they
+   * read as the same light that shadows the cat and the holes.
+   */
+  private blobShadows(spots: { x: number; z: number; r: number }[]): THREE.InstancedMesh {
+    this.shadowMat ??= new THREE.MeshBasicMaterial({ map: blobTexture(), color: 0x173016, transparent: true, opacity: 0.62, depthWrite: false });
+    const geo = new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2);
+    const mesh = new THREE.InstancedMesh(geo, this.shadowMat, spots.length);
+    const yaw = Math.atan2(SHADOW_DIR.x, SHADOW_DIR.y);
+    const q = new THREE.Quaternion().setFromAxisAngle(UP, yaw);
+    spots.forEach((s, i) => {
+      const pos = new THREE.Vector3(s.x + SHADOW_DIR.x * s.r * 0.45, 0.004, s.z + SHADOW_DIR.y * s.r * 0.45);
+      mesh.setMatrixAt(i, new THREE.Matrix4().compose(pos, q, new THREE.Vector3(s.r * 1.6, 1, s.r * 2.3)));
+    });
+    mesh.renderOrder = 1;
+    mesh.frustumCulled = false;
+    return mesh;
+  }
+
+  private grassPatch(spots: { x: number; z: number; lean?: THREE.Vector2 }[], seed: number, size = 1, worldOffset?: THREE.Vector3): THREE.Group {
+    const rnd = mulberry(seed);
+    const blades: THREE.Matrix4[] = [];
+    const colors: THREE.Color[] = [];
+    const q = new THREE.Quaternion();
+    const e = new THREE.Euler(0, 0, 0, "YXZ");
+    const base = new THREE.Color();
+    for (const s of spots) {
+      // a touceira: 6-9 blades fanning out from one root, tinted like the lawn around it
+      const wx = s.x + (worldOffset?.x ?? 0);
+      const wz = s.z + (worldOffset?.z ?? 0);
+      groundColor(Math.min(1, Math.hypot(wx, wz) / 15), base);
+      base.multiplyScalar(0.86 + rnd() * 0.12);
+      base.offsetHSL((rnd() - 0.5) * 0.03, 0, 0);
+      const n = 5 + Math.floor(rnd() * 4);
+      const turn = rnd() * Math.PI * 2;
+      const tuft = (0.75 + rnd() * 0.45) * size;
+      for (let k = 0; k < n; k++) {
+        const yaw = turn + (k / n) * Math.PI * 2 + (rnd() - 0.5) * 0.5;
+        let lean = 0.08 + rnd() * 0.28;
+        let yawF = yaw;
+        if (s.lean) {
+          // tufts at a hole's lip all lean in over the opening
+          yawF = Math.atan2(s.lean.x, s.lean.y) + (rnd() - 0.5) * 1.2;
+          lean = 0.4 + rnd() * 0.25;
+        }
+        e.set(lean, yawF, 0);
+        q.setFromEuler(e);
+        const h = tuft * (0.85 + rnd() * 0.55);
+        const w = 0.7 + rnd() * 0.3;
+        blades.push(new THREE.Matrix4().compose(new THREE.Vector3(s.x + (rnd() - 0.5) * 0.03, 0, s.z + (rnd() - 0.5) * 0.03), q, new THREE.Vector3(w, h, w)));
+        colors.push(base.clone().multiplyScalar(0.94 + rnd() * 0.12));
+      }
+    }
+    const mesh = new THREE.InstancedMesh(bladeGeometry(), this.grassMaterial(), blades.length);
+    blades.forEach((m, i) => {
+      mesh.setMatrixAt(i, m);
+      mesh.setColorAt(i, colors[i]!);
+    });
+    mesh.receiveShadow = true;
+    mesh.frustumCulled = false;
+    const group = new THREE.Group();
+    group.add(this.blobShadows(spots.map((s) => ({ x: s.x, z: s.z, r: 0.16 * size }))), mesh);
+    return group;
+  }
+
+  /** Clovers scattered here and there: mostly three leaves, now and then a lucky four. */
+  private cloverPatch(spots: { x: number; z: number }[], seed: number): THREE.Group {
+    const rnd = mulberry(seed);
+    const group = new THREE.Group();
+    const base = new THREE.Color();
+    for (const leaves of [3, 4] as const) {
+      const mine = spots.filter((_, i) => (i % 13 === 7 ? 4 : 3) === leaves);
+      if (!mine.length) continue;
+      const mesh = new THREE.InstancedMesh(cloverGeometry(leaves), this.grassMaterial(), mine.length);
+      mine.forEach((s, i) => {
+        const size = 1.25 + rnd() * 0.55;
+        const q = new THREE.Quaternion().setFromEuler(new THREE.Euler((rnd() - 0.5) * 0.2, rnd() * Math.PI * 2, (rnd() - 0.5) * 0.2));
+        mesh.setMatrixAt(i, new THREE.Matrix4().compose(new THREE.Vector3(s.x, 0, s.z), q, new THREE.Vector3(size, size, size)));
+        // a deeper, slightly bluer green than the grass, so clovers stand out softly
+        groundColor(Math.min(1, Math.hypot(s.x, s.z) / 15), base);
+        base.offsetHSL(0.03, 0.05, -0.04);
+        mesh.setColorAt(i, base.clone().multiplyScalar(0.92 + rnd() * 0.12));
+      });
+      mesh.receiveShadow = true;
+      mesh.frustumCulled = false;
+      group.add(mesh);
+    }
+    group.add(this.blobShadows(spots.map((s) => ({ x: s.x, z: s.z, r: 0.17 }))));
+    return group;
+  }
+
+  /** Grass around a hole's lip: some tufts hang over the edge. */
+  private tufts(seed: number, count: number, rMin: number, rMax: number, at: THREE.Vector3): THREE.Group {
+    const rnd = mulberry(seed);
+    const spots = Array.from({ length: count }, (_, k) => {
+      const a = (k / count) * Math.PI * 2 + (rnd() - 0.5) * 0.6;
+      const lip = true;
+      const d = lip ? rMin + rnd() * 0.06 : rMin + 0.15 + rnd() * (rMax - rMin - 0.15);
+      return { x: Math.cos(a) * d, z: Math.sin(a) * d, lean: lip ? new THREE.Vector2(-Math.cos(a), -Math.sin(a)) : undefined };
+    });
+    return this.grassPatch(spots, seed + 1, 0.85, at);
+  }
+
   // ---- building ----------------------------------------------------------------
 
   // Built in small steps that hand the main thread back in between, so the page stays
@@ -598,7 +793,7 @@ export class Lawn {
     }
     groundGeo.setAttribute("color", new THREE.Float32BufferAttribute(colors, 3));
     const grass = grassTexture();
-    grass.repeat.set(12, 12);
+    grass.repeat.set(4, 4);
     grass.anisotropy = Math.min(16, this.renderer.capabilities.getMaxAnisotropy());
     const ground = new THREE.Mesh(groundGeo, new THREE.MeshLambertMaterial({ map: grass, vertexColors: true }));
     ground.rotation.x = -Math.PI / 2;
@@ -641,10 +836,10 @@ export class Lawn {
   // the grass can't cover the opening, while critters climbing out stay visible inside it.
   private buildHoles(): void {
     const R = 0.42;
-    const rimGeo = new THREE.TorusGeometry(R, 0.085, 12, 36);
-    rimGeo.rotateX(Math.PI / 2);
-    rimGeo.scale(1, 0.5, 1);
-    const rimMat = toon(0x8a5a3a);
+    // three lumpy rims, so no two neighbouring holes look stamped from the same mould
+    const rimGeos = [0, 1, 2].map((v) => lumpyRim(R, v));
+    const rimMat = toon(0x6e4a32);
+    const clodMat = toon(0x5a3b27);
     const wallGeo = new THREE.CylinderGeometry(R, R * 0.86, PIT_DEPTH + 0.05, 36, 1, true);
     wallGeo.translate(0, -(PIT_DEPTH + 0.05) / 2, 0);
     const wallMat = new THREE.MeshBasicMaterial({ map: wallTexture(), side: THREE.BackSide });
@@ -656,15 +851,16 @@ export class Lawn {
     maskGeo.rotateX(-Math.PI / 2);
     maskGeo.translate(0, 0.004, 0);
     const maskMat = new THREE.MeshBasicMaterial({ colorWrite: false });
-    // soft contact shadow around the lip
-    const aoGeo = new THREE.RingGeometry(R * 0.95, R * 1.9, 40);
-    aoGeo.rotateX(-Math.PI / 2);
-    const aoMat = new THREE.MeshBasicMaterial({ map: aoTexture(), transparent: true, depthWrite: false });
+    // dug-up soil around the lip that fades into the grass, darker towards the opening
+    const soilGeo = new THREE.RingGeometry(R * 0.92, R * 1.75, 64);
+    soilGeo.rotateX(-Math.PI / 2);
+    const soilMat = new THREE.MeshLambertMaterial({ map: soilTexture(), transparent: true, depthWrite: false });
     const glowGeo = new THREE.RingGeometry(0.52, 0.62, 40);
     glowGeo.rotateX(-Math.PI / 2);
     const moundGeo = new THREE.SphereGeometry(0.3, 16, 10, 0, Math.PI * 2, 0, Math.PI / 2);
     moundGeo.scale(1, 0.45, 1);
-    const clod = new THREE.SphereGeometry(0.045, 8, 6);
+    const clod = new THREE.IcosahedronGeometry(0.045, 1);
+    const rnd = mulberry(31);
 
     for (let i = 0; i < HOLES; i++) {
       const pos = holePos(i);
@@ -675,11 +871,14 @@ export class Lawn {
       wall.renderOrder = floor.renderOrder = -3;
       const mask = new THREE.Mesh(maskGeo, maskMat);
       mask.renderOrder = -1;
-      const ao = new THREE.Mesh(aoGeo, aoMat);
+      const ao = new THREE.Mesh(soilGeo, soilMat);
       ao.position.y = 0.008;
+      ao.rotation.y = rnd() * Math.PI * 2;
+      ao.receiveShadow = true;
       ao.renderOrder = 1;
-      const rim = new THREE.Mesh(rimGeo, rimMat);
+      const rim = new THREE.Mesh(rimGeos[i % 3]!, rimMat);
       rim.position.y = 0.012;
+      rim.rotation.y = rnd() * Math.PI * 2;
       rim.castShadow = true;
       rim.receiveShadow = true;
       const glow = new THREE.Mesh(
@@ -688,15 +887,20 @@ export class Lawn {
       );
       glow.position.y = 0.02;
       glow.renderOrder = 2;
-      for (let k = 0; k < 3; k++) {
-        const c = new THREE.Mesh(clod, rimMat);
-        const a = k * 2.1 + i;
-        c.position.set(Math.cos(a) * 0.58, 0.015, Math.sin(a) * 0.52);
-        c.scale.set(1, 0.6, 1);
+      // clods of earth kicked out of the hole
+      for (let k = 0; k < 6; k++) {
+        const c = new THREE.Mesh(clod, k % 2 ? clodMat : rimMat);
+        const a = rnd() * Math.PI * 2;
+        const d = R * (1.25 + rnd() * 0.55);
+        c.position.set(Math.cos(a) * d, 0.01, Math.sin(a) * d);
+        const s = 0.5 + rnd() * 0.9;
+        c.scale.set(s, s * 0.55, s);
+        c.rotation.set(rnd(), rnd() * 3, rnd());
         c.castShadow = true;
-        rim.add(c);
+        c.receiveShadow = true;
+        group.add(c);
       }
-      group.add(wall, floor, mask, ao, rim, glow);
+      group.add(wall, floor, mask, ao, rim, glow, this.tufts(i * 97 + 5, 5, R * 0.95, R * 1.15, pos));
       group.scale.setScalar(0);
       this.scene.add(group);
       const mound = new THREE.Mesh(moundGeo, rimMat);
@@ -740,7 +944,7 @@ export class Lawn {
     casts(model.root);
     const shadow = new THREE.Mesh(
       new THREE.PlaneGeometry(2, 1.6),
-      new THREE.MeshBasicMaterial({ map: shadowTexture(), transparent: true, depthWrite: false, opacity: 0.6 })
+      new THREE.MeshBasicMaterial({ map: shadowTexture(), transparent: true, depthWrite: false, opacity: 0.78 })
     );
     shadow.rotation.x = -Math.PI / 2;
     shadow.position.set(0, 0.012, 0.05);
@@ -753,6 +957,8 @@ export class Lawn {
     aura.visible = false;
     model.root.add(aura);
     setCatFace(model, "idle");
+    const feet = [[-0.5, 0.42], [-0.28, 0.58], [0, 0.62], [0.24, 0.6], [0.46, 0.46], [-0.62, 0.15], [0.62, 0.2], [0.1, 0.5]];
+    model.root.add(this.grassPatch(feet.map(([x, z]) => ({ x: x!, z: z! })), 900 + skin.length, 0.85));
     return { model, aura, setOpacity };
   }
 
@@ -767,7 +973,8 @@ export class Lawn {
       ring.innerHTML = `<span class="lick-ring__dial"></span>`;
       this.layer.append(ring);
       this.cats.push({
-        slot, model, present: true, aura, setOpacity, yaw: 0, mood: "idle", moodTimer: 0, lickFrom: 0, lickUntil: 0, swipeAt: 0, pounce: 0, spot: new THREE.Vector3(), ring, tag: null
+        slot, model, present: true, aura, setOpacity, yaw: 0, mood: "idle", moodTimer: 0, lickFrom: 0, lickUntil: 0, swipeAt: 0, pawsOut: 0, pounce: 0, spot: new THREE.Vector3(), ring, tag: null,
+        face: "idle", nextBlink: performance.now() + 1500, blinkUntil: 0, nextTwitch: performance.now() + 2500, twitchEar: 0, twitchUntil: 0, hunt: 0, headYaw: 0, headPitch: -0.22
       });
     }
     this.placeCats();
@@ -798,6 +1005,32 @@ export class Lawn {
       }
       return new THREE.Vector3(10, 0, 10);
     };
+
+    // tufts of grass all over the lawn (never where a hole is or will be dug)
+    const spots: { x: number; z: number }[] = [];
+    const holeSpots = Array.from({ length: HOLES }, (_, i) => holePos(i));
+    const want = this.quality >= 2 ? 700 : 1400;
+    for (let n = 0; n < 12000 && spots.length < want; n++) {
+      const a = rnd() * Math.PI * 2;
+      const r = Math.sqrt(rnd()) * 9.5;
+      const x = Math.cos(a) * r;
+      const z = Math.sin(a) * r * 0.85;
+      if (holeSpots.some((h) => Math.hypot(h.x - x, h.z - z) < 0.66)) continue;
+      spots.push({ x, z });
+    }
+    this.scene.add(this.grassPatch(spots, 404));
+    const cloverSpots: { x: number; z: number }[] = [];
+    for (let n = 0; n < 3000 && cloverSpots.length < 120; n++) {
+      const a = rnd() * Math.PI * 2;
+      const r = 0.8 + Math.pow(rnd(), 0.8) * 8.5;
+      const x = Math.cos(a) * r;
+      const z = Math.sin(a) * r * 0.85;
+      if (holeSpots.some((h) => Math.hypot(h.x - x, h.z - z) < 0.75)) continue;
+      // clovers grow in little families of 2-4
+      const family = 2 + Math.floor(rnd() * 3);
+      for (let k = 0; k < family; k++) cloverSpots.push({ x: x + (rnd() - 0.5) * 0.3, z: z + (rnd() - 0.5) * 0.3 });
+    }
+    this.scene.add(this.cloverPatch(cloverSpots, 505));
 
     // round shrubs framing the lawn
     const leaf = [0x4f8f4a, 0x5f9f4f, 0x467f44].map((c) => toon(c));
@@ -903,7 +1136,6 @@ export class Lawn {
       down = -0.85;
     } else if (kind === "lizard") {
       body = buildLizard();
-      up = 0.04;
       down = -0.95;
     } else if (kind === "mouse" || kind === "fancy") {
       body = buildMouse(kind === "fancy" ? variant ?? 0 : null);
@@ -950,6 +1182,7 @@ export class Lawn {
     victim: Occupant | null, stuck: Occupant | null
   ): void {
     const top = h.pos.clone().add(new THREE.Vector3(0, 0.4, 0.1));
+    this.rustle(h.pos, outcome === "whiff" ? 1.2 : 1);
     if (label) this.pop(hole, label, outcome);
     switch (outcome) {
       case "whiff":
@@ -1017,7 +1250,13 @@ export class Lawn {
 
   private setCatMood(c: CatView, mood: CatMood): void {
     c.mood = mood;
-    if (c.lickUntil <= performance.now()) setCatFace(c.model, mood as CatFace);
+    if (c.lickUntil <= performance.now()) this.showFace(c, mood as CatFace);
+  }
+
+  private showFace(c: CatView, face: CatFace): void {
+    c.face = face;
+    c.blinkUntil = 0;
+    setCatFace(c.model, face);
   }
 
   // ---- particles -----------------------------------------------------------------
@@ -1116,6 +1355,7 @@ export class Lawn {
   }
 
   private update(now: number, dt: number): void {
+    this.grassTime.value = this.wtime;
     if (this.fitDirty) this.fit();
     const k = this.snapCamera ? 1 : 1 - Math.exp(-dt * 2.4);
     this.snapCamera = false;
@@ -1188,32 +1428,79 @@ export class Lawn {
       m.body.position.y = 0;
     }
     c.pounce = Math.max(0, c.pounce - dt * 3.2);
+    const frozen = this.mood === "freeze";
+    // hunting mode: prey on the lawn makes the cat crouch a little, ears up, tail tip twitching
+    const prey = this.holes.some((h) => h.occ && (h.occ.kind === "mouse" || h.occ.kind === "fancy" || h.occ.kind === "lizard"));
+    if (!frozen) c.hunt += ((prey ? 1 : 0) - c.hunt) * Math.min(1, dt * 4);
     const squash = Math.sin(c.pounce * Math.PI) * 0.07;
     const breathe = Math.sin(this.wtime * 1.9 + c.slot) * 0.012;
-    m.body.scale.set(1 + squash, 1 - squash + breathe, 1 + squash);
+    const crouch = c.hunt * 0.035;
+    m.body.scale.set(1 + squash + crouch * 0.4, 1 - squash + breathe - crouch, 1 + squash + crouch * 0.4);
     const licking = c.lickUntil > now;
     // the right arm: a quick swipe when slapping, up at the mouth when licking
-    const swipe = (now - c.swipeAt) / 380;
-    let armX = 0;
-    let armZ = 0;
+    let armTarget = REST_Q;
     if (licking) {
-      setCatFace(m, "lick");
+      if (c.face !== "lick") this.showFace(c, "lick");
+      // paw up to the mouth, head tipped onto it, tongue lapping
       const bob = Math.sin(this.time * 14);
-      armX = -2.1 + bob * 0.12;
-      armZ = 0.55;
-      m.head.rotation.set(0.18 + bob * 0.04, 0, -0.12);
+      armTarget = LICK_Q.clone().multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), bob * 0.08));
+      m.head.rotation.set(0.24 + bob * 0.04, 0.1, -0.16);
+      m.tongue.position.set(0.05, -0.215 + Math.max(0, bob) * 0.03, 0.45);
+      m.tongue.scale.set(0.9, 1.1 + Math.max(0, bob) * 0.35, 0.6);
     } else {
-      if (c.mood === "idle" && m.tongue.position.z > 0.42) setCatFace(m, c.mood);
-      m.head.rotation.set(-0.22 + Math.sin(this.wtime * 0.9 + c.slot) * 0.03, Math.sin(this.wtime * 0.6 + c.slot) * 0.08, 0);
-      if (swipe >= 0 && swipe < 1) armX = -Math.sin(swipe * Math.PI) * 1.9;
+      if (c.face !== c.mood) this.showFace(c, c.mood as CatFace);
+      // look at the latest critter (or the hole being slapped), otherwise back at the camera
+      let yaw = Math.sin(this.wtime * 0.6 + c.slot) * 0.08;
+      let pitch = -0.22 + Math.sin(this.wtime * 0.9 + c.slot) * 0.03;
+      const glance = now < this.lookUntil ? this.lookTarget : null;
+      if (glance) {
+        const d = glance.clone().sub(m.root.position);
+        // the eyes do most of the looking; the head only follows a little, so the face stays to camera
+        yaw = THREE.MathUtils.clamp(Math.atan2(d.x, d.z) - c.yaw, -0.9, 0.9) * 0.4;
+        pitch = -0.16;
+      }
+      if (!frozen) {
+        const k = Math.min(1, dt * 9);
+        c.headYaw += (yaw - c.headYaw) * k;
+        c.headPitch += (pitch - c.headPitch) * k;
+      }
+      m.head.rotation.set(c.headPitch, c.headYaw, 0);
+      // the eyes lead: they turn further than the head
+      for (const e of m.eyes) e.rotation.y = (e.userData.side as number) * 0.25 + c.headYaw * 0.9;
+      // blinks (one now and then, sometimes a double blink); a happy squint doesn't blink
+      if (!frozen && (c.face === "idle" || c.face === "angry" || c.face === "sad")) {
+        if (now >= c.nextBlink) {
+          c.blinkUntil = now + 120;
+          c.nextBlink = now + (Math.random() < 0.2 ? 260 : 1800 + Math.random() * 3600);
+          setLids(m, 1.32, 0);
+        } else if (c.blinkUntil && now >= c.blinkUntil) {
+          c.blinkUntil = 0;
+          setCatFace(m, c.face);
+        }
+      }
     }
-    m.arm.rotation.x += (armX - m.arm.rotation.x) * Math.min(1, dt * 20);
-    m.arm.rotation.z += (armZ - m.arm.rotation.z) * Math.min(1, dt * 20);
+    // ears: perk up while hunting, flick one now and then
+    if (!frozen && now >= c.nextTwitch) {
+      c.twitchEar = Math.random() < 0.5 ? 0 : 1;
+      c.twitchUntil = now + 160;
+      c.nextTwitch = now + 1600 + Math.random() * 3200;
+    }
+    m.ears.forEach((e, i) => {
+      const base = (e.userData.tilt as number | undefined) ?? 0.35;
+      const tilt = c.face === "idle" || c.face === "catch" ? base * (1 - 0.45 * c.hunt) : base;
+      e.rotation.z = (i === 0 ? 1 : -1) * tilt;
+      const flick = now < c.twitchUntil && i === c.twitchEar ? Math.sin(((c.twitchUntil - now) / 160) * Math.PI) : 0;
+      e.rotation.x = -0.1 - flick * 0.55;
+    });
+    m.arm.quaternion.slerp(armTarget, Math.min(1, dt * 14));
     // the tail sways as a wave that runs down to the curled tip
+    const tipFrom = m.tail.length - 4;
     m.tail.forEach((seg, i) => {
       const bend = seg.userData.bend as { x: number; y: number };
       const flick = c.mood === "angry" ? 2.2 : 1;
-      seg.rotation.y = bend.y + Math.sin(this.wtime * 1.8 * flick - i * 0.45 + c.slot) * (0.05 + i * 0.006) * flick;
+      // the tip twitches while the cat is hunting
+      const nervous = i >= tipFrom ? Math.sin(this.wtime * 11 + i) * 0.12 * c.hunt : 0;
+      seg.rotation.y = bend.y + Math.sin(this.wtime * 1.8 * flick - i * 0.45 + c.slot) * (0.05 + i * 0.006) * flick + nervous;
       seg.rotation.x = bend.x + Math.sin(this.wtime * 1.2 - i * 0.3) * 0.02;
     });
     c.aura.material.opacity = 0.4 + Math.sin(this.time * 6) * 0.12;
@@ -1303,7 +1590,7 @@ export class Lawn {
         if (prop) prop.rotation.y += dt * 18;
         if (occ.kind === "lizard") {
           const tail = occ.body.getObjectByName("lizTail");
-          if (tail) tail.rotation.y = Math.sin(t * 4) * 0.35;
+          if (tail) tail.rotation.y = Math.PI * 0.85 + Math.sin(t * 4) * 0.3;
           const tongue = occ.body.getObjectByName("tongue");
           const f = (t % 1.6) / 1.6;
           if (tongue) tongue.scale.z = Math.max(0.01, f < 0.18 ? Math.sin((f / 0.18) * Math.PI) : 0);
@@ -1502,21 +1789,182 @@ function iceMaterial(): THREE.MeshPhongMaterial {
   return iceMat;
 }
 
-let ao: THREE.Texture | null = null;
-/** Soft dark falloff for the ring of grass around each hole. */
-function aoTexture(): THREE.Texture {
-  if (ao) return ao;
+let soil: THREE.Texture | null = null;
+/**
+ * Dug-up earth around a hole (mapped on a ring from 0.92 R to 2.15 R): dark and crumbly at the
+ * lip, breaking up into blotches and crumbs that fade into the grass.
+ */
+function soilTexture(): THREE.Texture {
+  if (soil) return soil;
+  const S = 512;
   const c = document.createElement("canvas");
-  c.width = c.height = 128;
+  c.width = c.height = S;
   const ctx = c.getContext("2d")!;
-  const g = ctx.createRadialGradient(64, 64, 30, 64, 64, 64);
-  g.addColorStop(0, "rgba(25,12,20,.5)");
-  g.addColorStop(1, "rgba(25,12,20,0)");
-  ctx.fillStyle = g;
-  ctx.fillRect(0, 0, 128, 128);
-  ao = new THREE.CanvasTexture(c);
-  return ao;
+  const C = S / 2;
+  const inner = C * (0.92 / 1.75);
+  const rnd = mulberry(77);
+  const base = ctx.createRadialGradient(C, C, inner - 4, C, C, C * 0.98);
+  base.addColorStop(0, "rgba(84,56,37,.95)");
+  base.addColorStop(0.3, "rgba(98,68,44,.7)");
+  base.addColorStop(0.65, "rgba(108,78,50,.2)");
+  base.addColorStop(1, "rgba(110,80,50,0)");
+  ctx.fillStyle = base;
+  ctx.fillRect(0, 0, S, S);
+  // a ragged edge: blotches of earth thinning out into the lawn
+  for (let i = 0; i < 300; i++) {
+    const a = rnd() * Math.PI * 2;
+    const d = inner + Math.pow(rnd(), 1.6) * (C - inner - 12);
+    const r = 4 + rnd() * 12;
+    ctx.fillStyle = `rgba(${90 + rnd() * 20},${60 + rnd() * 16},${38 + rnd() * 10},${(0.5 * (1 - (d - inner) / (C - inner))).toFixed(3)})`;
+    ctx.beginPath();
+    ctx.ellipse(C + Math.cos(a) * d, C + Math.sin(a) * d, r, r * (0.5 + rnd() * 0.5), rnd() * 3, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  // crumbs and little stones
+  for (let i = 0; i < 220; i++) {
+    const a = rnd() * Math.PI * 2;
+    const d = inner + Math.pow(rnd(), 1.4) * (C - inner - 20);
+    ctx.fillStyle = rnd() < 0.6 ? "rgba(58,36,22,.75)" : "rgba(160,124,88,.6)";
+    ctx.beginPath();
+    ctx.arc(C + Math.cos(a) * d, C + Math.sin(a) * d, 0.8 + rnd() * 2.6, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  // shade right at the lip, where the ground drops away
+  const ao = ctx.createRadialGradient(C, C, inner - 2, C, C, inner + 30);
+  ao.addColorStop(0, "rgba(18,10,8,.6)");
+  ao.addColorStop(1, "rgba(18,10,8,0)");
+  ctx.fillStyle = ao;
+  ctx.fillRect(0, 0, S, S);
+  soil = new THREE.CanvasTexture(c);
+  soil.colorSpace = THREE.SRGBColorSpace;
+  soil.anisotropy = 8;
+  return soil;
 }
+
+/** The raised lip of a hole: a torus with lumps and dips so it reads as packed earth. */
+function lumpyRim(R: number, variant: number): THREE.BufferGeometry {
+  const g = new THREE.TorusGeometry(R, 0.085, 12, 72);
+  g.rotateX(Math.PI / 2);
+  g.scale(1, 0.5, 1);
+  const pos = g.getAttribute("position");
+  const p = new THREE.Vector3();
+  for (let i = 0; i < pos.count; i++) {
+    p.fromBufferAttribute(pos, i);
+    const a = Math.atan2(p.z, p.x);
+    const n = Math.sin(a * 3 + variant * 2.1) * 0.5 + Math.sin(a * 7 + variant * 4.3) * 0.3 + Math.sin(a * 13 + variant) * 0.2;
+    const r = Math.hypot(p.x, p.z);
+    const k = 1 + (n * 0.05 * (r > R ? 1 : 0.35)) / r;
+    pos.setXYZ(i, p.x * k, p.y * (1 + n * 0.45) + Math.max(0, n) * 0.012, p.z * k);
+  }
+  g.computeVertexNormals();
+  return g;
+}
+
+// Where the scene's sun throws shadows on the ground (the sun sits at -4, 9, 6).
+const SHADOW_DIR = new THREE.Vector2(4, -6).normalize();
+
+const clovers = new Map<number, THREE.BufferGeometry>();
+/**
+ * A clover: three (or, rarely, four) heart-shaped leaves on short stalks, lifted a little off the
+ * ground. Same conventions as the grass blades (vertex colours, upward normals, height ~0.2 for
+ * the sway), so it shares their material, wind and paw rustle.
+ */
+function cloverGeometry(leaves: 3 | 4): THREE.BufferGeometry {
+  const hit = clovers.get(leaves);
+  if (hit) return hit;
+  const heart = new THREE.Shape();
+  // a leaf pointing along +y from its stalk, notched at the far end like a clover's
+  heart.moveTo(0, 0);
+  heart.bezierCurveTo(-0.03, 0.012, -0.05, 0.045, -0.034, 0.064);
+  heart.bezierCurveTo(-0.022, 0.078, -0.006, 0.072, 0, 0.06);
+  heart.bezierCurveTo(0.006, 0.072, 0.022, 0.078, 0.034, 0.064);
+  heart.bezierCurveTo(0.05, 0.045, 0.03, 0.012, 0, 0);
+  const parts: THREE.BufferGeometry[] = [];
+  for (let k = 0; k < leaves; k++) {
+    const leaf = new THREE.ShapeGeometry(heart, 6);
+    leaf.rotateX(-Math.PI / 2 + 0.35); // lie almost flat, tipped up a little
+    leaf.rotateY((k / leaves) * Math.PI * 2);
+    leaf.translate(0, 0.075, 0);
+    parts.push(leaf);
+  }
+  const stalk = new THREE.CylinderGeometry(0.004, 0.006, 0.075, 4, 1, true);
+  stalk.translate(0, 0.0375, 0);
+  parts.push(stalk);
+  for (const g of parts) {
+    g.deleteAttribute("uv");
+    const pos = g.getAttribute("position");
+    const col: number[] = [];
+    const nor: number[] = [];
+    for (let i = 0; i < pos.count; i++) {
+      // stalk and leaf roots darker, leaf edges light
+      const r = Math.hypot(pos.getX(i), pos.getZ(i));
+      const k = pos.getY(i) < 0.07 ? 0.7 : 0.82 + Math.min(1, r / 0.07) * 0.32;
+      col.push(k, k, k);
+      nor.push(0, 1, 0);
+    }
+    g.setAttribute("color", new THREE.Float32BufferAttribute(col, 3));
+    g.setAttribute("normal", new THREE.Float32BufferAttribute(nor, 3));
+  }
+  const merged = mergeGeometries(parts.map((g) => (g.index ? g.toNonIndexed() : g)));
+  // both windings, like the blades
+  const pos = merged.getAttribute("position");
+  const idx: number[] = [];
+  for (let i = 0; i < pos.count; i += 3) idx.push(i, i + 1, i + 2, i + 2, i + 1, i);
+  merged.setIndex(idx);
+  clovers.set(leaves, merged);
+  return merged;
+}
+
+let blob: THREE.Texture | null = null;
+/** Soft contact shadow, darkest in the middle. */
+function blobTexture(): THREE.Texture {
+  if (blob) return blob;
+  const c = document.createElement("canvas");
+  c.width = c.height = 64;
+  const ctx = c.getContext("2d")!;
+  const g = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
+  g.addColorStop(0, "rgba(255,255,255,1)");
+  g.addColorStop(0.5, "rgba(255,255,255,.55)");
+  g.addColorStop(1, "rgba(255,255,255,0)");
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, 64, 64);
+  blob = new THREE.CanvasTexture(c);
+  return blob;
+}
+
+// The licking pose: the right arm turned from hanging down to pointing from the shoulder
+// (0.17, 0.62, 0.32) to just under the mouth (0.03, 1.12, 0.5), all in body space.
+const REST_Q = new THREE.Quaternion();
+const LICK_Q = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, -1, 0), new THREE.Vector3(-0.14, 0.5, 0.18).normalize());
+
+let blade: THREE.BufferGeometry | null = null;
+/**
+ * One cartoon grass blade: a flat, curved leaf (root, waist, shoulder, tip), dark at the root
+ * and light at the tip, lit like the ground under it. Tufts of them are drawn instanced.
+ */
+function bladeGeometry(): THREE.BufferGeometry {
+  if (blade) return blade;
+  const w = 0.042;
+  const h = 0.2;
+  const g = new THREE.BufferGeometry();
+  g.setAttribute("position", new THREE.Float32BufferAttribute([
+    -w, 0, 0, w, 0, 0,
+    -w * 0.85, h * 0.42, 0.02, w * 0.85, h * 0.42, 0.02,
+    -w * 0.5, h * 0.76, 0.05, w * 0.5, h * 0.76, 0.05,
+    0, h, 0.085
+  ], 3));
+  // both windings, so the blade shows from either side with the same upward normal
+  const front = [0, 1, 3, 0, 3, 2, 2, 3, 5, 2, 5, 4, 4, 5, 6];
+  const back: number[] = [];
+  for (let i = 0; i < front.length; i += 3) back.push(front[i + 2]!, front[i + 1]!, front[i]!);
+  g.setIndex([...front, ...back]);
+  const shade = [0.74, 0.74, 0.9, 0.9, 1.04, 1.04, 1.16];
+  g.setAttribute("color", new THREE.Float32BufferAttribute(shade.flatMap((k) => [k, k, k]), 3));
+  g.setAttribute("normal", new THREE.Float32BufferAttribute(Array.from({ length: 7 }, () => [0, 1, 0]).flat(), 3));
+  blade = g;
+  return g;
+}
+
 
 function segDist(px: number, py: number, ax: number, ay: number, bx: number, by: number): number {
   const dx = bx - ax;

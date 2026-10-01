@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Cat lab</title>
+  <meta name="robots" content="noindex">
+  <style>
+    html, body { margin: 0; background: #111; color: #eee; font: 14px system-ui, sans-serif; }
+    #stage { position: absolute; left: 0; top: 0; width: 720px; height: 720px; overflow: hidden; }
+    #status { position: fixed; right: 8px; bottom: 8px; background: #000a; padding: 6px 10px; border-radius: 6px; }
+  </style>
+</head>
+<body>
+  <!-- dev-only: films the cat's animations frame by frame (see tools/catlab.ts) -->
+  <div id="stage"></div>
+  <div id="status">loading…</div>
+  <script type="module" src="./catlab.ts"></script>
+</body>
+</html>
