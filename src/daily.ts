@@ -1,5 +1,6 @@
 import { DAILY_GOAL, type RoundStats } from "./game";
 import { dailyNumber, dailyVariant, fancyKind } from "./fancy";
+import { rankFor, challengeUrl } from "./rank";
 
 export { dailyNumber, dailyVariant };
 
@@ -73,15 +74,20 @@ export function formatSeconds(ms: number): string {
   return s < 60 ? `${s}s` : `${Math.floor(s / 60)}m ${String(s % 60).padStart(2, "0")}s`;
 }
 
-/** The share text, Wordle-style: one square per mouse of the day towards today's goal. */
-export function dailyShareText(run: DailyRun): string {
+/**
+ * The share text, Wordle-style: the round's catch and rank, one square per mouse of the day
+ * towards today's goal, the time, and a link that dares friends to beat the score.
+ */
+export function dailyShareText(run: DailyRun, mice: number): string {
   const caught = Math.min(DAILY_GOAL, run.fancy);
   const squares = "🐭".repeat(caught) + "⬛".repeat(DAILY_GOAL - caught);
   const done = run.doneMs !== null;
+  const rank = rankFor(mice);
   return (
-    `🐆 Tilcayo #${dailyNumber()} — ${run.points.toLocaleString("en-US")} pts\n` +
-    `${squares} (${caught} ${fancyKind(dailyVariant()).name} caught${done ? " ✅" : ""})\n` +
-    `⏱️ ${formatSeconds(done ? run.doneMs! : run.elapsedMs)}\n` +
-    `tilcayo.cat`
+    `🐱 Cat The Mouse Company · Day #${dailyNumber()}\n` +
+    `${rank.emoji} ${mice} ${mice === 1 ? "mouse" : "mice"} · ${rank.name} · ${run.points.toLocaleString("en-US")} pts\n` +
+    `${squares}\n` +
+    `🎩 ${caught}/${DAILY_GOAL} ${fancyKind(dailyVariant()).name}${done ? " ✅" : ""} · ⏱️ ${formatSeconds(done ? run.doneMs! : run.elapsedMs)}\n` +
+    `Can your cat beat mine? ${challengeUrl(mice).replace("https://", "")}`
   );
 }

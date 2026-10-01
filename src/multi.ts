@@ -2,7 +2,9 @@ import "./style.css";
 import { Lawn, webgl2Available } from "./engine/lawn";
 import { sfx, music, volume } from "./sound";
 import { API, WS_BASE } from "./api";
-import { earn, mountSeals } from "./seals";
+import { earn, mountSeals, checkStreakSeals } from "./seals";
+import { touchStreak } from "./rank";
+import { currentSkin, hasLizard, earnPoints } from "./shop";
 import { mountOnline } from "./presence";
 import { fancyKind } from "./fancy";
 import { guard } from "./guard";
@@ -32,7 +34,7 @@ const hudEl = document.querySelector<HTMLElement>(".hud")!;
 if (!webgl2Available()) {
   // very old browsers: say so instead of showing a broken lawn
   const box = document.getElementById("loading")!;
-  box.innerHTML = `<p class="nogl">The 3D lawn needs a browser with WebGL 2.<br>Try updating your browser, or read <a href="/about">about the tilcayo cat</a>.</p>`;
+  box.innerHTML = `<p class="nogl">The 3D lawn needs a browser with WebGL 2.<br>Try updating your browser, or read <a href="/about">about the cats</a>.</p>`;
   document.getElementById("overlay")!.hidden = true;
   throw new Error("WebGL 2 unavailable");
 }
@@ -49,6 +51,9 @@ const lawn = new Lawn({
     return { top: Math.max(0, h.bottom - f.top + 34), bottom: 12, left: 8, right: 8 };
   }
 });
+// until the room says who is who, both cats wear yours
+lawn.setCatSkin(1, currentSkin());
+lawn.setCatSkin(2, currentSkin());
 void lawn.ready.then(() => {
   $("loading").hidden = true;
   lawn.setActive(ALL_HOLES, false);
@@ -87,7 +92,7 @@ try {
 }
 
 function myName(): string {
-  const n = nameInput.value.trim().slice(0, 14) || "Tilcayo";
+  const n = nameInput.value.trim().slice(0, 14) || "Cat";
   try {
     localStorage.setItem(NAME_KEY, n);
   } catch {
@@ -170,7 +175,7 @@ $("cancelBtn").addEventListener("click", () => {
 $("copyBtn").addEventListener("click", async () => {
   const url = `${location.origin}/play?room=${code}`;
   try {
-    if (navigator.share) await navigator.share({ title: "Tilcayo Cat 1v1", text: "Catch more mice than me!", url });
+    if (navigator.share) await navigator.share({ title: "Cat The Mouse Company 1v1", text: "🐱 Join my lawn in Cat The Mouse Company! First cat to win 2 rounds takes the match. 🐭", url });
     else await navigator.clipboard.writeText(url);
     $("copyBtn").textContent = "Copied!";
     setTimeout(() => ($("copyBtn").textContent = "Copy link"), 1500);
@@ -189,8 +194,8 @@ $("againBtn").addEventListener("click", () => {
 $("shareBtn").addEventListener("click", async () => {
   const text = lastShareText;
   try {
-    if (navigator.share) await navigator.share({ title: "Tilcayo Cat 1v1", text, url: "https://tilcayo.cat/play" });
-    else await navigator.clipboard.writeText(`${text} https://tilcayo.cat/play`);
+    if (navigator.share) await navigator.share({ title: "Cat The Mouse Company 1v1", text, url: "https://catthemouse.co/play" });
+    else await navigator.clipboard.writeText(`${text} https://catthemouse.co/play`);
   } catch {
     /* cancelled */
   }
@@ -230,7 +235,8 @@ function connect(roomCode: string, name: string): void {
   phase = "waiting";
   lobbyError.hidden = true;
 
-  ws = new WebSocket(`${WS_BASE}/ws/${code}?name=${encodeURIComponent(name)}`);
+  // your cat and your unlocked lizard come along to the match
+  ws = new WebSocket(`${WS_BASE}/ws/${code}?name=${encodeURIComponent(name)}&skin=${currentSkin()}&lizard=${hasLizard() ? 1 : 0}`);
   ws.onmessage = (ev) => handle(JSON.parse(ev.data) as ServerMessage);
   ws.onerror = () => fail("Connection failed. Check the code and try again.");
   ws.onclose = (ev) => {
@@ -276,6 +282,7 @@ function handle(msg: ServerMessage): void {
       $("hudRound").textContent = String(msg.round);
       music.start();
       startClock();
+      if (msg.round === 1) checkStreakSeals(touchStreak().days);
       break;
     }
     case "spawn": {
@@ -285,6 +292,7 @@ function handle(msg: ServerMessage): void {
       lawn.raise(m.hole, m.kind, m.variant ?? null);
       if (m.kind === "porcupine") sfx.grunt();
       else if (m.kind === "snake") sfx.hiss();
+      else if (m.kind === "lizard") sfx.squeak();
       else if (m.kind === "fancy") {
         sfx.fancy();
         toast("Fancy mouse! +3", "fancy");
@@ -380,6 +388,7 @@ function applyPlayers(players: PlayerInfo[]): void {
     $(`hudName${p.slot}`).textContent = p.slot === me ? `${p.name} (you)` : p.name;
     $(`tagName${p.slot}`).textContent = p.slot === me ? `${p.name} (you)` : p.name;
     lawn.setCatPresent(p.slot, p.connected);
+    if (p.skin) lawn.setCatSkin(p.slot, p.skin);
   }
   if (players.length < 2) {
     const other: Slot = me === 1 ? 2 : 1;
@@ -523,12 +532,19 @@ function showFinal(winner: Slot | 0, wins: [number, number], rounds: RoundResult
   $("rankingTable").innerHTML = rankingTable(rounds, totals, wins);
   fillNames(wins[0] === wins[1] ? (totals[0] >= totals[1] ? [1, 2] : [2, 1]) : wins[0] > wins[1] ? [1, 2] : [2, 1]);
   if (won && !forfeit) earn("duelist");
+  // every mouse you caught in the match goes to your wallet, like in solo (10 points a mouse)
+  const caught = totals[me - 1];
+  if (caught > 0) {
+    earnPoints(caught * 10);
+    setTimeout(() => toast(`+${caught * 10} pts for the shop`, "seal"), 600);
+  }
   $("againBtn").hidden = false;
   $("shareBtn").hidden = !("share" in navigator || "clipboard" in navigator);
   $("resultCountdown").hidden = true;
+  const rival = names[me === 1 ? 1 : 0];
   lastShareText = won
-    ? `I beat ${names[me === 1 ? 1 : 0]} ${wins[me - 1]}–${wins[me === 1 ? 1 : 0]} in Tilcayo Cat 1v1 🐱🐭`
-    : `I lost to ${names[me === 1 ? 1 : 0]} in Tilcayo Cat 1v1. Rematch? 🐱🐭`;
+    ? `🏆 My cat beat ${rival} ${wins[me - 1]}–${wins[me === 1 ? 1 : 0]} in a Cat The Mouse Company duel (${totals[me - 1]} mice caught). Think your cat is faster? 🐭`
+    : `😼 ${rival} out-hunted me in Cat The Mouse Company 1v1. I want a rematch. Who's next? 🐭`;
   showPanel("result");
   if (winner === 0) {
     lawn.cat(1, "idle");

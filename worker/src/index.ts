@@ -1,7 +1,7 @@
 import { MatchRoom } from "./match";
 import { Lobby } from "./lobby";
 import { Presence } from "./presence";
-import { cleanName } from "./protocol";
+import { cleanName, cleanSkin } from "./protocol";
 
 export { MatchRoom, Lobby, Presence };
 
@@ -65,6 +65,8 @@ export default {
       const target = new URL(request.url);
       target.searchParams.set("code", code);
       target.searchParams.set("name", cleanName(url.searchParams.get("name")));
+      target.searchParams.set("skin", cleanSkin(url.searchParams.get("skin")));
+      target.searchParams.set("lizard", url.searchParams.get("lizard") === "1" ? "1" : "0");
       return env.MATCH.getByName(code).fetch(new Request(target.toString(), request));
     }
 

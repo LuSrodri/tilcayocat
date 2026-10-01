@@ -16,8 +16,8 @@ export const RANKS: Rank[] = [
   { id: "prowler", name: "Lawn Prowler", min: 12, tint: ["#bff3ff", "#2f6bb3"], emoji: "🌙" },
   { id: "hunter", name: "Night Hunter", min: 20, tint: ["#ffe27a", "#e0641f"], emoji: "🔥" },
   { id: "stalker", name: "Shadow Stalker", min: 30, tint: ["#ffc0e6", "#b02a7a"], emoji: "⚡" },
-  { id: "legend", name: "Yungas Legend", min: 45, tint: ["#cffff3", "#0d7a6b"], emoji: "👑" },
-  { id: "mythic", name: "Mythic Tilcayo", min: 65, tint: ["#fff6c9", "#c9851a"], emoji: "🌟" }
+  { id: "legend", name: "Lawn Legend", min: 45, tint: ["#cffff3", "#0d7a6b"], emoji: "👑" },
+  { id: "mythic", name: "Mythic Mouser", min: 65, tint: ["#fff6c9", "#c9851a"], emoji: "🌟" }
 ];
 
 export function rankFor(score: number): Rank {
@@ -92,7 +92,7 @@ export function challengeTarget(): number | null {
   return Number.isFinite(n) && n > 0 && n < 10000 ? n : null;
 }
 
-export const SITE = "https://tilcayo.cat/";
+export const SITE = "https://catthemouse.co/";
 
 export function challengeUrl(score: number): string {
   return score > 0 ? `${SITE}?beat=${score}` : SITE;

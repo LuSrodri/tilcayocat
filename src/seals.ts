@@ -2,9 +2,12 @@ import type { GameEvent } from "./game";
 import { sfx } from "./sound";
 import { albumAdd, albumSize, FANCY_COUNT } from "./fancy";
 
-// Achievement seals: seven wax seals the player collects, one of them only reachable in the 1v1
-// arena and one for filling the fancy-mouse album. They live on the device (localStorage), like the best score.
-export type SealId = "swift" | "nightwatch" | "clean" | "hoard" | "streak" | "duelist" | "collector";
+// Achievement seals: wax seals the player collects. One is only reachable in the 1v1 arena, one
+// fills the fancy-mouse album and four reward coming back day after day (5, 15, 60 and 90 days
+// in a row). They live on the device (localStorage), like the best score.
+export type SealId =
+  | "swift" | "nightwatch" | "clean" | "hoard" | "streak" | "duelist" | "collector"
+  | "days5" | "days15" | "days60" | "days90";
 
 export interface Seal {
   id: SealId;
@@ -59,6 +62,25 @@ const HAT_ICON =
   `<path d="M7.4 11.4h9.2" stroke="rgba(0,0,0,.35)" stroke-width="2"/>` +
   `<circle cx="8.5" cy="20.4" r="1.3" fill="currentColor"/><circle cx="15.5" cy="20.4" r="1.3" fill="currentColor"/></svg>`;
 
+// A little calendar page with the number of days stamped on it.
+function calendarIcon(days: number): string {
+  const size = days >= 10 ? 8.6 : 10;
+  return (
+    `<svg viewBox="0 0 24 24" aria-hidden="true">` +
+    `<rect x="3" y="4.5" width="18" height="16.5" rx="3" fill="currentColor"/>` +
+    `<path d="M7.5 2.6v4M16.5 2.6v4" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>` +
+    `<rect x="3" y="4.5" width="18" height="4.2" rx="2" fill="rgba(0,0,0,.28)"/>` +
+    `<text x="12" y="18.4" text-anchor="middle" font-family="Fredoka, Arial, sans-serif" font-weight="700" font-size="${size}" fill="rgba(255,255,255,.92)">${days}</text></svg>`
+  );
+}
+
+export const STREAK_SEALS: { id: SealId; days: number }[] = [
+  { id: "days5", days: 5 },
+  { id: "days15", days: 15 },
+  { id: "days60", days: 60 },
+  { id: "days90", days: 90 }
+];
+
 export const SEALS: Seal[] = [
   { id: "swift", name: "Quick Paws", goal: `${SWIFT_MICE} mice in one round`, tint: ["#ffe27a", "#e0641f"], icon: PAW_ICON },
   { id: "nightwatch", name: "Night Watch", goal: `Survive ${NIGHT_MS / 1000} s`, tint: ["#bff3ff", "#2f6bb3"], icon: MOON_ICON },
@@ -66,8 +88,17 @@ export const SEALS: Seal[] = [
   { id: "hoard", name: "Power Hoarder", goal: `Grab ${HOARD_POWERS} power-ups`, tint: ["#b6ffd8", "#12a06a"], icon: BOLT_ICON },
   { id: "streak", name: "No Escape", goal: `${STREAK_CATCHES} in a row, no escapes`, tint: ["#ffc0e6", "#b02a7a"], icon: CHAIN_ICON },
   { id: "duelist", name: "Lawn Duelist", goal: "Win a 1v1 online match", tint: ["#cffff3", "#0d7a6b"], icon: CUP_ICON },
-  { id: "collector", name: "Mouse Collector", goal: `All ${FANCY_COUNT} mice of the day`, tint: ["#fff0b3", "#b5179e"], icon: HAT_ICON }
+  { id: "collector", name: "Mouse Collector", goal: `All ${FANCY_COUNT} mice of the day`, tint: ["#fff0b3", "#b5179e"], icon: HAT_ICON },
+  { id: "days5", name: "Regular", goal: "Play 5 days in a row", tint: ["#ffe9c7", "#c46a2b"], icon: calendarIcon(5) },
+  { id: "days15", name: "Loyal Hunter", goal: "Play 15 days in a row", tint: ["#d9f7ff", "#2c7fb8"], icon: calendarIcon(15) },
+  { id: "days60", name: "Lawn Keeper", goal: "Play 60 days in a row", tint: ["#e6ffd1", "#3f8f2a"], icon: calendarIcon(60) },
+  { id: "days90", name: "Company Legend", goal: "Play 90 days in a row", tint: ["#fff3b0", "#a1278f"], icon: calendarIcon(90) }
 ];
+
+/** Grant every streak seal the current run of days has reached. */
+export function checkStreakSeals(days: number): void {
+  for (const s of STREAK_SEALS) if (days >= s.days) earn(s.id);
+}
 
 const EARNED_KEY = "tilcayo.seals";
 const POWERS_KEY = "tilcayo.powers";

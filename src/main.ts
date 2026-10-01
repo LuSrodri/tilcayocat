@@ -2,8 +2,11 @@ import "./style.css";
 import { Game, CATCH_WINDOW_MS, COMBO_WINDOW_MS, POWER_LABEL, DAILY_GOAL, HOLE_TIMES, FULL_LAWN_MS, GUARD_MS, type RoundStats } from "./game";
 import { Lawn, webgl2Available } from "./engine/lawn";
 import { sfx, music, volume } from "./sound";
-import { SealTracker, mountSeals, collectFancy } from "./seals";
-import { rankFor, touchStreak, challengeTarget, type Rank } from "./rank";
+import { SealTracker, mountSeals, collectFancy, checkStreakSeals } from "./seals";
+import { rankFor, touchStreak, currentStreak, challengeTarget, type Rank } from "./rank";
+import {
+  SKINS, LIZARD_PRICE, LIZARD_VALUE, wallet, earnPoints, ownsSkin, currentSkin, equipSkin, buySkin, hasLizard, buyLizard, skinById, type SkinId
+} from "./shop";
 import { dailyNumber, dailyVariant, dailyState, recordDaily, dailyShareText, runOf } from "./daily";
 import { nextFact } from "./facts";
 import { fancyKind, albumHas, albumSize, FANCY_COUNT } from "./fancy";
@@ -51,7 +54,7 @@ for (const el of document.querySelectorAll(".dailyNo")) el.textContent = String(
 if (!webgl2Available()) {
   // very old browsers: say so instead of showing a broken lawn
   const box = document.getElementById("loading")!;
-  box.innerHTML = `<p class="nogl">The 3D lawn needs a browser with WebGL 2.<br>Try updating your browser, or read <a href="/about">about the tilcayo cat</a>.</p>`;
+  box.innerHTML = `<p class="nogl">The 3D lawn needs a browser with WebGL 2.<br>Try updating your browser, or read <a href="/about">about the cats</a>.</p>`;
   document.getElementById("overlay")!.hidden = true;
   throw new Error("WebGL 2 unavailable");
 }
@@ -67,8 +70,10 @@ const lawn = new Lawn({
     return { top: Math.max(0, t.bottom - f.top + 10), bottom: 12, left: 10, right: 10 };
   }
 });
+lawn.setCatSkin(1, currentSkin());
 void lawn.ready.then(() => {
   $("loading").hidden = true;
+  if (!views.shop.hidden) renderShop();
   const thumb = lawn.thumbnail(today);
   $<HTMLImageElement>("dailyImg").src = thumb;
   $<HTMLImageElement>("hudDailyImg").src = thumb;
@@ -79,6 +84,8 @@ new ResizeObserver(() => lawn.refit()).observe(topbar);
 
 const seals = new SealTracker();
 mountSeals($("sealsList"), $("sealsCount"), toast);
+// a streak carried over from earlier visits counts too
+checkStreakSeals(currentStreak());
 
 const COMBO_CALLS: Record<number, string> = {
   5: "Nice combo!",
@@ -182,7 +189,7 @@ const game = new Game(lawn, {
       toast(isNew ? "Daily done! New in your album" : "Daily Challenge done!", "seal");
       sfx.record();
     } else {
-      toast(`${fancyKind(variant).name} ${count}/10`, "fancy");
+      toast(count > DAILY_GOAL ? fancyKind(variant).name : `${fancyKind(variant).name} ${count}/10`, "fancy");
     }
   },
   onEvent(ev) {
@@ -194,10 +201,11 @@ const game = new Game(lawn, {
     field.dataset.zone = "";
     music.stop();
     lastStats = stats;
+    earnPoints(stats.points);
     lawn.shakeIt(0.12);
     showResults(score, best, isNewBest, stats);
   }
-});
+}, { lizard: hasLizard });
 
 // ---- in-round juice -----------------------------------------------------------
 
@@ -249,7 +257,7 @@ function toast(text: string, kind: string): void {
 
 // ---- start / results screen ---------------------------------------------------
 
-const views = { home: $("homeView"), album: $("albumView"), seals: $("sealsView") };
+const views = { home: $("homeView"), album: $("albumView"), seals: $("sealsView"), shop: $("shopView") };
 const resultEl = $("result");
 const challengeEl = $("challenge");
 
@@ -257,9 +265,12 @@ function showView(which: keyof typeof views): void {
   for (const [k, el] of Object.entries(views)) el.hidden = k !== which;
   guard(overlayCard);
   if (which === "album") renderAlbum();
+  if (which === "shop") renderShop();
+  renderWallet();
 }
 $("albumBtn").addEventListener("click", () => showView("album"));
 $("sealsBtn").addEventListener("click", () => showView("seals"));
+$("shopBtn").addEventListener("click", () => showView("shop"));
 $("dailyCard").addEventListener("click", () => showView("album"));
 for (const b of document.querySelectorAll("[data-back]")) b.addEventListener("click", () => showView("home"));
 
@@ -308,6 +319,95 @@ function renderAlbum(): void {
     })
   );
 }
+
+// ---- shop ---------------------------------------------------------------------------
+
+type ShopItem = SkinId | "lizard";
+const compact = new Intl.NumberFormat("en-US", { notation: "compact", maximumFractionDigits: 1 });
+let shopSelected: ShopItem = currentSkin();
+
+function renderWallet(): void {
+  const w = wallet().toLocaleString("en-US");
+  $("walletCount").textContent = w;
+  $("walletNum").textContent = w;
+}
+
+function renderShop(): void {
+  const items: ShopItem[] = [...SKINS.map((s) => s.id), "lizard"];
+  const equipped = currentSkin();
+  $("shopGrid").replaceChildren(
+    ...items.map((id) => {
+      const li = document.createElement("li");
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "shop__item";
+      const isLizard = id === "lizard";
+      const own = isLizard ? hasLizard() : ownsSkin(id);
+      const price = isLizard ? LIZARD_PRICE : skinById(id).price;
+      const name = isLizard ? "Yellow Lizard" : skinById(id).name;
+      if (own) b.classList.add("is-owned");
+      if (!isLizard && id === equipped) b.classList.add("is-equipped");
+      if (id === shopSelected) b.classList.add("is-sel");
+      if (isLizard) b.classList.add("is-critter");
+      const img = document.createElement("img");
+      img.alt = "";
+      img.width = img.height = 64;
+      img.src = isLizard ? lawn.lizardThumbnail() : lawn.catThumbnail(id);
+      const tag = document.createElement("small");
+      tag.textContent = own ? (isLizard ? "Unlocked" : id === equipped ? "On" : "Owned") : compact.format(price);
+      if (!own) tag.classList.add("is-price");
+      b.append(img, tag);
+      b.setAttribute("aria-label", `${name}, ${own ? "owned" : `${price} points`}`);
+      b.addEventListener("click", () => {
+        shopSelected = id;
+        renderShop();
+      });
+      li.append(b);
+      return li;
+    })
+  );
+  renderShopDetail();
+}
+
+function renderShopDetail(): void {
+  const id = shopSelected;
+  const isLizard = id === "lizard";
+  const btn = $<HTMLButtonElement>("shopBuy");
+  const price = isLizard ? LIZARD_PRICE : skinById(id).price;
+  const own = isLizard ? hasLizard() : ownsSkin(id);
+  $("shopName").textContent = isLizard ? "Yellow Lizard" : skinById(id).name;
+  $("shopBlurb").textContent = isLizard
+    ? `A new critter to hunt. Quick, and worth ${LIZARD_VALUE} mice.`
+    : skinById(id).blurb;
+  btn.disabled = false;
+  if (own) {
+    btn.textContent = isLizard ? "Unlocked" : currentSkin() === id ? "Your cat" : "Choose";
+    btn.disabled = isLizard || currentSkin() === id;
+  } else {
+    btn.textContent = `Buy · ${price.toLocaleString("en-US")}`;
+    btn.disabled = wallet() < price;
+  }
+}
+
+$("shopBuy").addEventListener("click", () => {
+  const id = shopSelected;
+  if (id === "lizard") {
+    if (buyLizard()) {
+      toast("Lizard unlocked!", "seal");
+      sfx.record();
+    }
+  } else if (ownsSkin(id)) {
+    equipSkin(id);
+    lawn.setCatSkin(1, id);
+    sfx.powerCollect();
+  } else if (buySkin(id)) {
+    lawn.setCatSkin(1, id);
+    toast(`${skinById(id).name} joined the company!`, "seal");
+    sfx.record();
+  }
+  renderWallet();
+  renderShop();
+});
 
 function renderStart(): void {
   overlay.dataset.mode = "start";
@@ -360,8 +460,9 @@ function showResults(score: number, best: number, isNewBest: boolean, stats: Rou
   chip.textContent = `${rank.emoji} ${rank.name}`;
   chip.style.setProperty("--r1", rank.tint[0]);
   chip.style.setProperty("--r2", rank.tint[1]);
-  $("resultPoints").textContent = `${stats.points.toLocaleString("en-US")} pts · best ${best}`;
+  $("resultPoints").textContent = `+${stats.points.toLocaleString("en-US")} pts · best ${best}`;
   $("factText").textContent = nextFact().text;
+  renderWallet();
   renderDaily(stats.fancy.length);
 
   playBtn.textContent = "Play again";
@@ -420,6 +521,7 @@ function play(): void {
   ready.hidden = false;
   setTimeout(() => (ready.hidden = true), GUARD_MS);
   if (streak.grew) setTimeout(() => toast(`🔥 ${streak.days}-day streak!`, "seal"), GUARD_MS + 200);
+  setTimeout(() => checkStreakSeals(streak.days), GUARD_MS + 1700);
 }
 
 playBtn.addEventListener("click", play);
@@ -440,7 +542,7 @@ const nativeBtn = $<HTMLButtonElement>("shareNativeBtn");
 nativeBtn.hidden = !("share" in navigator);
 
 function shareText(): string {
-  return lastStats ? dailyShareText(runOf(lastStats)) : "";
+  return lastStats ? dailyShareText(runOf(lastStats), lastStats.score) : "";
 }
 
 shareBtn.addEventListener("click", () => {
@@ -508,6 +610,7 @@ document.addEventListener("visibilitychange", () => {
 field.addEventListener("touchstart", () => sfx.unlock(), { passive: true, once: true });
 
 renderStart();
+renderWallet();
 guard(overlayCard);
 lawn.setCalm(true);
 

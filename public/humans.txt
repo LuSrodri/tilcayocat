@@ -1,14 +1,15 @@
 /* TEAM */
-Site: tilcayo.cat
+Site: catthemouse.co
+Name: Cat The Mouse Company
 Contact: rodrigueslucass@outlook.com.br
 Location: Brazil
 
 /* THANKS */
 The Senda Verde Animal Refuge, Bolivia, and the researchers who described Leopardus tilcayo.
-Real-cat photos on /about by Fernando Faciole / National Geographic; the game artwork is original.
+Tilcayo photos on /about by Fernando Faciole / National Geographic; the game's 3D cats are original.
 
 /* SITE */
-Last update: 2026-09-25
+Last update: 2026-10-01
 Language: English
 Standards: HTML5, CSS3, TypeScript
 Components: Vite

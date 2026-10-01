@@ -1,8 +1,8 @@
 import { DurableObject } from "cloudflare:workers";
 import {
   COUNTDOWN_MS, GRID, INTERMISSION_MS, MAX_ROUNDS, ROUNDS_TO_WIN, ROUND_MS,
-  PORCUPINE_LICK_MS, SNAKE_LICK_MS, FANCY_EVERY, FANCY_POINTS, FANCY_KINDS, neighbours,
-  type ClientMessage, type Critter, type MouseInfo, type PlayerInfo, type RoundResult, type ServerMessage, type Slot
+  PORCUPINE_LICK_MS, SNAKE_LICK_MS, FANCY_EVERY, FANCY_POINTS, FANCY_KINDS, LIZARD_POINTS, neighbours, cleanSkin,
+  type ClientMessage, type Critter, type MouseInfo, type PlayerInfo, type RoundResult, type ServerMessage, type Slot, type Skin
 } from "./protocol";
 import type { Env } from "./index";
 
@@ -18,6 +18,8 @@ interface Live extends MouseInfo {
 interface Attachment {
   slot: Slot;
   name: string;
+  skin: Skin;
+  lizard: boolean;
 }
 
 interface Persisted {
@@ -27,11 +29,13 @@ interface Persisted {
   wins: [number, number];
   rounds: RoundResult[];
   names: [string, string];
+  skins?: [Skin, Skin];
 }
 
 // One MatchRoom per room code. The room is authoritative: it spawns the mice, resolves taps
 // (first tap wins) and keeps the score. Porcupines and snakes make the slapping cat sit out
-// licking its paw; snakes also eat mice next to them; every 10th mouse calls out a fancy one. Two players share the same 5×5 lawn for 60-second
+// licking its paw; snakes also eat mice next to them; every 10th mouse calls out a fancy one; the
+// yellow lizard joins when either player has bought it. Two players share the same 5×5 lawn for 60-second
 // rounds, best of three. In-memory state only matters during a round, when timers keep the
 // object awake; everything needed to resume after hibernation lives in storage/attachments.
 export class MatchRoom extends DurableObject<Env> {
@@ -58,6 +62,7 @@ export class MatchRoom extends DurableObject<Env> {
   private timer: ReturnType<typeof setTimeout> | null = null;
   private nextSpawnAt = 0;
   private nextFoeAt = 0;
+  private nextLizardAt = Infinity;
 
   private async save(): Promise<void> {
     await this.ctx.storage.put("state", this.state);
@@ -68,7 +73,9 @@ export class MatchRoom extends DurableObject<Env> {
     if (request.headers.get("Upgrade") !== "websocket") return new Response("Expected WebSocket", { status: 426 });
 
     const code = url.searchParams.get("code") ?? "";
-    const name = url.searchParams.get("name") ?? "Tilcayo";
+    const name = url.searchParams.get("name") ?? "Cat";
+    const skin = cleanSkin(url.searchParams.get("skin"));
+    const lizard = url.searchParams.get("lizard") === "1";
     if (!this.state.code) {
       this.state.code = code;
       await this.save();
@@ -86,10 +93,12 @@ export class MatchRoom extends DurableObject<Env> {
       return new Response(null, { status: 101, webSocket: client });
     }
 
-    const att: Attachment = { slot, name };
+    const att: Attachment = { slot, name, skin, lizard };
     this.ctx.acceptWebSocket(server, [`p${slot}`]);
     server.serializeAttachment(att);
     this.state.names[slot - 1] = name;
+    this.state.skins ??= ["grey", "grey"];
+    this.state.skins[slot - 1] = skin;
     await this.save();
 
     send(server, { type: "welcome", you: slot, code: this.state.code, players: this.players(), now: Date.now() });
@@ -156,6 +165,7 @@ export class MatchRoom extends DurableObject<Env> {
     this.nextSpawnAt = this.roundStart + 400;
     this.nextFoeAt = this.roundStart + 6000 + Math.random() * 5000;
     this.nextSnakeAt = this.roundStart + 14000 + Math.random() * 6000;
+    this.nextLizardAt = this.sockets().some((s) => s.att.lizard) ? this.roundStart + 7000 + Math.random() * 4000 : Infinity;
     this.lickUntil = [0, 0];
     this.plainCaught = 0;
     this.broadcast({
@@ -196,6 +206,10 @@ export class MatchRoom extends DurableObject<Env> {
     if (now >= this.nextFoeAt) {
       if (![...this.mice.values()].some((m) => m.kind === "porcupine")) this.spawn(now, 2200, "porcupine");
       this.nextFoeAt = now + 8000 + Math.random() * 6000;
+    }
+    if (now >= this.nextLizardAt) {
+      if (![...this.mice.values()].some((m) => m.kind === "lizard")) this.spawn(now, 1000, "lizard");
+      this.nextLizardAt = now + 9000 + Math.random() * 5000;
     }
     if (now >= this.nextSnakeAt) {
       if (![...this.mice.values()].some((m) => m.kind === "snake")) this.spawn(now, 4800, "snake");
@@ -251,7 +265,7 @@ export class MatchRoom extends DurableObject<Env> {
     for (const n of neighbours(snake.hole)) {
       const id = this.byHole.get(n);
       const v = id === undefined ? undefined : this.mice.get(id);
-      if (!v || (v.kind !== "mouse" && v.kind !== "fancy") || now - v.upAt < 380) continue;
+      if (!v || (v.kind !== "mouse" && v.kind !== "fancy" && v.kind !== "lizard") || now - v.upAt < 380) continue;
       this.remove(v);
       snake.nextBiteAt = now + 700;
       this.broadcast({ type: "eaten", id: v.id, hole: v.hole, snakeHole: snake.hole });
@@ -279,7 +293,7 @@ export class MatchRoom extends DurableObject<Env> {
       return;
     }
     this.remove(critter);
-    const gain = critter.kind === "fancy" ? FANCY_POINTS : 1;
+    const gain = critter.kind === "fancy" ? FANCY_POINTS : critter.kind === "lizard" ? LIZARD_POINTS : 1;
     this.scores[slot - 1] += gain;
     this.broadcast({ type: "catch", id, hole, by: slot, scores: this.scores, gain });
     if (critter.kind === "mouse" && ++this.plainCaught % FANCY_EVERY === 0 && ![...this.mice.values()].some((m) => m.kind === "fancy")) {
@@ -375,7 +389,8 @@ export class MatchRoom extends DurableObject<Env> {
     for (const slot of [1, 2] as Slot[]) {
       const s = live.find((x) => x.att.slot === slot);
       const name = s?.att.name ?? this.state.names[slot - 1];
-      if (name) out.push({ slot, name, connected: !!s });
+      const skin = s?.att.skin ?? this.state.skins?.[slot - 1] ?? "grey";
+      if (name) out.push({ slot, name, connected: !!s, skin });
     }
     return out;
   }

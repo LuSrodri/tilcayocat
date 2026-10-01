@@ -1241,7 +1241,7 @@ body.game { background: var(--sky-top); }
 .result__line { display: flex; align-items: center; justify-content: center; gap: 10px; flex-wrap: wrap; margin: 0; font-size: 13px; color: var(--ink-soft); }
 .rank-chip { padding: 4px 12px; border-radius: 999px; background: linear-gradient(135deg, var(--r1, #fff), var(--r2, #888)); color: #2a140a; font: 600 13px var(--font-display); }
 .fact { margin: 0; padding: 10px 12px; border-radius: 14px; background: rgba(0, 0, 0, .18); font-size: 13px; line-height: 1.4; text-align: left; }
-.fact::before { content: "Tilcayo fact · "; font-weight: 700; color: var(--teal); }
+.fact::before { content: "Cat fact · "; font-weight: 700; color: var(--teal); }
 
 .back { appearance: none; align-self: flex-start; padding: 6px 10px 6px 4px; border: 0; background: none; color: var(--ink-soft); font: 600 14px var(--font-display); cursor: pointer; }
 .view__title { margin: -6px 0 0; font: 700 24px var(--font-display); color: var(--gold); }
@@ -1327,3 +1327,45 @@ body.game { background: var(--sky-top); }
 .game .topbar .hud, .game .roundbar, .game .topbar .info-btn, .game .combo, .game .hud--duel { backdrop-filter: none; -webkit-backdrop-filter: none; background: rgba(46, 33, 58, .86); }
 .game .overlay { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; background: rgba(30, 18, 36, .55); }
 .game .sheet { backdrop-filter: none; -webkit-backdrop-filter: none; }
+
+/* ============================================================ SHOP */
+.overlay__logo { width: 1.15em; height: 1.15em; vertical-align: -0.2em; margin-right: 2px; }
+.game .seals__list { grid-template-columns: repeat(4, 1fr); }
+.game .seal__medal { width: 36px; height: 36px; }
+.game .seal__medal svg { width: 20px; height: 20px; }
+.pill--shop { background: rgba(255, 214, 107, .14); }
+.shop__wallet { margin: -4px 0 0; font-size: 13px; color: var(--ink-soft); }
+.shop__wallet b { color: var(--gold); font: 700 16px var(--font-display); }
+.shop { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.shop__item {
+  appearance: none;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  width: 100%;
+  padding: 4px 2px 5px;
+  border: 0;
+  border-radius: 14px;
+  background: var(--paper-2);
+  color: var(--ink);
+  font: 600 11px var(--font-display);
+  cursor: pointer;
+}
+.shop__item img { width: 100%; max-width: 70px; aspect-ratio: 1; object-fit: contain; filter: brightness(.7) saturate(.8); }
+.shop__item.is-owned img { filter: none; }
+.shop__item small { font-size: 11px; color: var(--ink-soft); }
+.shop__item small.is-price { color: var(--gold); }
+.shop__item small.is-price::before { content: "★ "; font-size: 9px; }
+.shop__item.is-equipped { box-shadow: inset 0 0 0 2px var(--teal); }
+.shop__item.is-critter { background: rgba(255, 214, 74, .12); }
+.shop__item.is-sel { outline: 2px solid var(--gold); outline-offset: 1px; }
+.shop__detail { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 16px; background: rgba(0, 0, 0, .18); }
+.shop__info { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; text-align: left; }
+.shop__info b { font: 600 16px var(--font-display); color: var(--gold); }
+.shop__info small { font-size: 12px; line-height: 1.3; color: var(--ink-soft); }
+.shop__detail .btn { flex: none; min-width: 112px; padding-inline: 14px; }
+.shop__detail .btn:disabled { opacity: .55; filter: grayscale(.4); cursor: default; }
+.is-guarded .shop__item { pointer-events: none; }
+.game:not(.game--duel) #overlayTitle { font-size: clamp(24px, min(7.4vw, 5.2vh), 32px); white-space: nowrap; }

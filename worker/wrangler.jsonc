@@ -4,7 +4,7 @@
   "main": "src/index.ts",
   "compatibility_date": "2026-09-01",
   "observability": { "enabled": true },
-  "routes": [{ "pattern": "tilcayo.cat/mp/*", "zone_name": "tilcayo.cat" }],
+  "routes": [{ "pattern": "catthemouse.co/mp/*", "zone_name": "catthemouse.co" }],
   "durable_objects": {
     "bindings": [
       { "name": "MATCH", "class_name": "MatchRoom" },

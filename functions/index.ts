@@ -1,4 +1,4 @@
-// Challenge links (https://tilcayo.cat/?beat=42) unfurl as a personal dare: the static page is
+// Challenge links (https://catthemouse.co/?beat=42) unfurl as a personal dare: the static page is
 // served as usual, and only its social tags are rewritten to name the score and show the
 // sharer's rank card from /og/beat-<rank>.jpg.
 import { rankFor } from "../src/rank";
@@ -21,10 +21,10 @@ export const onRequestGet = async ({ request, next }: Ctx): Promise<Response> =>
   if (!res.headers.get("content-type")?.includes("text/html")) return res;
 
   const rank = rankFor(beat);
-  const title = `Can you beat ${beat} ${beat === 1 ? "mouse" : "mice"}? 🐆 Tilcayo Cat Game`;
-  const description = `A friend caught ${beat} mice as the tilcayo cat and reached ${rank.name}. Tap to accept the challenge — free, no install.`;
-  const image = `https://tilcayo.cat/og/beat-${rank.id}.jpg`;
-  const url = `https://tilcayo.cat/?beat=${beat}`;
+  const title = `Can you beat ${beat} ${beat === 1 ? "mouse" : "mice"}? 🐱 Cat The Mouse Company`;
+  const description = `A friend's cat caught ${beat} mice and reached ${rank.name}. Can yours do better? Free, no install.`;
+  const image = `https://catthemouse.co/og/beat-${rank.id}.jpg`;
+  const url = `https://catthemouse.co/?beat=${beat}`;
 
   const set = (value: string) => ({ element: (el: { setAttribute(n: string, v: string): void }) => el.setAttribute("content", value) });
   const out = new HTMLRewriter()

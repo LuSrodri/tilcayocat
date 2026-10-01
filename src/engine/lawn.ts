@@ -1,9 +1,10 @@
 import * as THREE from "three";
 import { loadArt, glowTexture, starTexture, heartTexture, shadowTexture, groundTexture } from "./art";
 import {
-  toon, buildCat, setCatFace, buildMouse, buildPorcupine, buildPaw, buildCoin, buildSnake, fadeable, disposeClones, fancyThumb,
-  wallTexture, PIT_DEPTH, SNAKE_SEGMENTS, type CatModel, type CatFace
+  toon, buildCat, setCatFace, buildMouse, buildPorcupine, buildPaw, buildCoin, buildSnake, buildLizard, fadeable, disposeClones,
+  fancyThumb, catThumb, lizardThumb, wallTexture, PIT_DEPTH, SNAKE_SEGMENTS, type CatModel, type CatFace
 } from "./models";
+import type { SkinId } from "../shop";
 
 // The 3D lawn shared by the solo game and the 1v1 arena. Game rules live elsewhere: this class
 // only shows what it is told (critters rising, paws slapping, snakes gulping) and reports which
@@ -13,7 +14,7 @@ import {
 export const LAYOUT = 5;
 export const HOLES = LAYOUT * LAYOUT;
 
-export type Critter = "mouse" | "fancy" | "porcupine" | "snake" | "auto" | "fulltime" | "freeze";
+export type Critter = "mouse" | "fancy" | "lizard" | "porcupine" | "snake" | "auto" | "fulltime" | "freeze";
 export type CatMood = "idle" | "catch" | "angry" | "sad";
 export type SlapOutcome = "catch" | "whiff" | "prick" | "bite" | "collect";
 export type Mood = "" | "freeze" | "auto";
@@ -83,11 +84,14 @@ interface HoleView {
   vscale: number;
   telegraphUntil: number;
   occ: Occupant | null;
+  /** a block of ice around whatever stands in the hole while Freeze is on */
+  ice: THREE.Mesh | null;
 }
 
 interface CatView {
   slot: 1 | 2;
   model: CatModel;
+  present: boolean;
   aura: THREE.Sprite;
   setOpacity: (o: number) => void;
   yaw: number;
@@ -130,6 +134,7 @@ export class Lawn {
   private readonly spritePool: THREE.Sprite[] = [];
   private readonly fireflies: { s: THREE.Sprite; base: THREE.Vector3; ph: number; sp: number }[] = [];
   private tapHandler: ((hole: number) => void) | null = null;
+  private readonly skins: [SkinId, SkinId] = ["grey", "grey"];
   private wanted = new Set<number>();
   private hemi = new THREE.HemisphereLight(0xffe6cc, 0x3a4a34, 1.6);
   private sun = new THREE.DirectionalLight(0xffd29a, 2.1);
@@ -148,6 +153,9 @@ export class Lawn {
   private raf = 0;
   private last = 0;
   private time = 0;
+  // the world's own clock: it stops while Freeze is on, so every critter, the fireflies and
+  // the cats' idle motion hold still (paws, pops and particles keep running on real time)
+  private wtime = 0;
   private shake = 0;
   // adaptive quality: 0 = full, 1 = lighter shadows, 2 = no shadows, 3 = low resolution
   private quality = 0;
@@ -197,6 +205,37 @@ export class Lawn {
   /** A portrait of a fancy mouse (data URL), rendered once with the lawn's renderer. */
   thumbnail(variant: number): string {
     return this.built ? fancyThumb(variant, this.renderer) : "";
+  }
+
+  /** A portrait of one of the shop's cats (data URL). */
+  catThumbnail(skin: SkinId): string {
+    return this.built ? catThumb(skin, this.renderer) : "";
+  }
+
+  /** A portrait of the yellow lizard (data URL). */
+  lizardThumbnail(): string {
+    return this.built ? lizardThumb(this.renderer) : "";
+  }
+
+  /** Dress a cat in another coat. Works before the lawn is built too (it is applied on build). */
+  setCatSkin(slot: 1 | 2, skin: SkinId): void {
+    this.skins[slot - 1] = skin;
+    const c = this.cats[slot - 1];
+    if (!c || c.model.skin === skin) return;
+    const old = c.model;
+    const made = this.makeCat(skin);
+    made.model.root.position.copy(old.root.position);
+    made.model.root.rotation.y = old.root.rotation.y;
+    this.scene.remove(old.root);
+    disposeClones(old.root);
+    this.scene.add(made.model.root);
+    c.model = made.model;
+    c.aura = made.aura;
+    c.setOpacity = made.setOpacity;
+    c.setOpacity(c.present ? 1 : 0.35);
+    c.aura.visible = this.mood === "auto";
+    setCatFace(c.model, c.mood as CatFace);
+    if (this.built) this.dust(c.model.root.position, 12);
   }
 
   /** Menus over the lawn: draw at a gentle ~20 fps to save battery and main-thread time. */
@@ -305,7 +344,7 @@ export class Lawn {
     const stuck = outcome === "prick" || outcome === "bite" ? h.occ : null;
 
     const paw = new THREE.Group();
-    const inner = buildPaw();
+    const inner = buildPaw(cat.model.skin);
     casts(inner);
     paw.add(inner);
     this.scene.add(paw);
@@ -465,7 +504,10 @@ export class Lawn {
   }
 
   setCatPresent(slot: 1 | 2, present: boolean): void {
-    this.cats[slot - 1]?.setOpacity(present ? 1 : 0.35);
+    const c = this.cats[slot - 1];
+    if (!c) return;
+    c.present = present;
+    c.setOpacity(present ? 1 : 0.35);
   }
 
   /** Floating label over a hole. */
@@ -484,6 +526,9 @@ export class Lawn {
   }
 
   setMood(mood: Mood): void {
+    if (mood === "freeze" && this.mood !== "freeze") {
+      for (const h of this.holes) if (h.occ) this.emit(h.pos.clone().add(new THREE.Vector3(0, 0.6, 0.1)), 8, 0xdff6ff, 0.9, starTexture(), true, 1.5, 0.14);
+    }
     this.mood = mood;
     this.hemi.color.set(mood === "freeze" ? 0xc8ecff : 0xffe6cc);
     this.sun.color.set(mood === "freeze" ? 0xbfe4ff : 0xffd29a);
@@ -564,7 +609,7 @@ export class Lawn {
     // Compile every shader up front (in parallel where the GPU driver allows), including the
     // critters that aren't on the lawn yet, so the first mouse doesn't cause a hitch.
     const warm = new THREE.Group();
-    warm.add(buildMouse(0), buildPorcupine(), buildSnake(), buildPaw(), buildCoin("auto"));
+    warm.add(buildMouse(0), buildPorcupine(), buildSnake(), buildLizard(), buildPaw(this.skins[0]), buildCoin("auto"));
     scene.add(warm);
     try {
       await this.renderer.compileAsync(scene, this.camera);
@@ -646,7 +691,7 @@ export class Lawn {
       mound.visible = false;
       mound.castShadow = true;
       this.scene.add(mound);
-      this.holes.push({ group, glow, mound, pos, active: false, scale: 0, vscale: 0, telegraphUntil: 0, occ: null });
+      this.holes.push({ group, glow, mound, pos, active: false, scale: 0, vscale: 0, telegraphUntil: 0, occ: null, ice: null });
     }
   }
 
@@ -676,27 +721,32 @@ export class Lawn {
     return this.portrait ? new THREE.Vector3(s * 1.7, 0, back) : new THREE.Vector3(s < 0 ? minX - 2.0 : maxX + 2.0, 0, midZ);
   }
 
+  private makeCat(skin: SkinId): { model: CatModel; aura: THREE.Sprite; setOpacity: (o: number) => void } {
+    const model = buildCat(skin);
+    const setOpacity = fadeable(model.root);
+    casts(model.root);
+    const shadow = new THREE.Mesh(
+      new THREE.PlaneGeometry(2, 1.6),
+      new THREE.MeshBasicMaterial({ map: shadowTexture(), transparent: true, depthWrite: false, opacity: 0.6 })
+    );
+    shadow.rotation.x = -Math.PI / 2;
+    shadow.position.set(0, 0.012, 0.05);
+    model.root.add(shadow);
+    const aura = new THREE.Sprite(
+      new THREE.SpriteMaterial({ map: glowTexture(), color: 0xffcf4a, transparent: true, opacity: 0.5, depthWrite: false, blending: THREE.AdditiveBlending })
+    );
+    aura.scale.set(3.4, 3.4, 1);
+    aura.position.set(0, CAT_H * 0.5, -0.3);
+    aura.visible = false;
+    model.root.add(aura);
+    setCatFace(model, "idle");
+    return { model, aura, setOpacity };
+  }
+
   private buildCats(): void {
     for (let s = 1; s <= this.opts.cats; s++) {
       const slot = s as 1 | 2;
-      const model = buildCat();
-      const setOpacity = fadeable(model.root);
-      casts(model.root);
-      const shadow = new THREE.Mesh(
-        new THREE.PlaneGeometry(2, 1.6),
-        new THREE.MeshBasicMaterial({ map: shadowTexture(), transparent: true, depthWrite: false, opacity: 0.6 })
-      );
-      shadow.rotation.x = -Math.PI / 2;
-      shadow.position.set(0, 0.012, 0.05);
-      model.root.add(shadow);
-      const aura = new THREE.Sprite(
-        new THREE.SpriteMaterial({ map: glowTexture(), color: 0xffcf4a, transparent: true, opacity: 0.5, depthWrite: false, blending: THREE.AdditiveBlending })
-      );
-      aura.scale.set(3.4, 3.4, 1);
-      aura.position.set(0, CAT_H * 0.5, -0.3);
-      aura.visible = false;
-      model.root.add(aura);
-      setCatFace(model, "idle");
+      const { model, aura, setOpacity } = this.makeCat(this.skins[slot - 1]);
       this.scene.add(model.root);
       const ring = document.createElement("div");
       ring.className = "lick-ring";
@@ -704,7 +754,7 @@ export class Lawn {
       ring.innerHTML = `<span class="lick-ring__dial"></span>`;
       this.layer.append(ring);
       this.cats.push({
-        slot, model, aura, setOpacity, yaw: 0, mood: "idle", moodTimer: 0, lickFrom: 0, lickUntil: 0, swipeAt: 0, pounce: 0, spot: new THREE.Vector3(), ring, tag: null
+        slot, model, present: true, aura, setOpacity, yaw: 0, mood: "idle", moodTimer: 0, lickFrom: 0, lickUntil: 0, swipeAt: 0, pounce: 0, spot: new THREE.Vector3(), ring, tag: null
       });
     }
     this.placeCats();
@@ -838,6 +888,10 @@ export class Lawn {
       body = buildPorcupine();
       up = -0.06;
       down = -0.85;
+    } else if (kind === "lizard") {
+      body = buildLizard();
+      up = 0.04;
+      down = -0.95;
     } else if (kind === "mouse" || kind === "fancy") {
       body = buildMouse(kind === "fancy" ? variant ?? 0 : null);
     } else {
@@ -996,6 +1050,7 @@ export class Lawn {
     const dt = Math.min(0.05, (now - this.last) / 1000);
     this.last = now;
     this.time += dt;
+    if (this.mood !== "freeze") this.wtime += dt;
     if (this.built && (!this.calm || now - this.lastDraw > 45)) {
       const step = this.calm ? Math.min(0.05, (now - this.lastDraw) / 1000) : dt;
       this.lastDraw = now;
@@ -1070,13 +1125,14 @@ export class Lawn {
       const tele = h.telegraphUntil > now && !h.active;
       h.mound.visible = tele;
       if (tele) {
-        const wob = Math.sin(this.time * 16) * 0.12;
+        const wob = Math.sin(this.wtime * 16) * 0.12;
         h.mound.scale.set(1 + wob, 1 + Math.abs(wob) * 2, 1 - wob);
       }
       const occ = h.occ;
       const glowMat = h.glow.material as THREE.MeshBasicMaterial;
-      glowMat.opacity += ((occ?.kind === "fancy" ? 0.3 + Math.sin(this.time * 8) * 0.12 : 0) - glowMat.opacity) * Math.min(1, dt * 10);
-      if (occ) this.updateOccupant(occ, h, now, dt);
+      glowMat.opacity += ((occ?.kind === "fancy" ? 0.3 + Math.sin(this.wtime * 8) * 0.12 : 0) - glowMat.opacity) * Math.min(1, dt * 10);
+      if (occ) this.updateOccupant(occ, h, now, this.mood === "freeze" ? 0 : dt);
+      this.updateIce(h, dt);
     }
 
     for (const c of this.cats) this.updateCat(c, now, dt);
@@ -1101,7 +1157,7 @@ export class Lawn {
     }
 
     for (const f of this.fireflies) {
-      const t = this.time * f.sp + f.ph;
+      const t = this.wtime * f.sp + f.ph;
       f.s.position.set(f.base.x + Math.sin(t) * 0.6, f.base.y + Math.sin(t * 1.7) * 0.25, f.base.z + Math.cos(t * 0.8) * 0.5);
       f.s.material.opacity = 0.3 + 0.7 * Math.max(0, Math.sin(t * 2.3));
     }
@@ -1120,7 +1176,7 @@ export class Lawn {
     }
     c.pounce = Math.max(0, c.pounce - dt * 3.2);
     const squash = Math.sin(c.pounce * Math.PI) * 0.07;
-    const breathe = Math.sin(this.time * 1.9 + c.slot) * 0.012;
+    const breathe = Math.sin(this.wtime * 1.9 + c.slot) * 0.012;
     m.body.scale.set(1 + squash, 1 - squash + breathe, 1 + squash);
     const licking = c.lickUntil > now;
     // the right arm: a quick swipe when slapping, up at the mouth when licking
@@ -1135,7 +1191,7 @@ export class Lawn {
       m.head.rotation.set(0.18 + bob * 0.04, 0, -0.12);
     } else {
       if (c.mood === "idle" && m.tongue.position.z > 0.42) setCatFace(m, c.mood);
-      m.head.rotation.set(-0.22 + Math.sin(this.time * 0.9 + c.slot) * 0.03, Math.sin(this.time * 0.6 + c.slot) * 0.08, 0);
+      m.head.rotation.set(-0.22 + Math.sin(this.wtime * 0.9 + c.slot) * 0.03, Math.sin(this.wtime * 0.6 + c.slot) * 0.08, 0);
       if (swipe >= 0 && swipe < 1) armX = -Math.sin(swipe * Math.PI) * 1.9;
     }
     m.arm.rotation.x += (armX - m.arm.rotation.x) * Math.min(1, dt * 20);
@@ -1144,8 +1200,8 @@ export class Lawn {
     m.tail.forEach((seg, i) => {
       const bend = seg.userData.bend as { x: number; y: number };
       const flick = c.mood === "angry" ? 2.2 : 1;
-      seg.rotation.y = bend.y + Math.sin(this.time * 1.8 * flick - i * 0.45 + c.slot) * (0.05 + i * 0.006) * flick;
-      seg.rotation.x = bend.x + Math.sin(this.time * 1.2 - i * 0.3) * 0.02;
+      seg.rotation.y = bend.y + Math.sin(this.wtime * 1.8 * flick - i * 0.45 + c.slot) * (0.05 + i * 0.006) * flick;
+      seg.rotation.x = bend.x + Math.sin(this.wtime * 1.2 - i * 0.3) * 0.02;
     });
     c.aura.material.opacity = 0.4 + Math.sin(this.time * 6) * 0.12;
 
@@ -1166,7 +1222,7 @@ export class Lawn {
   private updateOccupant(occ: Occupant, h: HoleView, now: number, dt: number): void {
     this.stepSpring(occ, dt);
     occ.body.position.y = occ.y;
-    const t = this.time + occ.phase;
+    const t = this.wtime + occ.phase;
     switch (occ.kind) {
       case "snake": {
         const { segs, head, eyes, tongue } = occ.body.userData as {
@@ -1190,7 +1246,7 @@ export class Lawn {
         let prev = new THREE.Vector3();
         for (let i = 0; i < n; i++) {
           const k = i / (n - 1);
-          const wave = this.time * 3.2 - i * 0.55;
+          const wave = this.wtime * 3.2 - i * 0.55;
           const amp = 0.04 + 0.07 * k;
           const lean = reach * k * k * 0.55;
           const p = new THREE.Vector3(Math.sin(wave) * amp + lx * lean, i * 0.075 - 0.45, Math.cos(wave * 0.8) * amp * 0.5 + lz * lean);
@@ -1198,20 +1254,20 @@ export class Lawn {
           prev = p;
         }
         const top = prev;
-        const breath = Math.sin(this.time * 2.1) * 0.03;
+        const breath = Math.sin(this.wtime * 2.1) * 0.03;
         head.position.set(top.x, top.y + 0.13 + breath + reach * 0.1, top.z + 0.03);
-        const look = occ.lunge ? Math.atan2(lx, lz) : Math.sin(this.time * 1.1) * 0.35;
+        const look = occ.lunge ? Math.atan2(lx, lz) : Math.sin(this.wtime * 1.1) * 0.35;
         head.rotation.y += (look - head.rotation.y) * Math.min(1, dt * 10);
-        head.rotation.z = Math.sin(this.time * 3.2 - n * 0.55) * 0.18;
+        head.rotation.z = Math.sin(this.wtime * 3.2 - n * 0.55) * 0.18;
         head.rotation.x = -reach * 0.3;
         // blink every few seconds
-        const blink = (this.time + occ.phase) % 3.4 < 0.12 ? 0.1 : 1;
+        const blink = (this.wtime + occ.phase) % 3.4 < 0.12 ? 0.1 : 1;
         for (const e of eyes) e.scale.y += (blink - e.scale.y) * Math.min(1, dt * 30);
         // tongue: quick eased flicks with a wiggle
-        const f = ((this.time + occ.phase) % 1.3) / 1.3;
+        const f = ((this.wtime + occ.phase) % 1.3) / 1.3;
         const out = f < 0.28 ? Math.sin((f / 0.28) * Math.PI) : 0;
         tongue.scale.z = Math.max(0.01, out * (1 + reach));
-        tongue.rotation.y = Math.sin(this.time * 40) * 0.25 * out;
+        tongue.rotation.y = Math.sin(this.wtime * 40) * 0.25 * out;
         break;
       }
       case "auto":
@@ -1232,13 +1288,40 @@ export class Lawn {
         if (head) head.rotation.set(Math.sin(t * 5) * 0.06, Math.sin(t * 2.3) * 0.25, Math.sin(t * 3.1) * 0.08);
         const prop = occ.body.getObjectByName("propeller");
         if (prop) prop.rotation.y += dt * 18;
-        if (occ.kind === "fancy" && now > occ.sparkAt && occ.target === occ.up) {
+        if (occ.kind === "lizard") {
+          const tail = occ.body.getObjectByName("lizTail");
+          if (tail) tail.rotation.y = Math.sin(t * 4) * 0.35;
+          const tongue = occ.body.getObjectByName("tongue");
+          const f = (t % 1.6) / 1.6;
+          if (tongue) tongue.scale.z = Math.max(0.01, f < 0.18 ? Math.sin((f / 0.18) * Math.PI) : 0);
+        }
+        if (occ.kind === "fancy" && dt > 0 && now > occ.sparkAt && occ.target === occ.up) {
           occ.sparkAt = now + 150;
           const p = h.pos.clone().add(new THREE.Vector3((Math.random() - 0.5) * 0.6, 0.5 + Math.random() * 0.6, 0.2));
           this.emit(p, 1, Math.random() < 0.5 ? 0xffd66b : 0xffffff, 0.3, starTexture(), true, -0.4, 0.12);
         }
       }
     }
+  }
+
+  // Freeze: whatever stands in a hole gets wrapped in a block of ice until the power runs out.
+  private updateIce(h: HoleView, dt: number): void {
+    const want = this.mood === "freeze" && !!h.occ && h.active;
+    if (want && !h.ice) {
+      h.ice = new THREE.Mesh(iceGeometry(), iceMaterial());
+      h.ice.position.y = 0.5;
+      h.ice.scale.setScalar(0.01);
+      h.ice.renderOrder = 4;
+      h.group.add(h.ice);
+    }
+    if (!h.ice) return;
+    const s = h.ice.scale.x + ((want ? 1 : 0) - h.ice.scale.x) * Math.min(1, dt * 14);
+    if (!want && s < 0.05) {
+      h.ice.removeFromParent();
+      h.ice = null;
+      return;
+    }
+    h.ice.scale.set(s, s, s);
   }
 
   private stepSpring(o: Occupant, dt: number): void {
@@ -1390,6 +1473,20 @@ function easeIn(t: number): number {
 
 function easeInOut(t: number): number {
   return t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+}
+
+let iceGeo: THREE.BufferGeometry | null = null;
+let iceMat: THREE.MeshPhongMaterial | null = null;
+function iceGeometry(): THREE.BufferGeometry {
+  iceGeo ??= new THREE.CylinderGeometry(0.4, 0.44, 1.05, 7, 1);
+  return iceGeo;
+}
+function iceMaterial(): THREE.MeshPhongMaterial {
+  iceMat ??= new THREE.MeshPhongMaterial({
+    color: 0xbfeaff, emissive: 0x3a7fae, emissiveIntensity: 0.25, specular: 0xffffff, shininess: 90,
+    transparent: true, opacity: 0.42, depthWrite: false, flatShading: true
+  });
+  return iceMat;
 }
 
 let ao: THREE.Texture | null = null;

@@ -34,6 +34,6 @@ User-agent: CCBot
 Allow: /
 Disallow: /mp/
 
-Sitemap: https://tilcayo.cat/sitemap.xml
-# Machine-readable summary for AI assistants: https://tilcayo.cat/llms.txt
-# Full version: https://tilcayo.cat/llms-full.txt
+Sitemap: https://catthemouse.co/sitemap.xml
+# Machine-readable summary for AI assistants: https://catthemouse.co/llms.txt
+# Full version: https://catthemouse.co/llms-full.txt

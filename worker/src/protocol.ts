@@ -13,6 +13,15 @@ export const SNAKE_LICK_MS = 3000;
 export const FANCY_EVERY = 10;
 export const FANCY_POINTS = 3;
 export const FANCY_KINDS = 100;
+// The yellow lizard is bought in the shop. If either player owns it, it shows up in the match;
+// it is quick and worth two mice.
+export const LIZARD_POINTS = 2;
+export const SKINS = ["grey", "orange", "badger", "black", "white", "calico", "tilcayo"] as const;
+export type Skin = (typeof SKINS)[number];
+
+export function cleanSkin(raw: string | null): Skin {
+  return (SKINS as readonly string[]).includes(raw ?? "") ? (raw as Skin) : "grey";
+}
 
 export type Slot = 1 | 2;
 
@@ -20,9 +29,11 @@ export interface PlayerInfo {
   slot: Slot;
   name: string;
   connected: boolean;
+  /** the cat this player wears (from the shop) */
+  skin: Skin;
 }
 
-export type Critter = "mouse" | "fancy" | "porcupine" | "snake";
+export type Critter = "mouse" | "fancy" | "lizard" | "porcupine" | "snake";
 
 export interface MouseInfo {
   id: number;
@@ -82,5 +93,5 @@ export type ClientMessage = { type: "tap"; hole: number } | { type: "ping" };
 
 export function cleanName(raw: string | null): string {
   const s = (raw ?? "").replace(/[^\p{L}\p{N} _.-]/gu, "").trim().slice(0, 14);
-  return s || "Tilcayo";
+  return s || "Cat";
 }

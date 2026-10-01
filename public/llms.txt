@@ -1,39 +1,36 @@
-# Tilcayo Cat Game — A New Cat Discovered After 100+ Years
+# Cat The Mouse Company — Free 3D Cat & Mouse Game
 
-> Tilcayo Cat Game (https://tilcayo.cat) is a free, mobile-first browser game in which the player is a tilcayo cat (Leopardus tilcayo) catching mice that pop out of holes on a moonlit lawn. The core rule: never go more than 5 seconds without catching a mouse, or the round ends. The site also has a sourced profile of the real tilcayo cat, the first new wild cat species described in more than 100 years (September 2026).
+> Cat The Mouse Company (https://catthemouse.co) is a free, mobile-first 3D browser game about cats catching mice. You start as a grey tabby and tap the mice that pop out of holes on a moonlit lawn; never go more than 5 seconds without a catch, or the round ends. Points from every round unlock six more cats — orange tabby, badger, black, white, calico and the tilcayo, the first new wild cat species described in over 100 years — and the yellow lizard, a new critter worth two mice. Formerly known as "Tilcayo Cat Game".
 
-Last updated: 2026-09-25
+Last updated: 2026-10-01
 
 ## Pages
 
-- [Play solo](https://tilcayo.cat/): the game itself, start screen with rules, seals and a live count of players online
-- [How to play](https://tilcayo.cat/how-to-play): full rules, the mouse of the day, snake and porcupine, power-ups, the 7 hunter ranks, the 7 seals, 1v1 rules, tips and FAQ
-- [About the tilcayo cat](https://tilcayo.cat/about): facts, photos, discovery story, FAQ, sources and a donation link for the only known tilcayo's refuge
-- [Cat games compared](https://tilcayo.cat/cat-games): Tilcayo Cat Game vs Cat Simulator, Kitty Loves Birds, Flip Pounce, Longcat and Yeetcat — genre, controls, multiplayer, who each is for
-- [1v1 online](https://tilcayo.cat/play): two players, one shared 5×5 lawn, 60-second rounds, best of three, global ranking
-- [Terms & Conditions](https://tilcayo.cat/terms) and [Privacy Policy](https://tilcayo.cat/privacy)
-- [Full text for LLMs](https://tilcayo.cat/llms-full.txt): everything above in one file
+- [Play solo](https://catthemouse.co/): the game itself, with the shop, album, seals and the mouse of the day
+- [How to play](https://catthemouse.co/how-to-play): full rules, the shop, the yellow lizard, power-ups, the 7 hunter ranks, the 11 seals, 1v1 rules, tips and FAQ
+- [About the cats](https://catthemouse.co/about): the seven cats of the game, real cat facts, and a sourced profile of the tilcayo with photos and a donation link for its refuge
+- [Cat games compared](https://catthemouse.co/cat-games): Cat The Mouse Company vs Cat Simulator, Kitty Loves Birds, Flip Pounce, Longcat and Yeetcat
+- [1v1 online](https://catthemouse.co/play): two players, each with their own cat, one shared 5×5 lawn, 60-second rounds, best of three, global ranking
+- [Terms & Conditions](https://catthemouse.co/terms) and [Privacy Policy](https://catthemouse.co/privacy)
+- [Full text for LLMs](https://catthemouse.co/llms-full.txt): everything above in one file
 
 ## The game in brief
 
 - Genre: arcade / reflex (whack-a-mole style). Free, no account, no install; ad-supported. Works on phones, tablets and desktop browsers.
-- 3D lawn at dusk. Clock: start with 5 s; each catch +0.8 s (capped at 5 s); empty slap −0.3 s.
+- Clock: start with 5 s; each catch +0.8 s (capped at 5 s); empty slap −0.3 s.
 - Porcupine and green snake: slapping them makes the cat lick its paw and stop hunting (2 s / 3 s). The snake eats mice that pop out right next to it.
 - Lawn starts with 4 holes and a new one opens every 4.5 s until all 25 are dug; mice speed up smoothly.
-- Daily Challenge: each day has a mouse of the day (one of 100 fancy mice, cycling every 100 days); catch 10 of it in one round. Finished days fill an album; all 100 earn a seal.
-- Power-ups: Auto-catch (6 s of automatic catches), Full time (clock back to 5 s), Freeze (everything paused 4 s).
-- Combos: catches under 1.5 s apart chain; 10+ is "frenzy".
-- Hunter ranks by mice in one round: Sleepy Kitten 0, Curious Cub 5, Lawn Prowler 12, Night Hunter 20, Shadow Stalker 30, Yungas Legend 45, Mythic Tilcayo 65.
-- Sharing: a Wordle-style text with points, one square per mouse of the day caught and the time.
+- Shop: points buy cats — Orange Tabby 150,000, Badger 400,000, Black Cat 800,000, White Cat 1,400,000, Calico 2,200,000, Tilcayo 4,000,000 — and the Yellow Lizard (600,000, worth 2 mice). Your cat and lizard also appear in 1v1.
+- Daily Challenge: catch 10 of the mouse of the day (one of 100 fancy mice) in one round to add it to the album.
+- Power-ups: Auto-catch (6 s), Full time (clock back to 5 s), Freeze (4 s: clock stopped, every critter frozen in ice).
+- Hunter ranks: Sleepy Kitten 0, Curious Cub 5, Lawn Prowler 12, Night Hunter 20, Shadow Stalker 30, Lawn Legend 45, Mythic Mouser 65.
+- Seals: 11, including streak seals for 5, 15, 60 and 90 days in a row.
 
-## The real tilcayo cat in brief
+## The tilcayo cat in brief
 
-- Leopardus tilcayo Nogales-Ascarrunz, Aliaga-Rossel, Lescroart & Eizirik, 2026 — a tiger cat (genus Leopardus) from the Bolivian Yungas cloud forest.
-- First new wild cat species described since the Pampas cat in 1923.
-- Described in Lescroart et al., "Phylogenomics and museomics reveal five distinct species of tiger cats in South America", Current Biology (2026), doi:10.1016/j.cub.2026.08.059.
-- About 45 cm head-to-body, 25 cm tail, 1.3 kg — smaller than a house cat. Rust-orange coat, large rosettes, two dark forehead stripes.
-- Only one known individual: a ten-year-old male at Senda Verde Animal Refuge, Bolivia. Not yet assessed by the IUCN.
-- Identifiers: Wikipedia https://en.wikipedia.org/wiki/Tilcayo · Wikidata Q141490808 · iNaturalist 1712052.
+- Leopardus tilcayo Nogales-Ascarrunz, Aliaga-Rossel, Lescroart & Eizirik, 2026 — a tiger cat from the Bolivian Yungas cloud forest; first new wild cat species since the Pampas cat in 1923.
+- Described in Lescroart et al., Current Biology (2026), doi:10.1016/j.cub.2026.08.059.
+- About 45 cm head-to-body, 1.3 kg; rust-orange coat, large rosettes, two dark forehead stripes. One known individual, at Senda Verde Animal Refuge, Bolivia.
 
 ## Contact
 

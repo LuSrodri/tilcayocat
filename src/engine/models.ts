@@ -1,10 +1,11 @@
 import * as THREE from "three";
 import { fancyKind } from "../fancy";
 import { iconImage } from "./art";
+import type { SkinId } from "../shop";
 
-// Procedural 3D models, built from primitives in a soft toon style with ink outlines. They are
-// modelled on the game's painted art: the tilcayo's rust coat, rosettes and twin forehead
-// stripes; the round grey mouse with big pink ears; the grumpy porcupine.
+// Procedural 3D models, built from primitives in a soft toon style with ink outlines: seven cats
+// (one sculpt, seven painted coats), the round grey mouse with big pink ears and its 100 fancy
+// outfits, the grumpy porcupine, the green snake and the yellow lizard.
 
 /** Everything below the floor of the holes is clipped, so critters can climb out of them. */
 export const GROUND_CLIP = [new THREE.Plane(new THREE.Vector3(0, 1, 0), 0.5)];
@@ -100,6 +101,75 @@ function rand(seed: number): () => number {
   };
 }
 
+// ---- cat coats -------------------------------------------------------------------------
+// Every cat in the shop is the same sculpt wearing its own coat: painted canvas textures for the
+// body and the head, plus a handful of per-cat colours (muzzle, ears, nose, eyes, tail bands).
+
+type Pattern = "tabby" | "solid" | "smoke" | "calico" | "rosettes";
+
+interface CatLook {
+  pattern: Pattern;
+  /** body gradient, top → bottom */
+  coat: [string, string, string];
+  /** stripes, rosettes, frosting */
+  marks: string;
+  /** muzzle, chest, paws */
+  cream: number;
+  nose: number;
+  bean: number;
+  /** outer ear colour, left / right (the calico has odd ears) */
+  ear: [number, number];
+  earTip: number | null;
+  earIn: number;
+  /** left / right iris (the white cat is odd-eyed) */
+  iris: [string, string];
+  /** band colour of a tail segment, or null for the coat */
+  tail: (i: number, n: number) => number | null;
+}
+
+const ringed = (c: number) => (i: number, n: number): number | null => (i >= n - 2 || (i > 2 && i % 2 === 0) ? c : null);
+
+const LOOKS: Record<SkinId, CatLook> = {
+  grey: {
+    pattern: "tabby", coat: ["#aeb0b7", "#9a9da5", "#878a93"], marks: "#3f424a", cream: 0xeceae6, nose: 0xd08e98, bean: 0xe5939f,
+    ear: [0x93969e, 0x93969e], earTip: 0x3f424a, earIn: 0xf2c4c4, iris: ["#b9d36a", "#b9d36a"], tail: ringed(0x4a4d55)
+  },
+  orange: {
+    pattern: "tabby", coat: ["#f8b465", "#ef9f4a", "#e08c39"], marks: "#bf5f27", cream: 0xfde9cf, nose: 0xee9a86, bean: 0xf09a90,
+    ear: [0xed9c49, 0xed9c49], earTip: 0xbf5f27, earIn: 0xf8c9b8, iris: ["#f0b447", "#f0b447"], tail: ringed(0xc6662c)
+  },
+  badger: {
+    pattern: "smoke", coat: ["#5d5965", "#4e4a56", "#403c48"], marks: "#cfcad6", cream: 0xf6f2ea, nose: 0x3d3238, bean: 0x4a3a44,
+    ear: [0x48444f, 0x48444f], earTip: 0x26232b, earIn: 0xd9a5ad, iris: ["#a7e06a", "#a7e06a"], tail: (i, n) => (i >= n - 3 ? 0xf6f2ea : null)
+  },
+  black: {
+    pattern: "solid", coat: ["#45414d", "#37333e", "#2c2932"], marks: "#6a6575", cream: 0x4a4552, nose: 0x2a2228, bean: 0x3a2e36,
+    ear: [0x38343f, 0x38343f], earTip: null, earIn: 0x8a5f6e, iris: ["#ffd24a", "#ffd24a"], tail: () => null
+  },
+  white: {
+    pattern: "solid", coat: ["#ffffff", "#f7f3ed", "#ece6de"], marks: "#ffffff", cream: 0xffffff, nose: 0xf4a3b0, bean: 0xf7a8b6,
+    ear: [0xf8f4ee, 0xf8f4ee], earTip: null, earIn: 0xffb8c4, iris: ["#7fc4ff", "#f0b447"], tail: () => null
+  },
+  calico: {
+    pattern: "calico", coat: ["#fdfaf4", "#f6efe4", "#ece3d6"], marks: "#2f2b31", cream: 0xffffff, nose: 0xf2a2a8, bean: 0xf3a1ac,
+    ear: [0xe8893a, 0x37323a], earTip: null, earIn: 0xf8c9c4, iris: ["#c9d65a", "#c9d65a"],
+    tail: (i, n) => (i >= n - 2 ? 0x2f2b31 : i % 4 < 2 ? 0xe8893a : 0x37323a)
+  },
+  tilcayo: {
+    pattern: "rosettes", coat: ["#e39a4c", "#d8883a", "#c9772f"], marks: "#3b2216", cream: 0xf6e6d0, nose: 0xe99a9a, bean: 0xe98a9a,
+    ear: [0xd98a3c, 0xd98a3c], earTip: 0x3b2216, earIn: 0xf6c9b8, iris: ["#f0b447", "#f0b447"], tail: ringed(0x3b2216)
+  }
+};
+
+const hexNum = (h: string): number => parseInt(h.slice(1), 16);
+
+/** Mix a #rrggbb colour towards white (f > 0) or black (f < 0). */
+function shade(hex: string, f: number): string {
+  const n = hexNum(hex);
+  const ch = [(n >> 16) & 255, (n >> 8) & 255, n & 255].map((c) => Math.round(f >= 0 ? c + (255 - c) * f : c * (1 + f)));
+  return `rgb(${ch.join(",")})`;
+}
+
 // Rosettes: broken dark rings around a slightly deeper centre, the tilcayo's big leopard-like spots.
 function rosette(ctx: CanvasRenderingContext2D, x: number, y: number, r: number, rnd: () => number): void {
   ctx.fillStyle = "#b8662a";
@@ -119,92 +189,261 @@ function rosette(ctx: CanvasRenderingContext2D, x: number, y: number, r: number,
   }
 }
 
-function coatBase(ctx: CanvasRenderingContext2D, w: number, h: number): void {
+function coatBase(ctx: CanvasRenderingContext2D, w: number, h: number, look: CatLook): void {
   const g = ctx.createLinearGradient(0, 0, 0, h);
-  g.addColorStop(0, "#e39a4c");
-  g.addColorStop(0.6, "#d8883a");
-  g.addColorStop(1, "#c9772f");
+  g.addColorStop(0, look.coat[0]);
+  g.addColorStop(0.6, look.coat[1]);
+  g.addColorStop(1, look.coat[2]);
   ctx.fillStyle = g;
   ctx.fillRect(0, 0, w, h);
   // soft fur mottling
   const rnd = rand(3);
-  for (let i = 0; i < 220; i++) {
-    ctx.fillStyle = rnd() < 0.5 ? "rgba(255,210,150,.08)" : "rgba(120,60,20,.06)";
+  for (let i = 0; i < 260; i++) {
+    ctx.fillStyle = rnd() < 0.5 ? "rgba(255,240,220,.08)" : "rgba(40,20,10,.06)";
     ctx.beginPath();
     ctx.ellipse(rnd() * w, rnd() * h, 6 + rnd() * 14, 3 + rnd() * 6, rnd() * 3, 0, Math.PI * 2);
     ctx.fill();
   }
+  // fine fur strokes
+  ctx.lineWidth = 1.2;
+  for (let i = 0; i < 500; i++) {
+    const x = rnd() * w;
+    const y = rnd() * h;
+    ctx.strokeStyle = rnd() < 0.5 ? "rgba(255,255,255,.07)" : "rgba(0,0,0,.07)";
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+    ctx.lineTo(x + (rnd() - 0.5) * 3, y + 5 + rnd() * 5);
+    ctx.stroke();
+  }
 }
 
-function coatTexture(): THREE.Texture {
-  return canvasTex("coat", 512, 256, (ctx) => {
-    coatBase(ctx, 512, 256);
+// Mackerel tabby: wavy dark stripes running down the flanks.
+function tabbyStripes(ctx: CanvasRenderingContext2D, w: number, h: number, color: string, seed: number, from = 0, to = h): void {
+  const rnd = rand(seed);
+  ctx.strokeStyle = color;
+  ctx.lineCap = "round";
+  const n = 16;
+  for (let s = 0; s < n; s++) {
+    const x0 = (s + 0.5) * (w / n) + (rnd() - 0.5) * 8;
+    ctx.lineWidth = 7 + rnd() * 5;
+    ctx.globalAlpha = 0.75 + rnd() * 0.25;
+    ctx.beginPath();
+    for (let y = from; y <= to; y += 8) {
+      const x = x0 + Math.sin(y * 0.05 + s) * 5;
+      if (y === from) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+    // broken side branches
+    if (rnd() < 0.6) {
+      const y = from + rnd() * (to - from);
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.moveTo(x0, y);
+      ctx.lineTo(x0 + 10 + rnd() * 6, y + 10);
+      ctx.stroke();
+    }
+  }
+  ctx.globalAlpha = 1;
+}
+
+function blob(ctx: CanvasRenderingContext2D, x: number, y: number, r: number, color: string, rnd: () => number): void {
+  ctx.fillStyle = color;
+  for (let k = 0; k < 6; k++) {
+    ctx.beginPath();
+    ctx.ellipse(x + (rnd() - 0.5) * r, y + (rnd() - 0.5) * r * 0.7, r * (0.45 + rnd() * 0.4), r * (0.35 + rnd() * 0.3), rnd() * 3, 0, Math.PI * 2);
+    ctx.fill();
+  }
+}
+
+function coatTexture(skin: SkinId): THREE.Texture {
+  const look = LOOKS[skin];
+  return canvasTex(`coat:${skin}`, 512, 256, (ctx) => {
+    coatBase(ctx, 512, 256, look);
     const rnd = rand(11);
-    for (let row = 0; row < 7; row++) {
-      for (let col = 0; col < 12; col++) {
-        const x = (col + (row % 2) * 0.5) * (512 / 12) + (rnd() - 0.5) * 10;
-        const y = 22 + row * 34 + (rnd() - 0.5) * 8;
-        if (rnd() < 0.8) rosette(ctx, x, y, 11 + rnd() * 5, rnd);
-        else {
-          ctx.fillStyle = "#3b2216";
+    switch (look.pattern) {
+      case "tabby":
+        tabbyStripes(ctx, 512, 256, look.marks, 21, 0, 236);
+        break;
+      case "smoke":
+        // a silvery frosting near the roots shows through the dark tips
+        for (let i = 0; i < 380; i++) {
+          ctx.strokeStyle = `rgba(207,202,214,${0.08 + rnd() * 0.12})`;
+          ctx.lineWidth = 1.5;
+          const x = rnd() * 512;
+          const y = 120 + rnd() * 136;
           ctx.beginPath();
-          ctx.arc(x, y, 4 + rnd() * 3, 0, Math.PI * 2);
+          ctx.moveTo(x, y);
+          ctx.lineTo(x + (rnd() - 0.5) * 4, y + 6 + rnd() * 6);
+          ctx.stroke();
+        }
+        break;
+      case "solid":
+        // a sheen along the back
+        ctx.fillStyle = "rgba(255,255,255,.07)";
+        ctx.fillRect(0, 10, 512, 40);
+        break;
+      case "calico":
+        for (let i = 0; i < 9; i++) blob(ctx, rnd() * 512, 20 + rnd() * 160, 36 + rnd() * 30, i % 2 ? "#e8893a" : "#37323a", rnd);
+        // orange patches carry faint tabby ghosting
+        ctx.globalCompositeOperation = "source-atop";
+        tabbyStripes(ctx, 512, 256, "rgba(200,100,30,.18)", 7, 0, 200);
+        ctx.globalCompositeOperation = "source-over";
+        break;
+      case "rosettes":
+        for (let row = 0; row < 7; row++) {
+          for (let col = 0; col < 12; col++) {
+            const x = (col + (row % 2) * 0.5) * (512 / 12) + (rnd() - 0.5) * 10;
+            const y = 22 + row * 34 + (rnd() - 0.5) * 8;
+            if (rnd() < 0.8) rosette(ctx, x, y, 11 + rnd() * 5, rnd);
+            else {
+              ctx.fillStyle = "#3b2216";
+              ctx.beginPath();
+              ctx.arc(x, y, 4 + rnd() * 3, 0, Math.PI * 2);
+              ctx.fill();
+            }
+          }
+        }
+        break;
+    }
+  });
+}
+
+// Head: the face looks out at u = 0.25, so forehead marks sit around x = 128 near the top.
+function headTexture(skin: SkinId): THREE.Texture {
+  const look = LOOKS[skin];
+  return canvasTex(`head:${skin}`, 512, 256, (ctx) => {
+    coatBase(ctx, 512, 256, look);
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    ctx.strokeStyle = look.marks;
+    ctx.fillStyle = look.marks;
+    const rnd = rand(5);
+    switch (look.pattern) {
+      case "tabby": {
+        // stripes over the crown and down the back of the head, then a clear forehead for the "M"
+        tabbyStripes(ctx, 512, 256, look.marks, 9, 0, 80);
+        const clear = ctx.createRadialGradient(128, 80, 10, 128, 80, 48);
+        clear.addColorStop(0, look.coat[0]);
+        clear.addColorStop(0.7, look.coat[0]);
+        clear.addColorStop(1, "rgba(0,0,0,0)");
+        ctx.fillStyle = clear;
+        ctx.fillRect(70, 20, 116, 130);
+        ctx.fillStyle = look.marks;
+        ctx.lineWidth = 7;
+        ctx.beginPath();
+        ctx.moveTo(98, 98);
+        ctx.lineTo(108, 62);
+        ctx.lineTo(128, 84);
+        ctx.lineTo(148, 62);
+        ctx.lineTo(158, 98);
+        ctx.stroke();
+        ctx.lineWidth = 6;
+        for (const dx of [-14, 0, 14]) {
+          ctx.beginPath();
+          ctx.moveTo(128 + dx, 58);
+          ctx.quadraticCurveTo(128 + dx * 1.2, 30, 128 + dx * 1.4, 0);
+          ctx.stroke();
+        }
+        // "mascara" lines from the outer eye corners and cheek bars
+        ctx.lineWidth = 5;
+        for (const s of [-1, 1]) {
+          ctx.beginPath();
+          ctx.moveTo(128 + s * 52, 118);
+          ctx.quadraticCurveTo(128 + s * 66, 112, 128 + s * 84, 116);
+          ctx.stroke();
+          ctx.beginPath();
+          ctx.moveTo(128 + s * 66, 136);
+          ctx.quadraticCurveTo(128 + s * 82, 140, 128 + s * 98, 134);
+          ctx.stroke();
+        }
+        break;
+      }
+      case "smoke": {
+        // the badger blaze: a white stripe from the crown down between the eyes to the muzzle
+        const g = ctx.createLinearGradient(0, 0, 0, 180);
+        g.addColorStop(0, "#f6f2ea");
+        g.addColorStop(1, "#ffffff");
+        ctx.fillStyle = g;
+        ctx.beginPath();
+        ctx.moveTo(116, 0);
+        ctx.quadraticCurveTo(118, 70, 108, 150);
+        ctx.lineTo(148, 150);
+        ctx.quadraticCurveTo(138, 70, 140, 0);
+        ctx.closePath();
+        ctx.fill();
+        // darker bands framing it, like a badger's mask
+        ctx.fillStyle = "rgba(20,18,26,.45)";
+        for (const s of [-1, 1]) {
+          ctx.beginPath();
+          ctx.ellipse(128 + s * 34, 70, 12, 60, s * 0.08, 0, Math.PI * 2);
           ctx.fill();
         }
+        break;
       }
+      case "calico":
+        blob(ctx, 82, 60, 60, "#e8893a", rnd);
+        blob(ctx, 182, 48, 54, "#37323a", rnd);
+        blob(ctx, 330, 80, 50, "#e8893a", rnd);
+        blob(ctx, 440, 60, 46, "#37323a", rnd);
+        break;
+      case "rosettes": {
+        ctx.lineWidth = 9;
+        for (const dx of [-13, 13]) {
+          ctx.beginPath();
+          ctx.moveTo(128 + dx * 1.6, 8);
+          ctx.quadraticCurveTo(128 + dx * 1.2, 50, 128 + dx * 0.7, 88);
+          ctx.stroke();
+        }
+        for (let i = 0; i < 30; i++) {
+          const x = rnd() * 512;
+          if (Math.abs(x - 128) < 60) continue;
+          ctx.beginPath();
+          ctx.ellipse(x, 20 + rnd() * 120, 3 + rnd() * 4, 8 + rnd() * 10, rnd() - 0.5, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.lineWidth = 5;
+        for (const dx of [-70, 70]) {
+          ctx.beginPath();
+          ctx.moveTo(128 + dx, 118);
+          ctx.quadraticCurveTo(128 + dx * 1.3, 128, 128 + dx * 1.6, 124);
+          ctx.stroke();
+        }
+        break;
+      }
+      case "solid":
+        break;
     }
   });
 }
 
-// Head: orange with the two dark stripes running down the forehead (front of a sphere = u 0.25).
-function headTexture(): THREE.Texture {
-  return canvasTex("head", 512, 256, (ctx) => {
-    coatBase(ctx, 512, 256);
-    ctx.fillStyle = "#3b2216";
-    ctx.lineCap = "round";
-    ctx.strokeStyle = "#3b2216";
-    for (const dx of [-13, 13]) {
-      ctx.lineWidth = 9;
-      ctx.beginPath();
-      ctx.moveTo(128 + dx * 1.6, 8);
-      ctx.quadraticCurveTo(128 + dx * 1.2, 50, 128 + dx * 0.7, 88);
-      ctx.stroke();
-    }
-    // side stripes and cheek marks
-    const rnd = rand(5);
-    for (let i = 0; i < 30; i++) {
-      const x = rnd() * 512;
-      if (Math.abs(x - 128) < 60) continue;
-      ctx.beginPath();
-      ctx.ellipse(x, 20 + rnd() * 120, 3 + rnd() * 4, 8 + rnd() * 10, rnd() - 0.5, 0, Math.PI * 2);
-      ctx.fill();
-    }
-    ctx.lineWidth = 5;
-    for (const dx of [-70, 70]) {
-      ctx.beginPath();
-      ctx.moveTo(128 + dx, 118);
-      ctx.quadraticCurveTo(128 + dx * 1.3, 128, 128 + dx * 1.6, 124);
-      ctx.stroke();
-    }
-  });
-}
-
-// Amber iris with a slit pupil and two catchlights, painted at the front of the eyeball (u = 0.25).
-function eyeTexture(): THREE.Texture {
-  return canvasTex("eye", 256, 128, (ctx) => {
+// Iris with a slit pupil and two catchlights, painted at the front of the eyeball (u = 0.25).
+function eyeTexture(iris: string): THREE.Texture {
+  return canvasTex(`eye:${iris}`, 256, 128, (ctx) => {
     ctx.fillStyle = "#fbf1de";
     ctx.fillRect(0, 0, 256, 128);
     const g = ctx.createRadialGradient(64, 60, 4, 64, 64, 40);
-    g.addColorStop(0, "#ffe7a0");
-    g.addColorStop(0.45, "#f0b447");
-    g.addColorStop(0.85, "#c9791f");
-    g.addColorStop(1, "#7a4214");
+    g.addColorStop(0, shade(iris, 0.6));
+    g.addColorStop(0.45, iris);
+    g.addColorStop(0.85, shade(iris, -0.3));
+    g.addColorStop(1, shade(iris, -0.55));
     ctx.fillStyle = g;
     ctx.beginPath();
     ctx.arc(64, 64, 40, 0, Math.PI * 2);
     ctx.fill();
+    // fine radial streaks in the iris
+    ctx.strokeStyle = "rgba(60,30,10,.18)";
+    ctx.lineWidth = 1.5;
+    for (let a = 0; a < Math.PI * 2; a += 0.22) {
+      ctx.beginPath();
+      ctx.moveTo(64 + Math.cos(a) * 14, 64 + Math.sin(a) * 14);
+      ctx.lineTo(64 + Math.cos(a) * 36, 64 + Math.sin(a) * 36);
+      ctx.stroke();
+    }
     ctx.lineWidth = 5;
     ctx.strokeStyle = "#3b2216";
+    ctx.beginPath();
+    ctx.arc(64, 64, 40, 0, Math.PI * 2);
     ctx.stroke();
     ctx.fillStyle = "#1a1015";
     ctx.beginPath();
@@ -219,6 +458,7 @@ function eyeTexture(): THREE.Texture {
     ctx.fill();
   });
 }
+
 
 function flatTex(key: string, map: THREE.Texture): THREE.MeshBasicMaterial {
   let m = matCache.get(`f:${key}`) as THREE.MeshBasicMaterial | undefined;
@@ -290,6 +530,7 @@ function part(g: THREE.BufferGeometry, m: THREE.Material, o: PartOpts = {}): THR
 // ---- cat ------------------------------------------------------------------------------
 
 export interface CatModel {
+  skin: SkinId;
   root: THREE.Group;
   body: THREE.Group;
   head: THREE.Group;
@@ -302,12 +543,13 @@ export interface CatModel {
   tail: THREE.Object3D[];
 }
 
-export function buildCat(): CatModel {
-  const coat = toon(0xffffff, coatTexture(), "coat");
-  const headMat = toon(0xffffff, headTexture(), "head");
-  const cream = toon(0xf6e6d0);
-  const pink = toon(0xe99a9a);
-  const dark = toon(0x3b2216);
+export function buildCat(skin: SkinId = "grey"): CatModel {
+  const look = LOOKS[skin];
+  const coat = toon(0xffffff, coatTexture(skin), `coat:${skin}`);
+  const headMat = toon(0xffffff, headTexture(skin), `head:${skin}`);
+  const cream = toon(look.cream);
+  const nose = toon(look.nose);
+  const mid = toon(hexNum(look.coat[1]));
   const black = flat(0x1a1015);
   const white = flat(0xffffff);
 
@@ -317,23 +559,30 @@ export function buildCat(): CatModel {
 
   body.add(part(sphere(0.5), coat, { pos: [0, 0.66, 0], scale: [1, 1.22, 0.92] }));
   body.add(part(sphere(0.34), cream, { pos: [0, 0.78, 0.26], scale: [0.95, 1.25, 0.7] }));
+  // a ruff of chest fluff where the bib meets the neck
+  for (const [x, y] of [[-0.1, 1.08], [0.1, 1.08], [0, 1.02]] as const) {
+    body.add(part(sphere(0.11, 12, 8), cream, { pos: [x, y, 0.33], scale: [1, 0.8, 0.6], outline: false }));
+  }
   for (const s of [-1, 1]) {
     body.add(part(sphere(0.3), coat, { pos: [s * 0.34, 0.3, -0.02], scale: [0.9, 0.95, 1.2] }));
     // hind paws peeking out
     body.add(part(sphere(0.12), cream, { pos: [s * 0.4, 0.07, 0.3], scale: [1, 0.6, 1.4] }));
+    toes(body, s * 0.4, 0.07, 0.44, cream);
   }
   // left front leg (the right one is the slapping arm below)
   const legGeo = geo("leg", () => new THREE.CapsuleGeometry(0.1, 0.42, 6, 12));
   body.add(part(legGeo, coat, { pos: [-0.17, 0.33, 0.34] }));
   body.add(part(sphere(0.125), cream, { pos: [-0.17, 0.08, 0.4], scale: [1, 0.7, 1.25] }));
+  toes(body, -0.17, 0.08, 0.54, cream);
 
   const arm = new THREE.Group();
   arm.position.set(0.17, 0.62, 0.32);
   arm.add(part(legGeo, coat, { pos: [0, -0.29, 0.02] }));
   arm.add(part(sphere(0.125), cream, { pos: [0, -0.54, 0.08], scale: [1, 0.7, 1.25] }));
+  toes(arm, 0, -0.54, 0.22, cream);
   body.add(arm);
 
-  // tail: a tapering chain of segments, banded like the art, curling up at the dark tip
+  // tail: a tapering chain of segments, banded per coat, curling up at the tip
   const tail: THREE.Object3D[] = [];
   const tailBase = new THREE.Group();
   tailBase.position.set(0.3, 0.14, -0.28);
@@ -348,9 +597,9 @@ export function buildCat(): CatModel {
     const bend = { x: i < 6 ? 0.04 : -0.12 - (i - 6) * 0.05, y: i < 2 ? 0 : -0.2 };
     seg.userData.bend = bend;
     seg.rotation.set(bend.x, bend.y, 0);
-    const dark = i >= TAIL_N - 2 || (i > 2 && i % 2 === 0);
+    const band = look.tail(i, TAIL_N);
     const r = 0.1 - i * 0.003;
-    seg.add(part(sphere(0.1), dark ? toon(0x3b2216) : coat, { scale: [r / 0.1, r / 0.1, (r / 0.1) * 1.25] }));
+    seg.add(part(sphere(0.1), band === null ? coat : toon(band), { scale: [r / 0.1, r / 0.1, (r / 0.1) * 1.25] }));
     joint.add(seg);
     tail.push(seg);
     joint = seg;
@@ -360,34 +609,56 @@ export function buildCat(): CatModel {
   head.position.set(0, 1.45, 0.05);
   body.add(head);
   head.add(part(sphere(0.46, 28, 20), headMat, { scale: [1.12, 0.94, 0.95] }));
+  // cheek ruffs: soft tufts of fur at the sides of the face
+  const tuft = geo("tuft", () => new THREE.ConeGeometry(0.09, 0.2, 10));
+  for (const s of [-1, 1]) {
+    for (const [dy, a] of [[-0.12, 1.9], [-0.2, 2.2]] as const) {
+      head.add(part(tuft, mid, { pos: [s * 0.47, dy, 0.05], rot: [0, 0, -s * a], scale: [1, 1, 0.6] }));
+    }
+  }
   // muzzle, chin, nose
   head.add(part(sphere(0.14), cream, { pos: [-0.085, -0.12, 0.36], scale: [1.1, 0.85, 0.8] }));
   head.add(part(sphere(0.14), cream, { pos: [0.085, -0.12, 0.36], scale: [1.1, 0.85, 0.8] }));
   head.add(part(sphere(0.1), cream, { pos: [0, -0.24, 0.3], scale: [1.2, 0.7, 0.8] }));
-  head.add(part(sphere(0.045), pink, { pos: [0, -0.04, 0.44], scale: [1.3, 0.8, 0.8] }));
+  head.add(part(geo("nose", () => new THREE.SphereGeometry(0.05, 14, 10).scale(1.3, 0.75, 0.8)), nose, { pos: [0, -0.04, 0.44] }));
+  // whisker pads: tiny dark dots
+  for (const s of [-1, 1]) {
+    for (let k = 0; k < 3; k++) {
+      head.add(part(sphere(0.008, 6, 4), flat(0x6a5560), { pos: [s * (0.07 + k * 0.025), -0.1 - (k % 2) * 0.03, 0.47 - k * 0.012], outline: false }));
+    }
+  }
   const mouth = part(sphere(0.05), black, { pos: [0, -0.2, 0.4], scale: [1.2, 0.6, 0.5], outline: false });
   mouth.visible = false;
   head.add(mouth);
   const tongue = part(sphere(0.045), toon(0xff7d9c), { pos: [0, -0.24, 0.4], scale: [0.9, 1.1, 0.6] });
   head.add(tongue);
-  // whiskers
+  // whiskers, plus brow whiskers above the eyes
   const whisker = geo("whisker", () => new THREE.CylinderGeometry(0.004, 0.004, 0.42, 4).rotateZ(Math.PI / 2));
+  const brow = geo("brow-whisker", () => new THREE.CylinderGeometry(0.003, 0.003, 0.22, 4).rotateZ(Math.PI / 2));
+  const wMat = flat(skin === "white" ? 0xd8d0c8 : 0xfff6ea);
   for (const s of [-1, 1]) {
     for (const k of [0, 1, 2]) {
-      const w = new THREE.Mesh(whisker, flat(0xfff6ea));
+      const w = new THREE.Mesh(whisker, wMat);
       w.position.set(s * 0.3, -0.12 - k * 0.03, 0.34);
       w.rotation.set(0, s * 0.25, s * (0.12 - k * 0.1));
       head.add(w);
     }
+    for (const k of [0, 1]) {
+      const w = new THREE.Mesh(brow, wMat);
+      w.position.set(s * (0.25 + k * 0.04), 0.2 + k * 0.02, 0.3);
+      w.rotation.set(0, s * 0.4, s * (0.5 + k * 0.2));
+      head.add(w);
+    }
   }
-  // eyes with toon lids (the lids carry the mood: half-closed = grumpy, like the art)
+  // eyes with toon lids (the lids carry the mood: half-closed = grumpy)
   const lids: THREE.Object3D[] = [];
   const lidGeo = geo("lid", () => new THREE.SphereGeometry(0.118, 18, 10, 0, Math.PI * 2, 0, Math.PI / 2));
   for (const s of [-1, 1]) {
     const eye = new THREE.Group();
     eye.position.set(s * 0.19, 0.05, 0.34);
     eye.rotation.y = s * 0.25;
-    eye.add(part(sphere(0.11, 28, 18), flatTex("eye", eyeTexture()), { scale: [1, 1, 0.8] }));
+    const iris = look.iris[s < 0 ? 0 : 1];
+    eye.add(part(sphere(0.11, 28, 18), flatTex(`eye:${iris}`, eyeTexture(iris)), { scale: [1, 1, 0.8] }));
     eye.add(part(sphere(0.018, 8, 6), white, { pos: [0.03, 0.035, 0.09], outline: false }));
     const lid = new THREE.Group();
     lid.add(part(lidGeo, headMat, { scale: [1.05, 1.05, 1.05] }));
@@ -396,24 +667,34 @@ export function buildCat(): CatModel {
     lids.push(lid);
     head.add(eye);
   }
-  // ears: orange cone, pink inside, dark back tip
+  // ears: coat-coloured cone, pink inside with a tuft of fur, darker tip where the coat has one
   const ears: THREE.Object3D[] = [];
   const earGeo = geo("ear", () => new THREE.ConeGeometry(0.2, 0.38, 20, 1));
   const tipGeo = geo("earTip", () => new THREE.ConeGeometry(0.09, 0.14, 16, 1));
   const innerGeo = geo("earIn", () => new THREE.ConeGeometry(0.13, 0.26, 16, 1));
-  const orange = toon(0xd98a3c);
-  for (const s of [-1, 1]) {
+  const furGeo = geo("earFur", () => new THREE.ConeGeometry(0.035, 0.16, 6, 1));
+  look.ear.forEach((earColor, idx) => {
+    const s = idx === 0 ? -1 : 1;
     const ear = new THREE.Group();
     ear.position.set(s * 0.3, 0.33, -0.04);
     ear.rotation.set(-0.1, 0, -s * 0.35);
-    ear.add(part(earGeo, orange, { scale: [1, 1, 0.5] }));
-    ear.add(part(tipGeo, dark, { pos: [0, 0.13, 0], scale: [1, 1, 0.55], outline: false }));
-    ear.add(part(innerGeo, toon(0xf6c9b8), { pos: [0, -0.04, 0.06], scale: [1, 1, 0.35], outline: false }));
+    ear.add(part(earGeo, toon(earColor), { scale: [1, 1, 0.5] }));
+    if (look.earTip !== null) ear.add(part(tipGeo, toon(look.earTip), { pos: [0, 0.13, 0], scale: [1, 1, 0.55], outline: false }));
+    ear.add(part(innerGeo, toon(look.earIn), { pos: [0, -0.04, 0.06], scale: [1, 1, 0.35], outline: false }));
+    for (const dx of [-0.03, 0.03]) ear.add(part(furGeo, cream, { pos: [dx, -0.08, 0.09], rot: [0.2, 0, dx * 6], outline: false }));
     ears.push(ear);
     head.add(ear);
-  }
-  return { root, body, head, lids, ears, arm, tongue, mouth, tail };
+  });
+  return { skin, root, body, head, lids, ears, arm, tongue, mouth, tail };
 }
+
+// Three little toe bumps along the front of a paw.
+function toes(parent: THREE.Object3D, x: number, y: number, z: number, mat: THREE.Material): void {
+  for (const dx of [-0.055, 0, 0.055]) {
+    parent.add(part(sphere(0.042, 10, 8), mat, { pos: [x + dx, y - 0.01, z - Math.abs(dx) * 0.6], scale: [1, 0.8, 1], outline: false }));
+  }
+}
+
 
 export type CatFace = "idle" | "catch" | "angry" | "sad" | "lick";
 
@@ -656,11 +937,12 @@ export function buildPorcupine(): THREE.Group {
 
 // ---- the slapping paw ----------------------------------------------------------------------
 
-export function buildPaw(): THREE.Group {
+export function buildPaw(skin: SkinId = "grey"): THREE.Group {
+  const look = LOOKS[skin];
   const g = new THREE.Group();
-  const coat = toon(0xffffff, coatTexture(), "coat");
-  const cream = toon(0xf6e6d0);
-  const bean = toon(0xe98a9a);
+  const coat = toon(0xffffff, coatTexture(skin), `coat:${skin}`);
+  const cream = toon(look.cream);
+  const bean = toon(look.bean);
   g.add(part(geo("pawArm", () => new THREE.CapsuleGeometry(0.16, 0.42, 6, 14)), coat, { pos: [0, 0.46, 0] }));
   g.add(part(sphere(0.21), cream, { pos: [0, 0.14, 0.02], scale: [1.15, 0.78, 1.2] }));
   g.add(part(sphere(0.075), bean, { pos: [0, 0.02, -0.02], scale: [1.4, 0.45, 1.1], outline: false }));
@@ -670,6 +952,124 @@ export function buildPaw(): THREE.Group {
     g.add(part(sphere(0.062), cream, { pos: [x, 0.1, z], scale: [1, 0.85, 1] }));
     g.add(part(sphere(0.028), bean, { pos: [x, 0.045, z + 0.01], scale: [1, 0.5, 1], outline: false }));
   }
+  return g;
+}
+
+// ---- yellow lizard ---------------------------------------------------------------------------
+
+function lizardTexture(): THREE.Texture {
+  return canvasTex("lizard", 256, 128, (ctx) => {
+    const g = ctx.createLinearGradient(0, 0, 0, 128);
+    g.addColorStop(0, "#f7d64a");
+    g.addColorStop(0.7, "#f1c22c");
+    g.addColorStop(1, "#e2a91c");
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, 256, 128);
+    const rnd = rand(17);
+    // fine scales
+    ctx.strokeStyle = "rgba(150,90,10,.18)";
+    ctx.lineWidth = 1;
+    for (let y = 4; y < 128; y += 7) {
+      for (let x = (y % 14) / 2; x < 256; x += 7) {
+        ctx.beginPath();
+        ctx.arc(x, y, 3, 0, Math.PI);
+        ctx.stroke();
+      }
+    }
+    // orange freckles and a darker dorsal line at the back (u = 0.75)
+    for (let i = 0; i < 70; i++) {
+      ctx.fillStyle = rnd() < 0.6 ? "rgba(224,120,30,.85)" : "rgba(150,80,20,.7)";
+      ctx.beginPath();
+      ctx.ellipse(rnd() * 256, rnd() * 110, 2 + rnd() * 4, 2 + rnd() * 3, rnd() * 3, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.fillStyle = "rgba(190,110,20,.55)";
+    ctx.fillRect(184, 0, 16, 128);
+  });
+}
+
+/** A bright yellow lizard, scrambling out of the hole with its front feet on the rim. */
+export function buildLizard(): THREE.Group {
+  const skin = toon(0xffffff, lizardTexture(), "lizard");
+  const belly = toon(0xfff1a8);
+  const orange = toon(0xf08a24);
+  const black = flat(0x1a1015);
+  const white = flat(0xffffff);
+  const g = new THREE.Group();
+  // body leaning out of the hole, belly towards the camera
+  const torso = new THREE.Group();
+  torso.rotation.x = 0.25;
+  g.add(torso);
+  torso.add(part(sphere(0.2), skin, { pos: [0, 0.3, 0], scale: [0.72, 1.7, 0.7] }));
+  torso.add(part(sphere(0.12, 16, 12), belly, { pos: [0, 0.27, 0.08], scale: [0.75, 1.9, 0.6], outline: false }));
+  // dorsal spines down the back
+  const spine = geo("liz-spine", () => new THREE.ConeGeometry(0.03, 0.08, 6));
+  for (let i = 0; i < 6; i++) torso.add(part(spine, orange, { pos: [0, 0.1 + i * 0.09, -0.13 + Math.sin(i * 0.4) * 0.01], rot: [-0.9, 0, 0], outline: false }));
+  // legs splayed out like a gecko's: front ones gripping the rim, hind ones bracing below
+  const upperGeo = geo("liz-leg", () => new THREE.CapsuleGeometry(0.04, 0.14, 4, 8));
+  const toeGeo = geo("liz-toe", () => new THREE.CapsuleGeometry(0.014, 0.06, 3, 6));
+  const padGeo = geo("liz-pad", () => new THREE.SphereGeometry(0.022, 8, 6));
+  for (const [y, z, size] of [[0.5, 0.04, 0.62], [0.1, 0.02, 0.58]] as const) {
+    const len = 1;
+    for (const s of [-1, 1]) {
+      // upper leg points out sideways, the forearm bends down to the ground
+      const hip = new THREE.Group();
+      hip.position.set(s * 0.12, y, z);
+      hip.rotation.set(0.3, 0, -s * 1.35);
+      hip.scale.setScalar(size);
+      hip.add(part(upperGeo, skin, { pos: [0, 0.1 * len, 0] }));
+      const knee = new THREE.Group();
+      knee.position.set(0, 0.2 * len, 0);
+      knee.rotation.z = -s * 1.25;
+      knee.add(part(upperGeo, skin, { pos: [0, 0.09 * len, 0], scale: [0.85, 0.9, 0.85] }));
+      for (const a of [-0.7, 0, 0.7]) {
+        const toe = part(toeGeo, skin, { pos: [Math.sin(a) * 0.05, 0.2 * len, Math.cos(a) * 0.015], rot: [0, 0, -a] });
+        toe.add(part(padGeo, orange, { pos: [0, 0.04, 0], outline: false }));
+        knee.add(toe);
+      }
+      hip.add(knee);
+      torso.add(hip);
+    }
+  }
+  // head: a long, rounded snout with bulging eyes at the sides
+  const head = new THREE.Group();
+  head.name = "head";
+  head.position.set(0, 0.68, 0.08);
+  g.add(head);
+  head.add(part(sphere(0.15, 22, 16), skin, { scale: [1, 0.72, 1.55] }));
+  head.add(part(sphere(0.11, 16, 10), belly, { pos: [0, -0.05, 0.06], scale: [0.95, 0.45, 1.6], outline: false }));
+  for (const s of [-1, 1]) {
+    const eye = new THREE.Group();
+    eye.position.set(s * 0.1, 0.06, 0.05);
+    eye.add(part(sphere(0.055, 14, 10), skin));
+    eye.add(part(sphere(0.042, 14, 10), white, { pos: [s * 0.018, 0.008, 0.02], outline: false }));
+    eye.add(part(sphere(0.026, 10, 8), black, { pos: [s * 0.03, 0.01, 0.045], outline: false }));
+    eye.add(part(sphere(0.009, 6, 4), white, { pos: [s * 0.038, 0.022, 0.066], outline: false }));
+    head.add(eye);
+    // nostrils and a rosy cheek
+    head.add(part(sphere(0.011, 6, 4), black, { pos: [s * 0.035, 0.03, 0.225], outline: false }));
+    head.add(part(sphere(0.026, 10, 8), toon(0xffa070), { pos: [s * 0.12, -0.04, 0.08], scale: [0.5, 0.6, 1], outline: false }));
+  }
+  // a wide, cheerful smile
+  head.add(part(geo("liz-smile", () => new THREE.TorusGeometry(0.11, 0.008, 6, 20, Math.PI * 0.7)), black, {
+    pos: [0, -0.02, 0.12], rot: [1.3, 0, Math.PI + Math.PI * 0.15], scale: [0.9, 1.4, 1], outline: false
+  }));
+  const tongue = part(geo("liz-tongue", () => new THREE.BoxGeometry(0.02, 0.008, 0.1).translate(0, 0, 0.05)), toon(0xff5d8f), { pos: [0, -0.04, 0.22], outline: false });
+  tongue.name = "tongue";
+  tongue.scale.z = 0.01;
+  head.add(tongue);
+  // tail curling out of the hole behind it
+  const curve = new THREE.CatmullRomCurve3([
+    new THREE.Vector3(0, 0.05, -0.12),
+    new THREE.Vector3(0.12, 0.12, -0.3),
+    new THREE.Vector3(0.3, 0.1, -0.32),
+    new THREE.Vector3(0.38, 0.22, -0.18)
+  ]);
+  const tail = new THREE.Group();
+  tail.name = "lizTail";
+  tail.add(part(geo("liz-tail", () => new THREE.TubeGeometry(curve, 24, 0.045, 8, false)), skin));
+  tail.add(part(sphere(0.045, 10, 8), skin, { pos: [0.38, 0.22, -0.18], outline: false }));
+  g.add(tail);
   return g;
 }
 
@@ -786,16 +1186,42 @@ export function disposeClones(obj: THREE.Object3D): void {
   });
 }
 
-// ---- album thumbnails: drawn once each through the lawn's own renderer ------------------------
+// ---- portraits: album mice, shop cats and the lizard, drawn once each through the lawn's renderer ----
 
 let thumbScene: THREE.Scene | null = null;
 let thumbCam: THREE.PerspectiveCamera | null = null;
 let thumbTarget: THREE.WebGLRenderTarget | null = null;
-const thumbs = new Map<number, string>();
+const thumbs = new Map<string, string>();
 const THUMB = 256;
 
 export function fancyThumb(variant: number, renderer: THREE.WebGLRenderer): string {
-  const hit = thumbs.get(variant);
+  return portrait(`m${variant}`, renderer, () => {
+    const m = buildMouse(variant);
+    m.rotation.y = -0.35;
+    return m;
+  }, [0, 0.95, 1.9], [0, 0.6, 0]);
+}
+
+export function catThumb(skin: SkinId, renderer: THREE.WebGLRenderer): string {
+  return portrait(`c${skin}`, renderer, () => {
+    const c = buildCat(skin);
+    setCatFace(c, "idle");
+    c.root.rotation.y = -0.3;
+    c.head.rotation.set(-0.15, 0.15, 0);
+    return c.root;
+  }, [0, 1.7, 4.3], [0, 1.05, 0]);
+}
+
+export function lizardThumb(renderer: THREE.WebGLRenderer): string {
+  return portrait("lizard", renderer, () => {
+    const l = buildLizard();
+    l.rotation.y = -0.3;
+    return l;
+  }, [0, 0.8, 2.0], [0, 0.45, 0]);
+}
+
+function portrait(key: string, renderer: THREE.WebGLRenderer, build: () => THREE.Object3D, eye: [number, number, number], at: [number, number, number]): string {
+  const hit = thumbs.get(key);
   if (hit) return hit;
   if (!thumbScene) {
     thumbScene = new THREE.Scene();
@@ -804,13 +1230,12 @@ export function fancyThumb(variant: number, renderer: THREE.WebGLRenderer): stri
     sun.position.set(-2, 3, 4);
     thumbScene.add(sun);
     thumbCam = new THREE.PerspectiveCamera(30, 1, 0.1, 20);
-    thumbCam.position.set(0, 0.95, 1.9);
-    thumbCam.lookAt(0, 0.6, 0);
     thumbTarget = new THREE.WebGLRenderTarget(THUMB, THUMB);
     thumbTarget.texture.colorSpace = THREE.SRGBColorSpace;
   }
-  const m = buildMouse(variant);
-  m.rotation.y = -0.35;
+  thumbCam!.position.set(...eye);
+  thumbCam!.lookAt(...at);
+  const m = build();
   thumbScene.add(m);
   const prevTarget = renderer.getRenderTarget();
   const prevColor = renderer.getClearColor(new THREE.Color());
@@ -835,6 +1260,6 @@ export function fancyThumb(variant: number, renderer: THREE.WebGLRenderer): stri
   small.width = small.height = THUMB / 2;
   small.getContext("2d")!.drawImage(big, 0, 0, THUMB / 2, THUMB / 2);
   const url = small.toDataURL("image/png");
-  thumbs.set(variant, url);
+  thumbs.set(key, url);
   return url;
 }
