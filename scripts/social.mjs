@@ -1,6 +1,6 @@
 // Social images: the 3D cats (art-src/renders/*.png, rendered from src/engine/models.ts) lined up
 // on a moonlit lawn under the painted sky (art-src/sky.png):
-//  - public/catthemouse-og.jpg         the site-wide Open Graph / X card
+//  - public/catthemouse-og-v2.jpg         the site-wide Open Graph / X card
 //  - public/og/beat-<rank>.jpg         challenge cards served for ?beat=N links (functions/_middleware.ts)
 //  - public/img/card-bg.{webp,jpg}     backdrop for the in-game share card
 // Run: npm run social
@@ -23,9 +23,13 @@ const RANKS = [
 
 const esc = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;");
 
-function overlay({ kicker, line1, line2, sub, pill, badge, pillColor = "#ff9f2e" }) {
+// With `logo`, the wordmark (public/brand/logo-wordmark.png) takes the place of the two title lines.
+function overlay({ kicker, line1 = "", line2 = "", sub, pill, badge, logo = false, pillColor = "#ff9f2e" }) {
   // Arial Black is ~0.72em per capital: keep the longest line inside the left 600 px
-  const fs = Math.min(98, Math.floor(600 / (Math.max(line1.length, line2.length) * 0.72)));
+  const fs = Math.min(98, Math.floor(600 / Math.max(1, Math.max(line1.length, line2.length) * 0.72)));
+  const kickerY = logo ? 66 : 104;
+  const subY = logo ? 384 : 366;
+  const pillY = badge ? 486 : logo ? 428 : 420;
   const badgeSvg = badge
     ? `<defs><linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${badge.tint[0]}"/><stop offset="1" stop-color="${badge.tint[1]}"/></linearGradient></defs>
        <rect x="64" y="392" width="${badge.name.length * 18 + 150}" height="62" rx="31" fill="url(#bg)"/>
@@ -45,17 +49,17 @@ function overlay({ kicker, line1, line2, sub, pill, badge, pillColor = "#ff9f2e"
     </linearGradient>
   </defs>
   <rect width="${W}" height="${H}" fill="url(#fade)"/>
-  <text x="66" y="104" font-family="Arial Black, Arial, sans-serif" font-size="21" font-weight="900" fill="#3ef2d0" letter-spacing="3">${esc(kicker)}</text>
-  <g font-family="Arial Black, Arial, sans-serif" font-weight="900" letter-spacing="-2">
+  <text x="66" y="${kickerY}" font-family="Arial Black, Arial, sans-serif" font-size="21" font-weight="900" fill="#3ef2d0" letter-spacing="3">${esc(kicker)}</text>
+  <g font-family="Arial Black, Arial, sans-serif" font-weight="900" letter-spacing="-2"${logo ? ' display="none"' : ""}>
     <text x="62" y="208" font-size="${fs}" fill="#1a0d05" fill-opacity=".55" dx="4" dy="6">${esc(line1)}</text>
     <text x="62" y="208" font-size="${fs}" fill="url(#gold)">${esc(line1)}</text>
     <text x="62" y="312" font-size="${fs}" fill="#1a0d05" fill-opacity=".55" dx="4" dy="6">${esc(line2)}</text>
     <text x="62" y="312" font-size="${fs}" fill="url(#gold)">${esc(line2)}</text>
   </g>
-  <text x="66" y="366" font-family="Arial, sans-serif" font-size="27" font-weight="700" fill="#fff7ea">${esc(sub)}</text>
+  <text x="66" y="${subY}" font-family="Arial, sans-serif" font-size="27" font-weight="700" fill="#fff7ea">${esc(sub)}</text>
   ${badgeSvg}
-  <rect x="64" y="${badge ? 486 : 420}" width="${pill.length * 15.5 + 64}" height="64" rx="32" fill="${pillColor}"/>
-  <text x="96" y="${badge ? 528 : 462}" font-family="Arial Black, Arial, sans-serif" font-size="26" font-weight="900" fill="#1a0d05">${esc(pill)}</text>
+  <rect x="64" y="${pillY}" width="${pill.length * 15.5 + 64}" height="64" rx="32" fill="${pillColor}"/>
+  <text x="96" y="${pillY + 42}" font-family="Arial Black, Arial, sans-serif" font-size="26" font-weight="900" fill="#1a0d05">${esc(pill)}</text>
 </svg>`);
 }
 
@@ -88,17 +92,21 @@ const crew = [
 ];
 const art = await sharp(sky).composite([{ input: lawn }, ...crew]).toBuffer();
 
+const LOGO_W = 590;
+const wordmark = await sharp("public/brand/logo-wordmark.png").resize({ width: LOGO_W }).toBuffer();
+
 async function social(file, spec) {
+  const layers = [{ input: overlay(spec) }];
+  if (spec.logo) layers.push({ input: wordmark, left: 48, top: 86 });
   await sharp(art)
-    .composite([{ input: overlay(spec) }])
+    .composite(layers)
     .jpeg({ quality: 86, mozjpeg: true })
     .toFile(file);
 }
 
-await social("public/catthemouse-og.jpg", {
+await social("public/catthemouse-og-v2.jpg", {
   kicker: "CATCH THE MICE · COLLECT THE CATS",
-  line1: "CAT THE MOUSE",
-  line2: "COMPANY",
+  logo: true,
   sub: "7 cats to unlock. 1v1 online. Free.",
   pill: "▶ PLAY FREE · catthemouse.co"
 });
