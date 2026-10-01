@@ -1,6 +1,6 @@
 // Social images: the 3D cats (art-src/renders/*.png, rendered from src/engine/models.ts) lined up
 // on a moonlit lawn under the painted sky (art-src/sky.png):
-//  - public/catthemouse-og-v2.jpg         the site-wide Open Graph / X card
+//  - public/catthemouse-og-v3.jpg         the site-wide Open Graph / X card
 //  - public/og/beat-<rank>.jpg         challenge cards served for ?beat=N links (functions/_middleware.ts)
 //  - public/img/card-bg.{webp,jpg}     backdrop for the in-game share card
 // Run: npm run social
@@ -92,19 +92,19 @@ const crew = [
 ];
 const art = await sharp(sky).composite([{ input: lawn }, ...crew]).toBuffer();
 
-const LOGO_W = 590;
+const LOGO_W = 620;
 const wordmark = await sharp("public/brand/logo-wordmark.png").resize({ width: LOGO_W }).toBuffer();
 
 async function social(file, spec) {
   const layers = [{ input: overlay(spec) }];
-  if (spec.logo) layers.push({ input: wordmark, left: 48, top: 86 });
+  if (spec.logo) layers.push({ input: wordmark, left: 44, top: 100 });
   await sharp(art)
     .composite(layers)
     .jpeg({ quality: 86, mozjpeg: true })
     .toFile(file);
 }
 
-await social("public/catthemouse-og-v2.jpg", {
+await social("public/catthemouse-og-v3.jpg", {
   kicker: "CATCH THE MICE · COLLECT THE CATS",
   logo: true,
   sub: "7 cats to unlock. 1v1 online. Free.",
