@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { loadArt, glowTexture, starTexture, heartTexture, shadowTexture, groundTexture } from "./art";
+import { loadArt, glowTexture, starTexture, heartTexture, shadowTexture, grassTexture, groundColor } from "./art";
 import {
   toon, buildCat, setCatFace, buildMouse, buildPorcupine, buildPaw, buildCoin, buildSnake, buildLizard, fadeable, disposeClones,
   fancyThumb, catThumb, lizardThumb, wallTexture, PIT_DEPTH, SNAKE_SEGMENTS, type CatModel, type CatFace
@@ -587,7 +587,20 @@ export class Lawn {
     scene.add(rim);
     await yieldToMain();
 
-    const ground = new THREE.Mesh(new THREE.CircleGeometry(15, 72), new THREE.MeshLambertMaterial({ map: groundTexture() }));
+    // crisp grass detail tiled every ~2.5 units, tinted per vertex from the warm middle to the dark rim
+    const groundGeo = new THREE.RingGeometry(0.001, 15, 96, 30);
+    const colors: number[] = [];
+    const pos = groundGeo.getAttribute("position");
+    const c = new THREE.Color();
+    for (let i = 0; i < pos.count; i++) {
+      groundColor(Math.hypot(pos.getX(i), pos.getY(i)) / 15, c);
+      colors.push(c.r, c.g, c.b);
+    }
+    groundGeo.setAttribute("color", new THREE.Float32BufferAttribute(colors, 3));
+    const grass = grassTexture();
+    grass.repeat.set(12, 12);
+    grass.anisotropy = Math.min(16, this.renderer.capabilities.getMaxAnisotropy());
+    const ground = new THREE.Mesh(groundGeo, new THREE.MeshLambertMaterial({ map: grass, vertexColors: true }));
     ground.rotation.x = -Math.PI / 2;
     ground.receiveShadow = true;
     scene.add(ground);

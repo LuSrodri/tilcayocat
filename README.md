@@ -66,6 +66,7 @@ npm run deploy   # wrangler deploy
 | `npm run build` | type-check and build to `dist/` |
 | `npm run preview` | serve `dist/` |
 | `npm run og` | regenerate the logo, favicons and PWA icons from `art-src/renders/logo-head.png` (a render of the 3D grey tabby) |
+| `npm run logo` | rebuild the cartoon wordmark (`public/brand/logo-wordmark*`) from the Fredoka font in `art-src/fonts` and the 3D renders |
 | `npm run social` | regenerate `public/catthemouse-og.jpg` and the per-rank challenge cards from the 3D cat renders in `art-src/renders/` over `art-src/sky.png` |
 | `npm run deploy` | build and publish to Cloudflare Pages |
 

@@ -411,6 +411,8 @@ $("shopBuy").addEventListener("click", () => {
 
 function renderStart(): void {
   overlay.dataset.mode = "start";
+  $("brandLogo").hidden = false;
+  overlayTitle.hidden = true;
   resultEl.hidden = true;
   $("intro").hidden = false;
   renderDaily(null);
@@ -439,6 +441,8 @@ function showResults(score: number, best: number, isNewBest: boolean, stats: Rou
   const wonChallenge = beat !== null && score > beat;
   const daily = recordDaily(stats);
   kicker.textContent = daily.justDone ? `Daily #${dailyNumber()} complete` : isNewBest ? "Personal best" : "Round over";
+  $("brandLogo").hidden = true;
+  overlayTitle.hidden = false;
   overlayTitle.textContent = daily.justDone
     ? "Fancy feast!"
     : isNewBest

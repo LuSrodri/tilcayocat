@@ -29,6 +29,7 @@
   <!-- Google AdSense -->
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4463881368194285"
      crossorigin="anonymous"></script>
+  <link rel="preload" as="image" href="/brand/logo-wordmark-sm.webp" type="image/webp">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,500;12..96,700&family=Fredoka:wght@500;600;700&display=swap" media="print" onload="this.media='all'">
@@ -276,8 +277,9 @@
 
         <!-- start / results -->
         <div id="homeView" class="view">
+          <h1 id="brandLogo" class="brand-logo"><picture><source srcset="/brand/logo-wordmark-sm.webp" type="image/webp"><img src="/brand/logo-wordmark-sm.png" alt="Cat The Mouse Company" width="700" height="289" decoding="async"></picture></h1>
           <p id="kicker" class="overlay__kicker">Catch the mice · collect the cats</p>
-          <h1 id="overlayTitle" class="overlay__title"><img class="overlay__logo" src="/logo.svg" alt="" width="44" height="44"> Cat The Mouse Co.</h1>
+          <h2 id="overlayTitle" class="overlay__title" hidden>Cat The Mouse Company</h2>
           <p id="challenge" class="challenge" hidden></p>
 
           <section id="result" class="result" hidden aria-live="polite">

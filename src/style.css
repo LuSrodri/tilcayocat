@@ -1369,3 +1369,10 @@ body.game { background: var(--sky-top); }
 .shop__detail .btn:disabled { opacity: .55; filter: grayscale(.4); cursor: default; }
 .is-guarded .shop__item { pointer-events: none; }
 .game:not(.game--duel) #overlayTitle { font-size: clamp(24px, min(7.4vw, 5.2vh), 32px); white-space: nowrap; }
+
+/* ============================================================ BRAND */
+.brand-logo { display: block; margin: 0 auto -4px; line-height: 0; }
+.brand-logo[hidden] { display: none; }
+.brand-logo img { display: block; width: auto; height: auto; max-width: min(100%, 330px); max-height: min(136px, 17dvh); margin: 0 auto; filter: drop-shadow(0 6px 10px rgba(20, 8, 20, .35)); }
+.brand-logo--duel img { max-height: min(96px, 12dvh); }
+.page__brand img { display: block; height: 56px; width: auto; }
