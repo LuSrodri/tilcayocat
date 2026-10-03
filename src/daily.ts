@@ -6,7 +6,8 @@ export { dailyNumber, dailyVariant };
 
 // Daily Challenge: catch 10 of today's fancy mouse in a single round. The count lives inside the
 // round, so every new round starts from zero; the best round of the day is kept for the share
-// text, Wordle-style. Everything is local to the device.
+// text, Wordle-style. Once a round gets the 10, the mouse of the day stays away until tomorrow.
+// Everything is local to the device.
 
 const DAILY_KEY = "tilcayo.daily";
 

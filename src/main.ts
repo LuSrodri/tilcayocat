@@ -205,7 +205,7 @@ const game = new Game(lawn, {
     lawn.shakeIt(0.12);
     showResults(score, best, isNewBest, stats);
   }
-}, { lizard: hasLizard });
+}, { lizard: hasLizard, dailyDone: () => dailyState().done });
 
 // ---- in-round juice -----------------------------------------------------------
 
