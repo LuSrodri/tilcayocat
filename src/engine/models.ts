@@ -529,6 +529,9 @@ function part(g: THREE.BufferGeometry, m: THREE.Material, o: PartOpts = {}): THR
 
 // ---- cat ------------------------------------------------------------------------------
 
+/** How far below its centre an ear cone's hinge sits (a bit above the bottom of the 0.38 cone). */
+const EAR_BASE = 0.15;
+
 export interface CatModel {
   skin: SkinId;
   root: THREE.Group;
@@ -543,8 +546,10 @@ export interface CatModel {
   /** the little "ω" cat mouth at rest, and a crooked frown for bad moods */
   smile: THREE.Object3D;
   frown: THREE.Object3D;
-  /** eyeballs with their lids; hidden while the cat squints happily */
+  /** eye sockets (eyeball, catchlight and lid) */
   eyes: THREE.Object3D[];
+  /** the eyeballs alone, turned to aim the gaze (the lid and the catchlight stay put) */
+  balls: THREE.Object3D[];
   /** closed, happy "^ ^" eyes */
   joy: THREE.Object3D;
   /** tufts of darker fur above the eyes that frown or droop with the mood */
@@ -705,16 +710,21 @@ export function buildCat(skin: SkinId = "grey"): CatModel {
   // eyes with toon lids (the lids carry the mood: half-closed = grumpy)
   const lids: THREE.Object3D[] = [];
   const eyes: THREE.Object3D[] = [];
+  const balls: THREE.Object3D[] = [];
+  const lidMat = toon(hexNum(look.coat[0]));
   const lidGeo = geo("lid", () => new THREE.SphereGeometry(0.118, 18, 10, 0, Math.PI * 2, 0, Math.PI / 2));
   for (const s of [-1, 1]) {
     const eye = new THREE.Group();
     eye.position.set(s * 0.19, 0.05, 0.34);
     eye.rotation.y = s * 0.25;
     const iris = look.iris[s < 0 ? 0 : 1];
-    eye.add(part(sphere(0.11, 28, 18), flatTex(`eye:${iris}`, eyeTexture(iris)), { scale: [1, 1, 0.8] }));
+    const ball = new THREE.Group();
+    ball.add(part(sphere(0.11, 28, 18), flatTex(`eye:${iris}`, eyeTexture(iris)), { scale: [1, 1, 0.8] }));
+    eye.add(ball);
+    balls.push(ball);
     eye.add(part(sphere(0.018, 8, 6), white, { pos: [0.03, 0.035, 0.09], outline: false }));
     const lid = new THREE.Group();
-    lid.add(part(lidGeo, headMat, { scale: [1.05, 1.05, 1.05] }));
+    lid.add(part(lidGeo, lidMat, { scale: [1.05, 1.05, 1.05] }));
     lid.userData.side = s;
     eye.add(lid);
     lids.push(lid);
@@ -730,17 +740,23 @@ export function buildCat(skin: SkinId = "grey"): CatModel {
   const furGeo = geo("earFur", () => new THREE.ConeGeometry(0.035, 0.16, 6, 1));
   look.ear.forEach((earColor, idx) => {
     const s = idx === 0 ? -1 : 1;
+    // the ear group pivots at the base of the cone (sunk in the head), so it tilts like a hinge
+    // instead of swinging its base out of the skull; the twist turns it about its own axis
     const ear = new THREE.Group();
-    ear.position.set(s * 0.3, 0.33, -0.04);
     ear.rotation.set(-0.1, 0, -s * 0.35);
-    ear.add(part(earGeo, toon(earColor), { scale: [1, 1, 0.5] }));
-    if (look.earTip !== null) ear.add(part(tipGeo, toon(look.earTip), { pos: [0, 0.13, 0], scale: [1, 1, 0.55], outline: false }));
-    ear.add(part(innerGeo, toon(look.earIn), { pos: [0, -0.04, 0.06], scale: [1, 1, 0.35], outline: false }));
-    for (const dx of [-0.03, 0.03]) ear.add(part(furGeo, cream, { pos: [dx, -0.08, 0.09], rot: [0.2, 0, dx * 6], outline: false }));
+    ear.position.set(s * 0.3, 0.33, -0.04).add(new THREE.Vector3(0, -EAR_BASE, 0).applyEuler(ear.rotation));
+    const twist = new THREE.Group();
+    twist.position.y = EAR_BASE;
+    twist.add(part(earGeo, toon(earColor), { scale: [1, 1, 0.5] }));
+    if (look.earTip !== null) twist.add(part(tipGeo, toon(look.earTip), { pos: [0, 0.13, 0], scale: [1, 1, 0.55], outline: false }));
+    twist.add(part(innerGeo, toon(look.earIn), { pos: [0, -0.04, 0.06], scale: [1, 1, 0.35], outline: false }));
+    for (const dx of [-0.03, 0.03]) twist.add(part(furGeo, cream, { pos: [dx, -0.08, 0.09], rot: [0.2, 0, dx * 6], outline: false }));
+    ear.add(twist);
+    ear.userData.twist = twist;
     ears.push(ear);
     head.add(ear);
   });
-  return { skin, root, body, head, lids, ears, arm, tongue, mouth, smile, frown, eyes, joy, brows, blush, tail };
+  return { skin, root, body, head, lids, ears, arm, tongue, mouth, smile, frown, eyes, balls, joy, brows, blush, tail };
 }
 
 // Three little toe bumps along the front of a paw.
@@ -756,8 +772,7 @@ export type CatFace = "idle" | "catch" | "angry" | "sad" | "lick";
 /** Pose the face for a mood. */
 export function setCatFace(cat: CatModel, face: CatFace): void {
   const happy = face === "catch";
-  const lid = happy ? 1.34 : face === "angry" ? 0.78 : face === "sad" ? 0.9 : face === "lick" ? 1.25 : 0.42;
-  const tilt = face === "angry" ? 0.4 : face === "sad" ? -0.3 : 0.1;
+  const { lid, tilt } = faceLids(face);
   setLids(cat, lid, tilt);
   cat.joy.visible = happy;
   cat.blush.visible = happy;
@@ -773,18 +788,55 @@ export function setCatFace(cat: CatModel, face: CatFace): void {
     b.rotation.z = face === "angry" ? s * 0.5 : -s * 0.38;
     b.position.y = face === "angry" ? 0.185 : 0.215;
   }
-  const earTilt = face === "angry" ? 0.9 : face === "sad" ? 0.7 : 0.35;
+  const ear = faceEars(face);
   cat.ears.forEach((e, i) => {
-    e.rotation.z = (i === 0 ? 1 : -1) * earTilt;
-    e.userData.tilt = earTilt;
+    const s = i === 0 ? 1 : -1;
+    setEar(e, ear.x, -s * ear.y, s * ear.z);
   });
 }
 
-/** Lid position (0.4 wide open … 1.3 shut) and tilt; used by moods and blinks. */
+/** Tilt an ear on its hinge (x forward/back, z splay) and twist it about its own axis (y). */
+export function setEar(ear: THREE.Object3D, x: number, y: number, z: number): void {
+  ear.rotation.set(x, 0, z);
+  (ear.userData.twist as THREE.Object3D).rotation.y = y;
+}
+
+/** Where a mood puts the lids (see `setLids`). */
+export function faceLids(face: CatFace): { lid: number; tilt: number } {
+  switch (face) {
+    case "catch": return { lid: 1.34, tilt: 0.1 };
+    case "angry": return { lid: 0.6, tilt: 0.35 };
+    case "sad": return { lid: 0.66, tilt: -0.3 };
+    case "lick": return { lid: 1.25, tilt: 0.1 };
+    default: return { lid: 0.42, tilt: 0.1 };
+  }
+}
+
+/**
+ * Where a mood puts the ears, per ear: x tips the ear
+ * forward (+) or back (-), y swivels the opening outwards (+), z splays it sideways
+ * (stored as magnitudes; `setCatFace` and the lawn apply each side's signs).
+ * Angry flattens them back and out ("airplane ears"), sad lets them droop.
+ */
+export function faceEars(face: CatFace): { x: number; y: number; z: number } {
+  switch (face) {
+    case "angry": return { x: -0.4, y: 0.6, z: 0.8 };
+    case "sad": return { x: -0.2, y: 0.3, z: 0.7 };
+    case "catch": return { x: 0.05, y: 0, z: 0.3 };
+    case "lick": return { x: -0.15, y: 0.15, z: 0.45 };
+    default: return { x: -0.1, y: 0, z: 0.35 };
+  }
+}
+
+/**
+ * Lid position (0.4 wide open … 1.3 shut) and tilt; used by moods and blinks. The lid is a dome
+ * hinged at the eye centre: tucked up and back at 0.4, over the top half at ~0.7, shut over the
+ * front at ~1.3.
+ */
 export function setLids(cat: CatModel, lid: number, tilt: number): void {
   for (const l of cat.lids) {
     const s = l.userData.side as number;
-    l.rotation.set(-Math.PI / 2 + (Math.PI / 2) * (1 - lid), 0, s * tilt);
+    l.rotation.set(-0.66 + (lid - 0.42) * 2.45, 0, s * tilt);
   }
 }
 

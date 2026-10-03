@@ -2,7 +2,7 @@ import * as THREE from "three";
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import { loadArt, glowTexture, starTexture, heartTexture, shadowTexture, grassTexture, groundColor } from "./art";
 import {
-  toon, buildCat, setCatFace, setLids, buildMouse, buildPorcupine, buildPaw, buildCoin, buildSnake, buildLizard, fadeable, disposeClones,
+  toon, buildCat, setCatFace, setLids, setEar, faceLids, faceEars, buildMouse, buildPorcupine, buildPaw, buildCoin, buildSnake, buildLizard, fadeable, disposeClones,
   fancyThumb, catThumb, lizardThumb, wallTexture, PIT_DEPTH, SNAKE_SEGMENTS, type CatModel, type CatFace
 } from "./models";
 import type { SkinId } from "../shop";
@@ -110,15 +110,74 @@ interface CatView {
   tag: HTMLElement | null;
   /** the face currently shown (mood, or "lick" while licking) */
   face: CatFace;
+  /** eyes: lids eased towards the mood, blinks layered on top, quick saccades for the gaze */
+  lid: number;
+  lidTilt: number;
+  blinkAt: number;
+  blinkSlow: boolean;
   nextBlink: number;
-  blinkUntil: number;
+  eyeYaw: number;
+  eyePitch: number;
+  gazeYaw: number;
+  gazePitch: number;
+  nextSaccade: number;
+  /** ears: a damped spring per ear and axis (x, y, z rotation), flicked by impulses */
+  ears: EarSpring[];
   nextTwitch: number;
+  twitchAgain: number;
   twitchEar: number;
-  twitchUntil: number;
+  lastHeadYaw: number;
+  lastHeadPitch: number;
+  lastPounce: number;
   /** 0..1, how much the cat is in hunting mode (prey on the lawn) */
   hunt: number;
   headYaw: number;
   headPitch: number;
+}
+
+interface EarSpring {
+  p: THREE.Vector3;
+  v: THREE.Vector3;
+}
+
+/** How shut a blink is (0..1) `t` ms after it started: a snappy close, a slower open. */
+function blinkAmount(t: number, slow: boolean): number {
+  const [close, hold, open] = slow ? [260, 360, 460] : [60, 40, 130];
+  if (t < 0) return 0;
+  if (t < close) return easeIn(t / close);
+  if (t < close + hold) return 1;
+  t -= close + hold;
+  return t < open ? 1 - easeOut(t / open) : 0;
+}
+
+const EAR_K = 170;
+const EAR_D = 10.5;
+
+/** A happy squint or a lick doesn't blink. */
+function blinks(face: CatFace): boolean {
+  return face === "idle" || face === "angry" || face === "sad";
+}
+
+/** A quick flick: the ear snaps back and out, and its spring brings it home. */
+function flickEar(c: CatView, i: number): void {
+  const e = c.ears[i]!;
+  e.v.x -= 13;
+  e.v.y -= (i === 0 ? 1 : -1) * 5;
+}
+
+type RestingFace = Pick<CatView, "lid" | "lidTilt" | "blinkAt" | "blinkSlow" | "nextBlink" | "eyeYaw" | "eyePitch" | "gazeYaw" | "gazePitch" | "nextSaccade" |
+  "ears" | "nextTwitch" | "twitchAgain" | "twitchEar" | "lastHeadYaw" | "lastHeadPitch" | "lastPounce">;
+
+/** Eyes open and ears at rest, for a cat that just sat down. */
+function restingFace(now: number): RestingFace {
+  const { lid, tilt } = faceLids("idle");
+  const ear = faceEars("idle");
+  return {
+    lid, lidTilt: tilt, blinkAt: -1e9, blinkSlow: false, nextBlink: now + 1500,
+    eyeYaw: 0, eyePitch: 0, gazeYaw: 0, gazePitch: 0, nextSaccade: now + 800,
+    ears: [1, -1].map((s) => ({ p: new THREE.Vector3(ear.x, -s * ear.y, s * ear.z), v: new THREE.Vector3() })),
+    nextTwitch: now + 2500, twitchAgain: 0, twitchEar: 0, lastHeadYaw: 0, lastHeadPitch: -0.22, lastPounce: 0
+  };
 }
 
 interface Anim {
@@ -974,7 +1033,7 @@ uniform vec4 uHits[4];
       this.layer.append(ring);
       this.cats.push({
         slot, model, present: true, aura, setOpacity, yaw: 0, mood: "idle", moodTimer: 0, lickFrom: 0, lickUntil: 0, swipeAt: 0, pawsOut: 0, pounce: 0, spot: new THREE.Vector3(), ring, tag: null,
-        face: "idle", nextBlink: performance.now() + 1500, blinkUntil: 0, nextTwitch: performance.now() + 2500, twitchEar: 0, twitchUntil: 0, hunt: 0, headYaw: 0, headPitch: -0.22
+        face: "idle", hunt: 0, headYaw: 0, headPitch: -0.22, ...restingFace(performance.now())
       });
     }
     this.placeCats();
@@ -1253,9 +1312,111 @@ uniform vec4 uHits[4];
     if (c.lickUntil <= performance.now()) this.showFace(c, mood as CatFace);
   }
 
+  /**
+   * Eyes: the gaze jumps in quick saccades (to a critter, or little darts around the camera when
+   * idle) and the head catches up later; the lids ease into each mood's pose and blinks ride on
+   * top: a snappy close and a slower open, sometimes a double, now and then a calm slow blink.
+   */
+  private animateEyes(c: CatView, now: number, dt: number, licking: boolean, lookYaw: number | null): void {
+    let yaw: number;
+    let pitch: number;
+    if (licking) {
+      yaw = 0.05;
+      pitch = 0.2;
+    } else if (lookYaw !== null) {
+      // the eyes go most of the way there, wherever the head is right now
+      yaw = THREE.MathUtils.clamp(lookYaw * 0.85 - c.headYaw, -0.5, 0.5);
+      pitch = 0.12;
+    } else {
+      if (now >= c.nextSaccade) {
+        const home = reduceMotion || Math.random() < 0.4;
+        c.gazeYaw = home ? 0 : (Math.random() * 2 - 1) * (0.12 + c.hunt * 0.12);
+        c.gazePitch = home ? 0 : Math.random() * 0.12 - 0.04;
+        c.nextSaccade = now + (c.hunt > 0.5 ? 350 + Math.random() * 700 : 700 + Math.random() * 1900);
+      }
+      yaw = c.gazeYaw;
+      pitch = c.gazePitch;
+    }
+    // saccades are fast
+    const k = Math.min(1, dt * 28);
+    c.eyeYaw += (yaw - c.eyeYaw) * k;
+    c.eyePitch += (pitch - c.eyePitch) * k;
+    // lids ease into the mood's pose; wider open while hunting
+    const pose = faceLids(c.face);
+    const target = c.face === "idle" ? pose.lid - c.hunt * 0.08 : pose.lid;
+    // (the happy "^ ^" squint is drawn on at once, so its lids shut at once too)
+    const kl = c.face === "catch" ? 1 : Math.min(1, dt * 12);
+    c.lid += (target - c.lid) * kl;
+    c.lidTilt += (pose.tilt - c.lidTilt) * kl;
+    if (blinks(c.face) && now >= c.nextBlink) {
+      c.blinkSlow = c.face === "idle" && c.hunt < 0.2 && !reduceMotion && Math.random() < 0.12;
+      c.blinkAt = now;
+      const double = !c.blinkSlow && Math.random() < 0.18;
+      c.nextBlink = now + (double ? 250 : 2000 + Math.random() * 3800 + (c.blinkSlow ? 1000 : 0));
+    }
+  }
+
+  private applyEyes(c: CatView, now: number): void {
+    const m = c.model;
+    const b = blinks(c.face) ? blinkAmount(now - c.blinkAt, c.blinkSlow) : 0;
+    // the upper lid follows the eye down a little
+    const lid = Math.min(1.34, c.lid + Math.max(0, c.eyePitch) * 0.5);
+    setLids(m, lid + (1.32 - lid) * b, c.lidTilt * (1 - b));
+    for (const ball of m.balls) ball.rotation.set(c.eyePitch, c.eyeYaw, 0);
+  }
+
+  /**
+   * Ears ride damped springs, so every move overshoots a touch and settles: they flatten or droop
+   * with the mood, prick forward while hunting, swivel towards a critter, trail behind head turns,
+   * flop on a pounce and flick back now and then (sometimes twice).
+   */
+  private animateEars(c: CatView, now: number, dt: number, lookYaw: number | null): void {
+    const pose = faceEars(c.face);
+    const hunt = c.face === "idle" || c.face === "catch" ? c.hunt : 0;
+    const swivel = lookYaw === null ? 0 : THREE.MathUtils.clamp((lookYaw - c.headYaw) * 0.6, -0.45, 0.45);
+    const dYaw = c.headYaw - c.lastHeadYaw;
+    const dPitch = c.headPitch - c.lastHeadPitch;
+    c.lastHeadYaw = c.headYaw;
+    c.lastHeadPitch = c.headPitch;
+    const kick = c.pounce > c.lastPounce + 0.05;
+    c.lastPounce = c.pounce;
+    if (now >= c.nextTwitch && !reduceMotion) {
+      c.twitchEar = Math.random() < 0.5 ? 0 : 1;
+      flickEar(c, c.twitchEar);
+      c.twitchAgain = Math.random() < 0.3 ? now + 170 : 0;
+      c.nextTwitch = now + (1400 + Math.random() * 3400) * (1 - 0.4 * c.hunt);
+    } else if (c.twitchAgain && now >= c.twitchAgain) {
+      c.twitchAgain = 0;
+      flickEar(c, c.twitchEar);
+    }
+    c.ears.forEach((e, i) => {
+      const s = i === 0 ? 1 : -1;
+      const drift = reduceMotion ? 0 : Math.sin(this.wtime * 0.7 + i * 2.1 + c.slot) * 0.06;
+      const tx = pose.x + hunt * 0.22;
+      const ty = -s * pose.y + swivel + drift;
+      const tz = s * pose.z * (1 - 0.45 * hunt);
+      // the head moves, the ears trail behind
+      e.v.y -= dYaw * 10;
+      e.v.x -= dPitch * 10;
+      if (kick) {
+        e.v.x += 5;
+        e.v.z += s * 3;
+      }
+      // spring with a little overshoot (damping ratio ~0.4), stepped finely to stay stable
+      let left = Math.min(dt, 0.1);
+      while (left > 0) {
+        const h = Math.min(left, 1 / 120);
+        e.v.x += (EAR_K * (tx - e.p.x) - EAR_D * e.v.x) * h;
+        e.v.y += (EAR_K * (ty - e.p.y) - EAR_D * e.v.y) * h;
+        e.v.z += (EAR_K * (tz - e.p.z) - EAR_D * e.v.z) * h;
+        e.p.addScaledVector(e.v, h);
+        left -= h;
+      }
+    });
+  }
+
   private showFace(c: CatView, face: CatFace): void {
     c.face = face;
-    c.blinkUntil = 0;
     setCatFace(c.model, face);
   }
 
@@ -1439,6 +1600,8 @@ uniform vec4 uHits[4];
     const licking = c.lickUntil > now;
     // the right arm: a quick swipe when slapping, up at the mouth when licking
     let armTarget = REST_Q;
+    // direction of whatever the cat is looking at, relative to its body (null: nothing in particular)
+    let lookYaw: number | null = null;
     if (licking) {
       if (c.face !== "lick") this.showFace(c, "lick");
       // paw up to the mouth, head tipped onto it, tongue lapping
@@ -1455,43 +1618,25 @@ uniform vec4 uHits[4];
       const glance = now < this.lookUntil ? this.lookTarget : null;
       if (glance) {
         const d = glance.clone().sub(m.root.position);
+        lookYaw = THREE.MathUtils.clamp(Math.atan2(d.x, d.z) - c.yaw, -0.9, 0.9);
         // the eyes do most of the looking; the head only follows a little, so the face stays to camera
-        yaw = THREE.MathUtils.clamp(Math.atan2(d.x, d.z) - c.yaw, -0.9, 0.9) * 0.4;
+        yaw = lookYaw * 0.4;
         pitch = -0.16;
       }
       if (!frozen) {
-        const k = Math.min(1, dt * 9);
+        // the head turns a beat behind the eyes
+        const k = Math.min(1, dt * 6);
         c.headYaw += (yaw - c.headYaw) * k;
         c.headPitch += (pitch - c.headPitch) * k;
       }
       m.head.rotation.set(c.headPitch, c.headYaw, 0);
-      // the eyes lead: they turn further than the head
-      for (const e of m.eyes) e.rotation.y = (e.userData.side as number) * 0.25 + c.headYaw * 0.9;
-      // blinks (one now and then, sometimes a double blink); a happy squint doesn't blink
-      if (!frozen && (c.face === "idle" || c.face === "angry" || c.face === "sad")) {
-        if (now >= c.nextBlink) {
-          c.blinkUntil = now + 120;
-          c.nextBlink = now + (Math.random() < 0.2 ? 260 : 1800 + Math.random() * 3600);
-          setLids(m, 1.32, 0);
-        } else if (c.blinkUntil && now >= c.blinkUntil) {
-          c.blinkUntil = 0;
-          setCatFace(m, c.face);
-        }
-      }
     }
-    // ears: perk up while hunting, flick one now and then
-    if (!frozen && now >= c.nextTwitch) {
-      c.twitchEar = Math.random() < 0.5 ? 0 : 1;
-      c.twitchUntil = now + 160;
-      c.nextTwitch = now + 1600 + Math.random() * 3200;
+    if (!frozen) {
+      this.animateEyes(c, now, dt, licking, lookYaw);
+      this.animateEars(c, now, dt, lookYaw);
     }
-    m.ears.forEach((e, i) => {
-      const base = (e.userData.tilt as number | undefined) ?? 0.35;
-      const tilt = c.face === "idle" || c.face === "catch" ? base * (1 - 0.45 * c.hunt) : base;
-      e.rotation.z = (i === 0 ? 1 : -1) * tilt;
-      const flick = now < c.twitchUntil && i === c.twitchEar ? Math.sin(((c.twitchUntil - now) / 160) * Math.PI) : 0;
-      e.rotation.x = -0.1 - flick * 0.55;
-    });
+    this.applyEyes(c, now);
+    m.ears.forEach((e, i) => setEar(e, c.ears[i]!.p.x, c.ears[i]!.p.y, c.ears[i]!.p.z));
     m.arm.quaternion.slerp(armTarget, Math.min(1, dt * 14));
     // the tail sways as a wave that runs down to the curled tip
     const tipFrom = m.tail.length - 4;
