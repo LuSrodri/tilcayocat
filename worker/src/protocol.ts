@@ -25,6 +25,31 @@ export function cleanSkin(raw: string | null): Skin {
   return (SKINS as readonly string[]).includes(raw ?? "") ? (raw as Skin) : "grey";
 }
 
+// ---- shop catalog and accounts (shared by the game and the Worker, which enforces it) ----
+
+/** What each cat costs in points; the grey tabby is free. */
+export const SKIN_PRICES: Record<Skin, number> = {
+  grey: 0, orange: 150_000, badger: 400_000, black: 800_000, white: 1_400_000, calico: 2_200_000, tilcayo: 4_000_000
+};
+export const LIZARD_PRICE = 600_000;
+/** The only thing sold for money: a pack of shop points. */
+export const POINTS_PACK = { points: 50_000, amountCents: 344, currency: "usd" } as const;
+/** Most points a single round or match can report (a guard against forged requests). */
+export const MAX_EARN = 50_000;
+
+export type ShopItem = Skin | "lizard";
+
+/** A signed-in player's inventory, as the Worker stores it. */
+export interface Inventory {
+  wallet: number;
+  owned: Skin[];
+  lizard: boolean;
+  skin: Skin;
+}
+
+/** A guest's progress, folded into the account the first time they sign in on this browser. */
+export type GuestProgress = Inventory;
+
 export type Slot = 1 | 2;
 
 export interface PlayerInfo {

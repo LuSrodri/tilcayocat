@@ -1501,3 +1501,14 @@ body.game { background: var(--sky-top); }
   .offer__info b { font-size: 19px; }
   .offer__info small, .account-line, .account-line__btn { font-size: 13px; }
 }
+.auth { display: flex; flex-direction: column; gap: 8px; }
+.auth[hidden], .auth__links[hidden], .auth__member[hidden], .auth__msg[hidden] { display: none; }
+.auth .input { min-height: 46px; font-size: 16px; }
+.auth__msg { margin: 0; padding: 8px 12px; border-radius: 12px; background: rgba(255, 255, 255, .07); font-size: 13px; line-height: 1.4; color: var(--ink); }
+.auth__msg[data-kind="error"] { background: rgba(255, 107, 107, .16); color: #ffd0d0; }
+.auth__msg[data-kind="ok"] { background: rgba(125, 220, 122, .16); color: #d6ffd4; }
+.auth__links { margin: 0; font-size: 12px; color: var(--ink-soft); }
+.auth__member { display: flex; flex-direction: column; gap: 10px; }
+.auth__member p { margin: 0; font-size: 14px; line-height: 1.45; color: var(--ink-soft); }
+.auth__member b { color: var(--ink); word-break: break-all; }
+.is-guarded .auth .input, .is-guarded .auth__links button { pointer-events: none; }

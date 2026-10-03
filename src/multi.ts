@@ -648,7 +648,7 @@ function showFinal(winner: Slot | 0, wins: [number, number], rounds: RoundResult
   // every mouse you caught in the match goes to your wallet, like in solo (10 points a mouse)
   const caught = totals[me - 1];
   if (caught > 0) {
-    earnPoints(caught * 10);
+    earnPoints(caught * 10, "duel");
     setTimeout(() => toast(`+${caught * 10} pts for the shop`, "seal"), 600);
   }
   $("againBtn").hidden = false;

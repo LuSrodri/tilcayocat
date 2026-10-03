@@ -2,6 +2,7 @@ import { MatchRoom } from "./match";
 import { Lobby } from "./lobby";
 import { Presence } from "./presence";
 import { cleanName, cleanSkin } from "./protocol";
+import { handleAccount } from "./account";
 
 export { MatchRoom, Lobby, Presence };
 
@@ -9,6 +10,11 @@ export interface Env {
   MATCH: DurableObjectNamespace<MatchRoom>;
   LOBBY: DurableObjectNamespace<Lobby>;
   PRESENCE: DurableObjectNamespace<Presence>;
+  DB: D1Database;
+  SUPABASE_URL: string;
+  SUPABASE_KEY: string;
+  STRIPE_SECRET_KEY: string;
+  STRIPE_WEBHOOK_SECRET: string;
 }
 
 const CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -21,8 +27,8 @@ export function makeCode(): string {
 
 const CORS: Record<string, string> = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "GET, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type"
+  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization"
 };
 
 function json(body: unknown, status = 200): Response {
@@ -37,6 +43,9 @@ export default {
     if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: CORS });
 
     if (path === "/create") return json({ code: makeCode() });
+
+    const account = await handleAccount(path, request, env, CORS);
+    if (account) return account;
 
     if (path === "/online") {
       const counts = await env.PRESENCE.getByName("presence").count();

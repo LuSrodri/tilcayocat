@@ -5,7 +5,7 @@ import { sfx, music, volume } from "./sound";
 import { SealTracker, mountSeals, collectFancy, checkStreakSeals } from "./seals";
 import { rankFor, touchStreak, currentStreak, challengeTarget, type Rank } from "./rank";
 import {
-  SKINS, LIZARD_PRICE, LIZARD_VALUE, wallet, earnPoints, ownsSkin, currentSkin, equipSkin, buySkin, hasLizard, buyLizard, skinById, type SkinId
+  SKINS, LIZARD_PRICE, LIZARD_VALUE, wallet, earnPoints, ownsSkin, currentSkin, equipSkin, buySkin, hasLizard, buyLizard, skinById, onInventory, type SkinId
 } from "./shop";
 import { dailyNumber, dailyVariant, dailyState, addDailyCatch, recordRound, dailyShareText } from "./daily";
 import { nextFact } from "./facts";
@@ -263,7 +263,7 @@ function toast(text: string, kind: string): void {
 
 // ---- start / results screen ---------------------------------------------------
 
-const views = { home: $("homeView"), album: $("albumView"), seals: $("sealsView"), shop: $("shopView") };
+const views = { home: $("homeView"), album: $("albumView"), seals: $("sealsView"), shop: $("shopView"), account: $("accountView") };
 const resultEl = $("result");
 const challengeEl = $("challenge");
 
@@ -625,62 +625,150 @@ guard(overlayCard);
 lawn.setCalm(true);
 
 // ---- account and the points pack ------------------------------------------------
-// Supabase loads in its own chunk after the game is up: an anonymous account right away, Google
-// when the player wants to buy.
+// Supabase loads in its own chunk after the game is up. Guests play on an anonymous session; an
+// e-mail account keeps points and cats on the server and is needed to buy points.
 
 type AccountModule = typeof import("./account");
 let acc: AccountModule | null = null;
 const buyPointsBtn = $<HTMLButtonElement>("buyPointsBtn");
 const accountBtn = $<HTMLButtonElement>("accountBtn");
+const authForm = $<HTMLFormElement>("authForm");
+const authEmail = $<HTMLInputElement>("authEmail");
+const authPassword = $<HTMLInputElement>("authPassword");
+const authSubmit = $<HTMLButtonElement>("authSubmit");
+const authMsg = $("authMsg");
+type AuthMode = "signin" | "signup" | "reset" | "newpass";
+let authMode: AuthMode = "signin";
 
 function renderAccount(): void {
   const st = acc?.account();
-  const google = !!st?.google;
-  $("accountText").textContent = google ? `Signed in as ${st!.label}` : "Playing as a guest";
-  accountBtn.textContent = google ? "Sign out" : "Sign in with Google";
-  $("offerNote").textContent = google ? "US$ 3.44 · one-time, added to your wallet" : "US$ 3.44 · sign in with Google to buy";
-  buyPointsBtn.textContent = google ? "US$ 3.44" : "Sign in";
-  buyPointsBtn.disabled = !acc;
-  accountBtn.disabled = !acc;
+  const member = !!st?.member;
+  $("accountText").textContent = member ? st!.email : "Playing as a guest";
+  accountBtn.textContent = member ? "Account" : "Sign in to save your points";
+  $("offerNote").textContent = member ? "US$ 3.44 · one-time, added to your account" : "US$ 3.44 · sign in to buy";
+  buyPointsBtn.textContent = member ? "US$ 3.44" : "Sign in";
+  buyPointsBtn.disabled = accountBtn.disabled = !acc;
+  // the account view: a form for guests, the account for members
+  if (st?.recovering) authMode = "newpass";
+  const showForm = !member || authMode === "newpass";
+  authForm.hidden = !showForm;
+  $("authLinks").hidden = !showForm || authMode === "newpass";
+  $("authMember").hidden = showForm;
+  $("authWho").textContent = st?.email ?? "";
+  const titles: Record<AuthMode, [string, string, string]> = {
+    signin: ["Sign in", "Keep your points and cats on every device, and buy points.", "Sign in"],
+    signup: ["Create an account", "We'll e-mail you a link to confirm your address. Your points and cats on this device come along.", "Create account"],
+    reset: ["Reset password", "We'll e-mail you a link to choose a new password.", "Send link"],
+    newpass: ["New password", "Choose a new password for your account.", "Save password"]
+  };
+  const [title, sub, submit] = member && authMode !== "newpass" ? ["Your account", "", ""] : titles[authMode];
+  $("authTitle").textContent = title;
+  $("authSub").textContent = sub;
+  $("authSub").hidden = !sub;
+  authSubmit.textContent = submit;
+  authEmail.hidden = authMode === "newpass";
+  authPassword.hidden = authMode === "reset";
+  authPassword.autocomplete = authMode === "signin" ? "current-password" : "new-password";
+  authPassword.placeholder = authMode === "signin" ? "Password" : "Password (8+ characters)";
+  $("authSwitch").textContent = authMode === "signup" ? "Have an account? Sign in" : "New here? Create an account";
+  $("authForgot").hidden = authMode !== "signin";
 }
-renderAccount();
 
-async function accountAction(fn: () => Promise<void>): Promise<void> {
-  buyPointsBtn.disabled = accountBtn.disabled = true;
-  try {
-    await fn();
-  } catch (err) {
-    toast(err instanceof Error ? err.message : "Something went wrong", "ouch");
-  } finally {
+function say(text: string, kind: "ok" | "error" | "" = ""): void {
+  authMsg.textContent = text;
+  authMsg.dataset.kind = kind;
+  authMsg.hidden = !text;
+}
+
+function openAccount(mode?: AuthMode): void {
+  if (mode) authMode = mode;
+  say("");
+  showView("account");
+  renderAccount();
+}
+
+$("authSwitch").addEventListener("click", () => {
+  authMode = authMode === "signup" ? "signin" : "signup";
+  say("");
+  renderAccount();
+});
+$("authForgot").addEventListener("click", () => {
+  authMode = "reset";
+  say("");
+  renderAccount();
+});
+
+authForm.addEventListener("submit", (ev) => {
+  ev.preventDefault();
+  if (!acc) return;
+  const a = acc;
+  const email = authEmail.value.trim();
+  const password = authPassword.value;
+  if (authMode !== "newpass" && !/^\S+@\S+\.\S+$/.test(email)) return say("Enter a valid e-mail address.", "error");
+  if (authMode !== "reset" && password.length < 8) return say("Passwords have at least 8 characters.", "error");
+  authSubmit.disabled = true;
+  say("");
+  const run = async (): Promise<void> => {
+    if (authMode === "signin") {
+      await a.signIn(email, password);
+      authPassword.value = "";
+    } else if (authMode === "signup") {
+      await a.signUp(email, password);
+      authPassword.value = "";
+      authMode = "signin";
+      say(`Almost there: we sent a confirmation link to ${email}. Open it, then sign in here.`, "ok");
+    } else if (authMode === "reset") {
+      await a.sendPasswordReset(email);
+      authMode = "signin";
+      say(`If ${email} has an account, a reset link is on its way.`, "ok");
+    } else {
+      await a.setNewPassword(password);
+      authPassword.value = "";
+      authMode = "signin";
+      say("Password saved. You're signed in.", "ok");
+    }
+  };
+  run()
+    .catch((err: unknown) => say(err instanceof Error ? err.message : "Something went wrong", "error"))
+    .finally(() => {
+      authSubmit.disabled = false;
+      renderAccount();
+    });
+});
+
+$("signOutBtn").addEventListener("click", () => {
+  if (!acc) return;
+  void acc.signOut().then(() => {
+    authMode = "signin";
+    say("Signed out. You're playing as a guest.", "ok");
     renderAccount();
-  }
-}
+  });
+});
 
+accountBtn.addEventListener("click", () => openAccount(acc?.account().member ? undefined : "signin"));
 buyPointsBtn.addEventListener("click", () => {
   if (!acc) return;
-  const a = acc;
-  void accountAction(() => (a.account().google ? a.buyPoints() : a.signInWithGoogle()));
-});
-accountBtn.addEventListener("click", () => {
-  if (!acc) return;
-  const a = acc;
-  void accountAction(() => (a.account().google ? a.signOut() : a.signInWithGoogle()));
+  if (!acc.account().member) return openAccount("signin");
+  buyPointsBtn.disabled = true;
+  acc.buyPoints()
+    .catch((err: unknown) => toast(err instanceof Error ? err.message : "Checkout is unavailable", "ouch"))
+    .finally(renderAccount);
 });
 
-function creditToast(points: number): void {
+// the wallet and the cats can change from the server (sign-in, purchases, a refused buy)
+onInventory(() => {
   renderWallet();
   if (!views.shop.hidden) renderShop();
-  toast(`+${points.toLocaleString("en-US")} pts added!`, "seal");
-  sfx.record();
-  confetti();
-}
+  lawn.setCatSkin(1, currentSkin());
+});
 
 void (async () => {
   const url = new URL(location.href);
-  const paid = url.searchParams.has("paid");
-  const openShop = paid || url.searchParams.has("shop");
-  for (const k of ["paid", "shop"]) url.searchParams.delete(k);
-  if (openShop) history.replaceState(null, "", url.pathname + url.search);
+  const paid = url.searchParams.get("paid");
+  const openShop = paid !== null || url.searchParams.has("shop");
+  const openAcc = url.searchParams.has("account");
+  for (const k of ["paid", "shop", "account"]) url.searchParams.delete(k);
+  if (openShop || openAcc) history.replaceState(null, "", url.pathname + url.search + location.hash);
   try {
     acc = await import("./account");
     acc.onAccount(renderAccount);
@@ -689,10 +777,18 @@ void (async () => {
     console.warn("accounts unavailable", err);
     return;
   }
-  if (openShop && !overlay.hidden) showView("shop");
-  const got = paid ? await acc.claimAfterCheckout() : await acc.claimPoints();
-  if (got > 0) creditToast(got);
-  else if (paid) toast("Payment received. Your points will arrive shortly.", "seal");
+  if (!overlay.hidden) {
+    if (openAcc) openAccount();
+    else if (openShop) showView("shop");
+  }
+  if (paid) {
+    const got = await acc.confirmPurchase(paid);
+    if (got > 0) {
+      toast(`+${got.toLocaleString("en-US")} pts added!`, "seal");
+      sfx.record();
+      confetti();
+    } else toast("Payment received. Your points will arrive shortly.", "seal");
+  }
 })();
 
 // dev-only handles for poking at the lawn from the console

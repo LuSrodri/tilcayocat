@@ -5,6 +5,10 @@
   "compatibility_date": "2026-09-01",
   "observability": { "enabled": true },
   "routes": [{ "pattern": "catthemouse.co/mp/*", "zone_name": "catthemouse.co" }],
+  // workers.dev stays on for the Stripe webhook: the catthemouse.co zone runs Bot Fight Mode,
+  // which would challenge Stripe's servers
+  "workers_dev": true,
+  "preview_urls": false,
   "durable_objects": {
     "bindings": [
       { "name": "MATCH", "class_name": "MatchRoom" },
@@ -15,5 +19,14 @@
   "migrations": [
     { "tag": "v1", "new_sqlite_classes": ["MatchRoom", "Lobby"] },
     { "tag": "v2", "new_sqlite_classes": ["Presence"] }
-  ]
+  ],
+  // player accounts: wallet, unlocked cats and Stripe purchases (sign-in itself is Supabase Auth)
+  "d1_databases": [
+    { "binding": "DB", "database_name": "catthemouse", "database_id": "335e004e-84db-4076-b8c6-0ee8a42598ab", "migrations_dir": "migrations" }
+  ],
+  "vars": {
+    "SUPABASE_URL": "https://ewyigeljgsrebcgjfboi.supabase.co",
+    "SUPABASE_KEY": "sb_publishable_T5RwnIDOl9yD551QiLXsLw_Xav0vPmA"
+  }
+  // secrets: STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET (wrangler secret put)
 }

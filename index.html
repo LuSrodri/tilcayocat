@@ -343,7 +343,25 @@
             <div class="offer__info"><b>+50,000 pts</b><small id="offerNote">Sign in with Google to buy</small></div>
             <button id="buyPointsBtn" class="btn btn--offer" type="button">US$ 3.44</button>
           </div>
-          <p class="account-line"><span id="accountText">Playing as a guest</span> · <button id="accountBtn" class="account-line__btn" type="button">Sign in with Google</button></p>
+          <p class="account-line"><span id="accountText">Playing as a guest</span> · <button id="accountBtn" class="account-line__btn" type="button">Sign in</button></p>
+        </div>
+
+        <!-- account: e-mail and password -->
+        <div id="accountView" class="view" hidden>
+          <button class="back" type="button" data-back>‹ Back</button>
+          <h2 id="authTitle" class="view__title">Sign in</h2>
+          <p id="authSub" class="view__sub">Keep your points and cats on every device, and buy points.</p>
+          <form id="authForm" class="auth" novalidate>
+            <input id="authEmail" class="input" type="email" autocomplete="email" placeholder="E-mail" required>
+            <input id="authPassword" class="input" type="password" autocomplete="current-password" placeholder="Password" minlength="8" required>
+            <button id="authSubmit" class="btn btn--primary" type="submit">Sign in</button>
+          </form>
+          <p id="authMsg" class="auth__msg" role="status" hidden></p>
+          <p id="authLinks" class="auth__links"><button id="authSwitch" class="account-line__btn" type="button">New here? Create an account</button> · <button id="authForgot" class="account-line__btn" type="button">Forgot password?</button></p>
+          <div id="authMember" class="auth__member" hidden>
+            <p>Signed in as <b id="authWho"></b>. Your points and cats are saved to your account.</p>
+            <button id="signOutBtn" class="btn" type="button">Sign out</button>
+          </div>
         </div>
 
         <!-- seals -->
