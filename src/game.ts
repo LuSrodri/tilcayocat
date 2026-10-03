@@ -28,7 +28,7 @@ export const FULL_LAWN_MS = HOLE_TIMES[HOLE_TIMES.length - 1]!;
 export const COMBO_WINDOW_MS = 1500;
 // Catches per 10-second slice, kept for the share card's heat strip.
 export const SLICE_MS = 10000;
-export const DAILY_GOAL = 10;
+export const DAILY_GOAL = 20;
 const BEST_KEY = "tilcayo.best";
 // The yellow lizard (bought in the shop) darts out now and then; it is quick and worth two mice.
 export const LIZARD_FIRST_MS = 12000;
@@ -75,8 +75,6 @@ export interface RoundStats {
   powers: number;
   slices: number[];
   fancy: number[];
-  /** Game time when the 10th fancy mouse fell, if it did. */
-  dailyAtMs: number | null;
 }
 
 export interface LawnProgress {
@@ -105,7 +103,7 @@ export interface GameCallbacks {
 export interface GameOptions {
   /** whether the yellow lizard is unlocked (asked at the start of every round) */
   lizard(): boolean;
-  /** whether today's Daily Challenge is already done (asked at the start of every round) */
+  /** whether today's Daily Challenge is already done (it can finish mid-round, so asked live) */
   dailyDone(): boolean;
 }
 
@@ -142,8 +140,6 @@ export class Game {
   private slices: number[] = [];
   private plainSinceFancy = 0;
   private fancyCaught: number[] = [];
-  private dailyAt: number | null = null;
-  private dailyOver = false;
 
   constructor(private readonly lawn: Lawn, private readonly cb: GameCallbacks, private readonly opts: GameOptions = { lizard: () => false, dailyDone: () => false }) {
     this.best = readBest();
@@ -196,8 +192,6 @@ export class Game {
     this.slices = [];
     this.plainSinceFancy = 0;
     this.fancyCaught = [];
-    this.dailyAt = null;
-    this.dailyOver = this.opts.dailyDone();
     this.stunUntil = 0;
     this.setPower(null);
     for (const h of this.holes) {
@@ -408,9 +402,9 @@ export class Game {
     return out;
   }
 
-  // The mouse of the day only shows up until the day's 10 are caught, in this round or an earlier one.
+  // The mouse of the day only shows up until the day's Daily Challenge is done.
   private wantsFancy(): boolean {
-    return !this.dailyOver && this.fancyCaught.length < DAILY_GOAL;
+    return !this.opts.dailyDone();
   }
 
   private spawn(now: number, what: Critter, variant: number | null = null): void {
@@ -559,14 +553,13 @@ export class Game {
     if (fancy) {
       const variant = hole.variant ?? 0;
       this.fancyCaught.push(variant);
-      if (this.fancyCaught.length === DAILY_GOAL && this.dailyAt === null) this.dailyAt = this.elapsed;
       sfx.fancyCatch();
       this.cb.onFancy(variant, this.fancyCaught.length, i);
       this.cb.onEvent({ type: "fancy", variant, count: this.fancyCaught.length, elapsed: this.elapsed });
     } else if (!lizard && this.wantsFancy()) {
       this.plainSinceFancy += 1;
       // every 10th plain catch calls out a fancy mouse (if one isn't already hopping around),
-      // until the day's 10 are caught
+      // until the Daily Challenge is done
       if (this.plainSinceFancy >= FANCY_EVERY && !this.holes.some((h) => h.up && h.what === "fancy")) {
         this.plainSinceFancy = 0;
         window.setTimeout(() => {
@@ -629,8 +622,7 @@ export class Game {
       holes: this.opened,
       powers: this.powersTaken,
       slices,
-      fancy: this.fancyCaught.slice(),
-      dailyAtMs: this.dailyAt
+      fancy: this.fancyCaught.slice()
     });
   }
 }

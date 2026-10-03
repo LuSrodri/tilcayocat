@@ -4,24 +4,16 @@ import { rankFor, challengeUrl } from "./rank";
 
 export { dailyNumber, dailyVariant };
 
-// Daily Challenge: catch 10 of today's fancy mouse in a single round. The count lives inside the
-// round, so every new round starts from zero; the best round of the day is kept for the share
-// text, Wordle-style. Once a round gets the 10, the mouse of the day stays away until tomorrow.
-// Everything is local to the device.
+// Daily Challenge: catch 20 of today's fancy mouse. Every round of the day adds to the same count,
+// which is saved on each catch so closing the tab mid-round loses nothing. Once the 20 are in, the
+// mouse of the day stays away until tomorrow. Everything is local to the device.
 
 const DAILY_KEY = "tilcayo.daily";
 
-export interface DailyRun {
-  fancy: number;
-  points: number;
-  elapsedMs: number;
-  /** time to the 10th fancy mouse, when it happened */
-  doneMs: number | null;
-}
-
 export interface DailyState {
   date: string;
-  best: DailyRun | null;
+  /** mice of the day caught today, across all rounds */
+  caught: number;
   done: boolean;
   rounds: number;
 }
@@ -31,43 +23,54 @@ function todayKey(): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
+// Older saves kept only the best round ({ best: { fancy }, done }); a finished day stays finished.
+interface LegacyState {
+  date: string;
+  best?: { fancy: number } | null;
+  done?: boolean;
+  rounds?: number;
+  caught?: number;
+}
+
 export function dailyState(): DailyState {
   const date = todayKey();
   try {
-    const raw = JSON.parse(localStorage.getItem(DAILY_KEY) ?? "null") as DailyState | null;
-    if (raw && raw.date === date) return raw;
+    const raw = JSON.parse(localStorage.getItem(DAILY_KEY) ?? "null") as LegacyState | null;
+    if (raw && raw.date === date) {
+      const done = !!raw.done;
+      const caught = raw.caught ?? (done ? DAILY_GOAL : (raw.best?.fancy ?? 0));
+      return { date, caught: Math.min(DAILY_GOAL, caught), done: done || caught >= DAILY_GOAL, rounds: raw.rounds ?? 0 };
+    }
   } catch {
     /* storage unavailable or corrupt */
   }
-  return { date, best: null, done: false, rounds: 0 };
+  return { date, caught: 0, done: false, rounds: 0 };
 }
 
-function better(a: DailyRun, b: DailyRun | null): boolean {
-  if (!b) return true;
-  if (a.doneMs !== null && b.doneMs !== null) return a.doneMs < b.doneMs;
-  if (a.doneMs !== null) return true;
-  if (b.doneMs !== null) return false;
-  return a.fancy > b.fancy || (a.fancy === b.fancy && a.points > b.points);
-}
-
-export function runOf(stats: RoundStats): DailyRun {
-  return { fancy: stats.fancy.length, points: stats.points, elapsedMs: stats.elapsedMs, doneMs: stats.dailyAtMs };
-}
-
-/** Fold a finished round into today's record. */
-export function recordDaily(stats: RoundStats): { state: DailyState; justDone: boolean } {
-  const state = dailyState();
-  const run = runOf(stats);
-  const wasDone = state.done;
-  state.rounds += 1;
-  if (better(run, state.best)) state.best = run;
-  state.done = state.done || run.doneMs !== null;
+function save(state: DailyState): void {
   try {
     localStorage.setItem(DAILY_KEY, JSON.stringify(state));
   } catch {
     /* storage unavailable */
   }
-  return { state, justDone: state.done && !wasDone };
+}
+
+/** Count one mouse of the day; `justDone` is true on the catch that completes the challenge. */
+export function addDailyCatch(): { state: DailyState; justDone: boolean } {
+  const state = dailyState();
+  if (state.done) return { state, justDone: false };
+  state.caught = Math.min(DAILY_GOAL, state.caught + 1);
+  state.done = state.caught >= DAILY_GOAL;
+  save(state);
+  return { state, justDone: state.done };
+}
+
+/** Count a finished round. */
+export function recordRound(): DailyState {
+  const state = dailyState();
+  state.rounds += 1;
+  save(state);
+  return state;
 }
 
 export function formatSeconds(ms: number): string {
@@ -76,19 +79,20 @@ export function formatSeconds(ms: number): string {
 }
 
 /**
- * The share text, Wordle-style: the round's catch and rank, one square per mouse of the day
- * towards today's goal, the time, and a link that dares friends to beat the score.
+ * The share text, Wordle-style: the round's catch and rank, today's progress towards the daily
+ * goal (one square per two mice of the day), the round's time, and a link that dares friends to
+ * beat the score.
  */
-export function dailyShareText(run: DailyRun, mice: number): string {
-  const caught = Math.min(DAILY_GOAL, run.fancy);
-  const squares = "🐭".repeat(caught) + "⬛".repeat(DAILY_GOAL - caught);
-  const done = run.doneMs !== null;
+export function dailyShareText(stats: RoundStats, mice: number): string {
+  const { caught, done } = dailyState();
+  const filled = Math.floor(caught / 2);
+  const squares = "🐭".repeat(filled) + "⬛".repeat(DAILY_GOAL / 2 - filled);
   const rank = rankFor(mice);
   return (
     `🐱 Cat The Mouse Company · Day #${dailyNumber()}\n` +
-    `${rank.emoji} ${mice} ${mice === 1 ? "mouse" : "mice"} · ${rank.name} · ${run.points.toLocaleString("en-US")} pts\n` +
+    `${rank.emoji} ${mice} ${mice === 1 ? "mouse" : "mice"} · ${rank.name} · ${stats.points.toLocaleString("en-US")} pts\n` +
     `${squares}\n` +
-    `🎩 ${caught}/${DAILY_GOAL} ${fancyKind(dailyVariant()).name}${done ? " ✅" : ""} · ⏱️ ${formatSeconds(done ? run.doneMs! : run.elapsedMs)}\n` +
+    `🎩 ${caught}/${DAILY_GOAL} ${fancyKind(dailyVariant()).name}${done ? " ✅" : ""} · ⏱️ ${formatSeconds(stats.elapsedMs)}\n` +
     `Can your cat beat mine? ${challengeUrl(mice).replace("https://", "")}`
   );
 }

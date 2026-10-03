@@ -7,7 +7,7 @@ import { rankFor, touchStreak, currentStreak, challengeTarget, type Rank } from 
 import {
   SKINS, LIZARD_PRICE, LIZARD_VALUE, wallet, earnPoints, ownsSkin, currentSkin, equipSkin, buySkin, hasLizard, buyLizard, skinById, type SkinId
 } from "./shop";
-import { dailyNumber, dailyVariant, dailyState, recordDaily, dailyShareText, runOf } from "./daily";
+import { dailyNumber, dailyVariant, dailyState, addDailyCatch, recordRound, dailyShareText } from "./daily";
 import { nextFact } from "./facts";
 import { fancyKind, albumHas, albumSize, FANCY_COUNT } from "./fancy";
 import { guard, isGuarded } from "./guard";
@@ -48,6 +48,7 @@ let passedBest = false;
 let toastTimer = 0;
 let roundLive = false;
 let comboTimer = 0;
+let dailyDoneThisRound = false;
 
 for (const el of document.querySelectorAll(".dailyNo")) el.textContent = String(dailyNumber());
 
@@ -182,14 +183,17 @@ const game = new Game(lawn, {
     field.dataset.lick = "1";
     window.setTimeout(() => (field.dataset.lick = ""), ms);
   },
-  onFancy(variant, count) {
-    renderHudDaily(count);
-    if (count === DAILY_GOAL) {
+  onFancy(variant) {
+    // every round of the day adds to the same count
+    const { state, justDone } = addDailyCatch();
+    renderHudDaily(state.caught);
+    if (justDone) {
+      dailyDoneThisRound = true;
       const isNew = collectFancy(variant);
       toast(isNew ? "Daily done! New in your album" : "Daily Challenge done!", "seal");
       sfx.record();
     } else {
-      toast(`${fancyKind(variant).name} ${count}/${DAILY_GOAL}`, "fancy");
+      toast(`${fancyKind(variant).name} ${state.caught}/${DAILY_GOAL}`, "fancy");
     }
   },
   onEvent(ev) {
@@ -274,17 +278,11 @@ $("shopBtn").addEventListener("click", () => showView("shop"));
 $("dailyCard").addEventListener("click", () => showView("album"));
 for (const b of document.querySelectorAll("[data-back]")) b.addEventListener("click", () => showView("home"));
 
-function renderDaily(fancyThisRound: number | null): void {
+function renderDaily(): void {
   const st = dailyState();
   $("dailyName").textContent = fancyKind(today).name;
-  const shown = fancyThisRound ?? st.best?.fancy ?? 0;
-  $("dailySquares").replaceChildren(
-    ...Array.from({ length: DAILY_GOAL }, (_, i) => {
-      const s = document.createElement("span");
-      if (i < shown) s.className = "is-on";
-      return s;
-    })
-  );
+  $("dailyFill").style.transform = `scaleX(${st.caught / DAILY_GOAL})`;
+  $("dailyCount").textContent = st.done ? "Done ✓" : `${st.caught}/${DAILY_GOAL}`;
   $("dailyCard").classList.toggle("is-done", st.done);
   $("albumCount").textContent = String(albumSize());
 }
@@ -415,7 +413,7 @@ function renderStart(): void {
   overlayTitle.hidden = true;
   resultEl.hidden = true;
   $("intro").hidden = false;
-  renderDaily(null);
+  renderDaily();
   if (beat) {
     challengeEl.hidden = false;
     challengeEl.innerHTML = `A friend caught <b>${beat}</b> mice. Beat it!`;
@@ -439,11 +437,12 @@ function countUp(el: HTMLElement, to: number): void {
 
 function showResults(score: number, best: number, isNewBest: boolean, stats: RoundStats): void {
   const wonChallenge = beat !== null && score > beat;
-  const daily = recordDaily(stats);
-  kicker.textContent = daily.justDone ? `Daily #${dailyNumber()} complete` : isNewBest ? "Personal best" : "Round over";
+  recordRound();
+  const dailyDone = dailyDoneThisRound;
+  kicker.textContent = dailyDone ? `Daily #${dailyNumber()} complete` : isNewBest ? "Personal best" : "Round over";
   $("brandLogo").hidden = true;
   overlayTitle.hidden = false;
-  overlayTitle.textContent = daily.justDone
+  overlayTitle.textContent = dailyDone
     ? "Fancy feast!"
     : isNewBest
       ? "New record!"
@@ -467,12 +466,12 @@ function showResults(score: number, best: number, isNewBest: boolean, stats: Rou
   $("resultPoints").textContent = `+${stats.points.toLocaleString("en-US")} pts · best ${best}`;
   $("factText").textContent = nextFact().text;
   renderWallet();
-  renderDaily(stats.fancy.length);
+  renderDaily();
 
   playBtn.textContent = "Play again";
   shareBtn.hidden = false;
   showOverlay();
-  if (isNewBest || wonChallenge || daily.justDone) {
+  if (isNewBest || wonChallenge || dailyDone) {
     confetti();
     setTimeout(() => sfx.record(), 350);
   }
@@ -515,7 +514,9 @@ function play(): void {
   roundRank = rankFor(0);
   roundBestBefore = game.bestScore;
   passedBest = false;
-  renderHudDaily(0);
+  dailyDoneThisRound = false;
+  const today0 = dailyState();
+  renderHudDaily(today0.done ? 0 : today0.caught);
   const streak = touchStreak();
   music.start();
   roundLive = true;
@@ -546,7 +547,7 @@ const nativeBtn = $<HTMLButtonElement>("shareNativeBtn");
 nativeBtn.hidden = !("share" in navigator);
 
 function shareText(): string {
-  return lastStats ? dailyShareText(runOf(lastStats), lastStats.score) : "";
+  return lastStats ? dailyShareText(lastStats, lastStats.score) : "";
 }
 
 shareBtn.addEventListener("click", () => {

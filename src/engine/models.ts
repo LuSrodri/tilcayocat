@@ -5,7 +5,8 @@ import type { SkinId } from "../shop";
 
 // Procedural 3D models, built from primitives in a soft toon style with ink outlines: seven cats
 // (one sculpt, seven painted coats), the round grey mouse with big pink ears and its 100 fancy
-// outfits, the grumpy porcupine, the green snake and the yellow lizard.
+// versions (ten characters, one per hat, each with its own coat, face and prop), the grumpy
+// porcupine, the green snake and the yellow lizard.
 
 /** Everything below the floor of the holes is clipped, so critters can climb out of them. */
 export const GROUND_CLIP = [new THREE.Plane(new THREE.Vector3(0, 1, 0), 0.5)];
@@ -483,17 +484,6 @@ export function wallTexture(): THREE.Texture {
   });
 }
 
-function quillTexture(): THREE.Texture {
-  return canvasTex("quill", 64, 16, (ctx) => {
-    const g = ctx.createLinearGradient(0, 0, 64, 0);
-    g.addColorStop(0, "#3a2418");
-    g.addColorStop(0.6, "#6b4a36");
-    g.addColorStop(1, "#fff1dc");
-    ctx.fillStyle = g;
-    ctx.fillRect(0, 0, 64, 16);
-  });
-}
-
 // ---- geometry helpers ----------------------------------------------------------------
 
 const geoCache = new Map<string, THREE.BufferGeometry>();
@@ -842,15 +832,49 @@ export function setLids(cat: CatModel, lid: number, tilt: number): void {
 
 // ---- mouse ----------------------------------------------------------------------------
 
+type EyeMood = "dot" | "sparkle" | "smug" | "squint" | "wise" | "joy";
+type BrowMood = "none" | "smug" | "happy" | "angry";
+type MouthMood = "smile" | "grin" | "smirk";
+
+// Each hat is a character: its own coat, face and something held in the paw. The accessory and
+// the colours still vary over the 100 mice of the day.
+interface MouseCharacter {
+  fur: number;
+  eyes: EyeMood;
+  brows: BrowMood;
+  mouth: MouthMood;
+  teeth?: boolean;
+  blush?: number;
+  plump?: boolean;
+}
+
+const PLAIN_MOUSE: MouseCharacter = { fur: 0xa39ca6, eyes: "dot", brows: "none", mouth: "smile", teeth: true };
+
+const CHARACTERS: MouseCharacter[] = [
+  { fur: 0x8f87a3, eyes: "smug", brows: "smug", mouth: "smirk" }, // magician: knows the trick
+  { fur: 0xe6d9c3, eyes: "smug", brows: "smug", mouth: "smile" }, // monarch: chin up, cape on
+  { fur: 0xc79f76, eyes: "sparkle", brows: "happy", mouth: "grin" }, // party animal
+  { fur: 0xf3f1f6, eyes: "joy", brows: "none", mouth: "smile", blush: 1.6 }, // snowbird: snug and happy
+  { fur: 0xb3895f, eyes: "squint", brows: "angry", mouth: "smirk" }, // cowpoke: squinting at the sun
+  { fur: 0x8e9aab, eyes: "wise", brows: "none", mouth: "smile" }, // wizard: calm, bearded
+  { fur: 0xdcb879, eyes: "sparkle", brows: "happy", mouth: "grin" }, // flower child
+  { fur: 0xf2e7d2, eyes: "joy", brows: "happy", mouth: "grin", blush: 1.4, plump: true }, // chef: well fed
+  { fur: 0x7b6b63, eyes: "squint", brows: "angry", mouth: "grin" }, // pirate
+  { fur: 0xc8875a, eyes: "sparkle", brows: "happy", mouth: "smile", teeth: true } // tinkerer
+];
+
 export function buildMouse(variant: number | null): THREE.Group {
-  const fur = toon(0xa39ca6);
+  const k = variant === null ? null : fancyKind(variant);
+  const who = k ? CHARACTERS[k.hat]! : PLAIN_MOUSE;
+  const fur = toon(who.fur);
   const belly = toon(0xefe3d6);
   const pink = toon(0xf4a3b0);
-  const black = flat(0x1a1015);
-  const white = flat(0xffffff);
   const g = new THREE.Group();
-  g.add(part(sphere(0.25), fur, { pos: [0, 0.3, 0], scale: [1, 1.15, 0.92] }));
-  g.add(part(sphere(0.19), belly, { pos: [0, 0.3, 0.1], scale: [0.95, 1.2, 0.75] }));
+  const eyes: THREE.Object3D[] = [];
+  g.userData.eyes = eyes;
+  const wide = who.plump ? 1.14 : 1;
+  g.add(part(sphere(0.25), fur, { pos: [0, 0.3, 0], scale: [wide, 1.15, 0.92 * wide] }));
+  g.add(part(sphere(0.19), belly, { pos: [0, 0.3, 0.1], scale: [0.95 * wide, 1.2, 0.75] }));
   const head = new THREE.Group();
   head.name = "head";
   head.position.set(0, 0.64, 0.02);
@@ -858,6 +882,9 @@ export function buildMouse(variant: number | null): THREE.Group {
   head.add(part(sphere(0.23), fur, { scale: [1.05, 0.95, 1] }));
   head.add(part(sphere(0.1), belly, { pos: [0, -0.07, 0.17], scale: [1.2, 0.8, 0.9] }));
   head.add(part(sphere(0.035), toon(0xff8fa3), { pos: [0, -0.03, 0.27] }));
+  head.add(part(sphere(0.011, 8, 6), flat(0xffffff), { pos: [0.012, -0.015, 0.302], outline: false }));
+  const pirate = k?.hat === 8;
+  const glasses = k !== null && [1, 2, 6, 8].includes(k.acc);
   for (const s of [-1, 1]) {
     const ear = new THREE.Group();
     ear.name = "ear";
@@ -866,12 +893,20 @@ export function buildMouse(variant: number | null): THREE.Group {
     ear.add(part(geo("mouseEar", () => new THREE.CylinderGeometry(0.15, 0.15, 0.04, 22).rotateX(Math.PI / 2)), fur));
     ear.add(part(geo("mouseEarIn", () => new THREE.CylinderGeometry(0.105, 0.105, 0.02, 22).rotateX(Math.PI / 2)), pink, { pos: [0, 0, 0.022], outline: false }));
     head.add(ear);
-    head.add(part(sphere(0.042), black, { pos: [s * 0.085, 0.04, 0.19], outline: false }));
-    head.add(part(sphere(0.014), white, { pos: [s * 0.085 + 0.015, 0.058, 0.225], outline: false }));
-    head.add(part(sphere(0.03), toon(0xffb3c1), { pos: [s * 0.14, -0.05, 0.16], scale: [1, 0.6, 0.4], outline: false }));
-    // little hands held up
-    g.add(part(sphere(0.05), pink, { pos: [s * 0.08, 0.42, 0.2], scale: [1, 0.8, 0.8] }));
+    if (pirate && s === -1 && !glasses) mouseEyePatch(head);
+    else mouseEye(head, s, who.eyes, fur, eyes);
+    mouseBrow(head, s, who.brows);
+    const blush = who.blush ?? 1;
+    head.add(part(sphere(0.03), toon(0xffb3c1), { pos: [s * 0.14, -0.05, 0.16], scale: [blush, 0.6 * blush, 0.4], outline: false }));
+    // whiskers
+    for (const [dy, tip] of [[0.005, 0.03], [-0.02, -0.02]] as const) {
+      head.add(stroke([[s * 0.075, -0.06 + dy, 0.225], [s * 0.15, -0.055 + dy + tip * 0.4, 0.215], [s * 0.23, -0.05 + tip, 0.18]], 0.0035, `whisker:${s}:${dy}`));
+    }
   }
+  mouseMouth(head, who.mouth, who.teeth ?? false);
+  // little hands held up (mittens for the snowbird)
+  const handMat = k?.hat === 3 ? toon(parseInt(k.palette[1].slice(1), 16)) : pink;
+  for (const s of [-1, 1]) g.add(part(sphere(0.05), handMat, { pos: [s * 0.08 * wide, 0.42, 0.2], scale: [1, 0.8, 0.8] }));
   const tail = new THREE.CatmullRomCurve3([
     new THREE.Vector3(0, 0.12, -0.2),
     new THREE.Vector3(0.12, 0.08, -0.36),
@@ -881,6 +916,69 @@ export function buildMouse(variant: number | null): THREE.Group {
   g.add(part(geo("mouseTail", () => new THREE.TubeGeometry(tail, 20, 0.018, 6, false)), pink, { outline: false }));
   if (variant !== null) dressUp(head, g, variant);
   return g;
+}
+
+// An eye in its own group (centred on the eyeball) so the lawn can squash it to blink.
+function mouseEye(head: THREE.Group, s: number, mood: EyeMood, lidMat: THREE.Material, blinkers: THREE.Object3D[]): void {
+  const black = flat(0x1a1015);
+  const white = flat(0xffffff);
+  const eye = new THREE.Group();
+  eye.position.set(s * 0.085, 0.04, 0.19);
+  head.add(eye);
+  if (mood === "joy") {
+    // closed, smiling "^ ^" eyes
+    eye.add(stroke([[-0.034, -0.006, 0.026], [0, 0.022, 0.036], [0.034, -0.006, 0.026]], 0.008, "eye:joy"));
+    return;
+  }
+  blinkers.push(eye);
+  if (mood === "sparkle") {
+    eye.add(part(sphere(0.05, 16, 12), black, { scale: [1, 1.15, 0.9], outline: false }));
+    eye.add(part(sphere(0.018, 8, 6), white, { pos: [s * 0.01 + 0.012, 0.024, 0.04], outline: false }));
+    eye.add(part(sphere(0.009, 8, 6), white, { pos: [-0.014, -0.016, 0.044], outline: false }));
+    return;
+  }
+  eye.add(part(sphere(0.042), black, { outline: false }));
+  eye.add(part(sphere(0.014), white, { pos: [0.015, 0.018, 0.035], outline: false }));
+  if (mood === "dot") return;
+  // a lid in the coat colour: half closed (smug), calm (wise) or almost shut (squint)
+  const tilt = mood === "squint" ? 0.42 : mood === "wise" ? 0.12 : -0.2;
+  const lid = part(geo("mouseLid", () => new THREE.SphereGeometry(0.049, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2)), lidMat, { rot: [tilt, 0, mood === "smug" ? s * 0.18 : 0], outline: false });
+  eye.add(lid);
+  const lash = stroke([[-0.046, 0, 0], [0, 0.004, 0.05], [0.046, 0, 0]], 0.006, "eye:lash");
+  lash.rotation.set(tilt, 0, mood === "smug" ? s * 0.18 : 0);
+  eye.add(lash);
+}
+
+function mouseEyePatch(head: THREE.Group): void {
+  const black = toon(0x1d1b26);
+  head.add(part(geo("patch", () => new THREE.CylinderGeometry(0.055, 0.055, 0.016, 20).rotateX(Math.PI / 2)), black, { pos: [-0.085, 0.045, 0.205], rot: [0, -0.35, 0] }));
+  head.add(stroke([[-0.13, 0.08, 0.17], [-0.05, 0.19, 0.13], [0.08, 0.215, 0.02], [0.17, 0.12, -0.06]], 0.009, "patch:strap"));
+}
+
+function mouseBrow(head: THREE.Group, s: number, mood: BrowMood): void {
+  if (mood === "none") return;
+  const m = toon(0x3a2a30);
+  const brow = geo("mouseBrow", () => new THREE.CapsuleGeometry(0.011, 0.05, 3, 6).rotateZ(Math.PI / 2));
+  // positive z-rotation lifts the outer end of the right brow (and the inner end of the left one)
+  const raise = mood === "smug" && s === 1 ? 0.035 : 0;
+  const rot = mood === "angry" ? s * 0.35 : mood === "happy" ? -s * 0.3 : s === 1 ? 0.3 : -0.08;
+  head.add(part(brow, m, { pos: [s * 0.085, 0.11 + raise + (mood === "happy" ? 0.012 : 0), 0.2], rot: [0.2, 0, rot], outline: false }));
+}
+
+function mouseMouth(head: THREE.Group, mood: MouthMood, teeth: boolean): void {
+  if (mood === "grin") {
+    head.add(part(sphere(0.05, 16, 10), toon(0x5a1f2e), { pos: [0, -0.112, 0.235], scale: [1.05, 0.62, 0.42], outline: false }));
+    head.add(part(sphere(0.026, 10, 8), toon(0xff7a95), { pos: [0, -0.124, 0.248], scale: [1, 0.55, 0.5], outline: false }));
+  } else if (mood === "smirk") {
+    head.add(stroke([[-0.04, -0.1, 0.248], [0, -0.106, 0.258], [0.038, -0.094, 0.25], [0.056, -0.078, 0.238]], 0.0065, "mouth:smirk"));
+  } else {
+    head.add(stroke([[-0.045, -0.088, 0.244], [-0.022, -0.108, 0.256], [0, -0.092, 0.262], [0.022, -0.108, 0.256], [0.045, -0.088, 0.244]], 0.0065, "mouth:w"));
+  }
+  head.add(stroke([[0, -0.06, 0.268], [0, -0.092, 0.262]], 0.006, "mouth:philtrum"));
+  if (teeth) {
+    const tooth = geo("tooth", () => new THREE.BoxGeometry(0.02, 0.028, 0.008));
+    for (const s of [-1, 1]) head.add(part(tooth, toon(0xfffbf2), { pos: [s * 0.0105, -0.12, 0.252], rot: [-0.25, 0, 0], outline: false }));
+  }
 }
 
 // ---- fancy outfits ------------------------------------------------------------------------
@@ -976,7 +1074,8 @@ function dressUp(head: THREE.Group, bodyGroup: THREE.Group, variant: number): vo
 
   // accessory
   const face = new THREE.Group();
-  face.position.set(0, 0.04, 0.2);
+  // glasses sit in front of the (now bigger) eyes and lids
+  face.position.set(0, 0.04, [1, 2, 6, 8].includes(k.acc) ? 0.245 : 0.2);
   head.add(face);
   const neck = new THREE.Group();
   neck.position.set(0, 0.46, 0.04);
@@ -1024,41 +1123,217 @@ function dressUp(head: THREE.Group, bodyGroup: THREE.Group, variant: number): vo
       neck.add(part(torus(0.15, 0.022), main, { rot: [Math.PI / 2, 0, 0], outline: false }));
       neck.add(part(sphere(0.04), gold, { pos: [0, -0.04, 0.16] }));
   }
+
+  // what each character carries, held up in its right paw
+  const paw = new THREE.Group();
+  paw.position.set(0.1, 0.43, 0.22);
+  bodyGroup.add(paw);
+  const wood = toon(0x9a6a3c);
+  const stick = (r: number, h: number): THREE.CylinderGeometry => geo(`stick${r}:${h}`, () => new THREE.CylinderGeometry(r, r, h, 10).translate(0, h / 2, 0));
+  switch (k.hat) {
+    case 0: // magic wand with a white tip and a twinkle
+      paw.rotation.z = -0.45;
+      paw.add(part(stick(0.013, 0.26), toon(0x1d1b26), { pos: [0, -0.06, 0] }));
+      paw.add(part(stick(0.0135, 0.05), white, { pos: [0, 0.2, 0], outline: false }));
+      paw.add(part(geo("twinkle", () => new THREE.OctahedronGeometry(0.03)), gold, { pos: [0.02, 0.3, 0], scale: [0.6, 1, 0.6], outline: false }));
+      break;
+    case 1: {
+      // sceptre, and a velvet cape with an ermine collar
+      paw.rotation.z = -0.3;
+      paw.add(part(stick(0.014, 0.28), gold, { pos: [0, -0.08, 0] }));
+      paw.add(part(sphere(0.038, 12, 10), accent, { pos: [0, 0.23, 0] }));
+      paw.add(part(torus(0.025, 0.009), gold, { pos: [0, 0.19, 0], rot: [Math.PI / 2, 0, 0], outline: false }));
+      const cape = toon(parseInt(k.palette[0].slice(1), 16), null, "cape");
+      cape.side = THREE.DoubleSide;
+      bodyGroup.add(part(geo("cape", () => new THREE.CylinderGeometry(0.24, 0.33, 0.42, 22, 1, true, Math.PI / 2, Math.PI)), cape, { pos: [0, 0.27, -0.03], outline: false }));
+      bodyGroup.add(part(torus(0.17, 0.04), white, { pos: [0, 0.48, 0.0], rot: [Math.PI / 2 - 0.15, 0, 0] }));
+      for (let i = 0; i < 6; i++) {
+        const a = Math.PI * (0.65 + (i / 5) * 0.7) + Math.PI / 2;
+        bodyGroup.add(part(sphere(0.01, 6, 4), darkM, { pos: [Math.cos(a) * 0.19, 0.5, -Math.sin(a) * 0.19 + 0.01], outline: false }));
+      }
+      break;
+    }
+    case 2: // a balloon on a string
+      paw.add(stroke([[0, 0, 0], [0.06, 0.18, -0.04], [0.15, 0.34, -0.08]], 0.004, "balloon:string"));
+      paw.add(part(sphere(0.1, 18, 14), accent, { pos: [0.16, 0.44, -0.08], scale: [1, 1.15, 1] }));
+      paw.add(part(cone(0.018, 0.03), accent, { pos: [0.155, 0.33, -0.08], rot: [Math.PI, 0, 0], outline: false }));
+      paw.add(part(sphere(0.022, 8, 6), white, { pos: [0.12, 0.49, -0.0], outline: false }));
+      break;
+    case 3: // a steaming mug of cocoa
+      paw.add(part(cyl(0.045, 0.04, 0.08), white, { pos: [0, 0.02, 0.02] }));
+      paw.add(part(cyl(0.04, 0.04, 0.005), toon(0x6b3e26), { pos: [0, 0.06, 0.02], outline: false }));
+      paw.add(part(torus(0.025, 0.008), white, { pos: [0.05, 0.02, 0.02], rot: [0, 0, 0] }));
+      break;
+    case 4: {
+      // a lasso, and a stalk of wheat in the corner of the mouth
+      paw.add(part(torus(0.085, 0.012), toon(0xc9a066), { pos: [0.06, 0.1, 0], rot: [0.4, 0.5, 0] }));
+      paw.add(stroke([[0, 0, 0], [0.03, 0.05, 0], [0.04, 0.03, 0]], 0.01, "lasso:end"));
+      const stalk = stroke([[0.035, -0.105, 0.25], [0.11, -0.13, 0.29], [0.19, -0.13, 0.32]], 0.006, "wheat:stalk");
+      stalk.material = toon(0xe8c860);
+      head.add(stalk);
+      head.add(part(geo("wheat:head", () => new THREE.CapsuleGeometry(0.016, 0.04, 3, 6).rotateZ(Math.PI / 2 - 0.2)), toon(0xe8c860), { pos: [0.215, -0.125, 0.325], outline: false }));
+      break;
+    }
+    case 5: {
+      // a staff with a glowing orb, bushy white brows and a long beard
+      paw.position.y = 0.36;
+      paw.add(part(stick(0.016, 0.62), wood, { pos: [0, -0.2, 0] }));
+      paw.add(part(sphere(0.05, 14, 10), flat(parseInt(k.palette[1].slice(1), 16)), { pos: [0, 0.46, 0] }));
+      const beard = toon(0xffffff);
+      // a long beard of tufts, tapering to a point
+      for (const [y, z, r, w] of [[-0.12, 0.215, 0.08, 1.4], [-0.19, 0.225, 0.07, 1.15], [-0.26, 0.215, 0.052, 1], [-0.315, 0.2, 0.034, 1]] as const) {
+        head.add(part(sphere(r, 14, 10), beard, { pos: [0, y, z], scale: [w, 0.85, 0.7] }));
+      }
+      for (const s of [-1, 1]) {
+        for (let i = 0; i < 3; i++) head.add(part(sphere(0.022, 8, 6), beard, { pos: [s * (0.06 + i * 0.025), 0.105 - i * 0.012, 0.2 - i * 0.012], outline: false }));
+      }
+      break;
+    }
+    case 6: {
+      // a daisy, and freckles
+      const stem = stroke([[0, -0.03, 0], [0.02, 0.1, 0], [0.01, 0.2, 0.01]], 0.007, "daisy:stem");
+      stem.material = toon(0x4f9a4a);
+      paw.add(stem);
+      const bloom = new THREE.Group();
+      bloom.position.set(0.01, 0.22, 0.02);
+      paw.add(bloom);
+      bloom.add(part(sphere(0.022, 10, 8), gold, { scale: [1, 1, 0.6] }));
+      for (let i = 0; i < 7; i++) {
+        const a = (i / 7) * Math.PI * 2;
+        bloom.add(part(sphere(0.022, 8, 6), white, { pos: [Math.cos(a) * 0.035, Math.sin(a) * 0.035, -0.004], scale: [1.4, 0.8, 0.4], rot: [0, 0, a], outline: false }));
+      }
+      for (const s of [-1, 1]) {
+        for (const [x, y] of [[0.12, -0.02], [0.145, -0.035], [0.125, -0.05]] as const) head.add(part(sphere(0.007, 6, 4), toon(0xb5734f), { pos: [s * x, y, 0.19], outline: false }));
+      }
+      break;
+    }
+    case 7: // a wooden spoon
+      paw.rotation.z = -0.25;
+      paw.add(part(stick(0.012, 0.24), wood, { pos: [0, -0.06, 0] }));
+      paw.add(part(sphere(0.042, 12, 10), wood, { pos: [0, 0.2, 0.01], scale: [1, 1.3, 0.45] }));
+      break;
+    case 8: {
+      // a cutlass, a gold earring and a gold tooth
+      paw.rotation.z = -0.35;
+      paw.add(part(geo("cutlass", () => new THREE.BoxGeometry(0.035, 0.26, 0.008).translate(0, 0.13, 0)), toon(0xd8dde6), { pos: [0, 0.03, 0], rot: [0, 0, 0.12] }));
+      paw.add(part(geo("guard", () => new THREE.BoxGeometry(0.1, 0.018, 0.03)), gold, { pos: [0, 0.03, 0] }));
+      paw.add(part(stick(0.014, 0.06), toon(0x4a2f22), { pos: [0, -0.04, 0], outline: false }));
+      head.add(part(torus(0.03, 0.007), gold, { pos: [0.27, 0.07, -0.02], rot: [0, Math.PI / 2, 0], outline: false }));
+      head.add(part(geo("goldTooth", () => new THREE.BoxGeometry(0.018, 0.022, 0.008)), gold, { pos: [0.014, -0.1, 0.258], outline: false }));
+      break;
+    }
+    default: {
+      // a wrench, and brass goggles pushed up on the forehead
+      paw.rotation.z = -0.3;
+      paw.add(part(stick(0.014, 0.2), toon(0x9aa3ad), { pos: [0, -0.04, 0] }));
+      paw.add(part(geo("wrench:jaw", () => new THREE.TorusGeometry(0.032, 0.014, 8, 16, Math.PI * 1.5)), toon(0x9aa3ad), { pos: [0, 0.19, 0], rot: [0, 0, Math.PI * 0.75] }));
+      const brass = toon(0xc9a04a);
+      for (const s of [-1, 1]) {
+        head.add(part(torus(0.042, 0.013), brass, { pos: [s * 0.07, 0.13, 0.17], rot: [-0.55, 0, 0] }));
+        head.add(part(geo("goggleLens", () => new THREE.CircleGeometry(0.04, 18)), flat(0x9fe3ff), { pos: [s * 0.07, 0.13, 0.172], rot: [-0.55, 0, 0], outline: false }));
+      }
+      head.add(part(geo("goggleBridge", () => new THREE.BoxGeometry(0.05, 0.012, 0.012)), brass, { pos: [0, 0.135, 0.18], rot: [-0.55, 0, 0], outline: false }));
+    }
+  }
 }
 
 // ---- porcupine ----------------------------------------------------------------------------
 
+// Cream quills with dark roots and dark tips, like the real thing.
+function quillTexture(): THREE.Texture {
+  return canvasTex("quill2", 8, 64, (ctx) => {
+    const g = ctx.createLinearGradient(0, 0, 0, 64);
+    g.addColorStop(0, "#22140e");
+    g.addColorStop(0.12, "#3a2418");
+    g.addColorStop(0.2, "#f6ead4");
+    g.addColorStop(0.62, "#f1e0c2");
+    g.addColorStop(0.78, "#5a3c2a");
+    g.addColorStop(1, "#3a2418");
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, 8, 64);
+  });
+}
+
+// A grumpy old porcupine: arms crossed, brows down, orange buck teeth, and a crest of long quills.
 export function buildPorcupine(): THREE.Group {
   const g = new THREE.Group();
-  const fur = toon(0x6b4a36);
-  const face = toon(0xd9b08c);
+  const eyes: THREE.Object3D[] = [];
+  g.userData.eyes = eyes;
+  const fur = toon(0x5a3e2e);
+  const furDark = toon(0x47301f);
+  const face = toon(0xcfa27e);
+  const snout = toon(0xe2bc96);
   const black = flat(0x1a1015);
-  g.add(part(sphere(0.3), fur, { pos: [0, 0.32, -0.04], scale: [1.05, 1.1, 1] }));
-  g.add(part(sphere(0.19), face, { pos: [0, 0.34, 0.2], scale: [1, 0.95, 0.75] }));
-  g.add(part(sphere(0.06), face, { pos: [0, 0.3, 0.33], scale: [1.2, 0.9, 1] }));
-  g.add(part(sphere(0.03), toon(0x3a2418), { pos: [0, 0.32, 0.38] }));
+  const white = flat(0xffffff);
+  g.add(part(sphere(0.3, 24, 18), fur, { pos: [0, 0.3, -0.04], scale: [1.08, 1.08, 1] }));
+  g.add(part(sphere(0.22), toon(0xb58a66), { pos: [0, 0.24, 0.12], scale: [1, 1.05, 0.7], outline: false }));
+  // arms crossed over the belly, the top one ending in a little clawed paw
+  const arm = geo("porcArm", () => new THREE.CapsuleGeometry(0.045, 0.17, 4, 10).rotateZ(Math.PI / 2));
+  g.add(part(arm, furDark, { pos: [0, 0.17, 0.27], rot: [0, 0, 0.3] }));
+  g.add(part(arm, fur, { pos: [0, 0.19, 0.305], rot: [0, 0, -0.28] }));
+  for (const s of [-1, 1]) g.add(part(sphere(0.042, 12, 10), face, { pos: [s * 0.13, s === 1 ? 0.14 : 0.215, 0.29], scale: [1, 0.85, 0.8] }));
+
+  const head = new THREE.Group();
+  head.name = "head";
+  head.position.set(0, 0.45, 0.15);
+  g.add(head);
+  head.add(part(sphere(0.2, 22, 16), face, { pos: [0, 0, 0.02], scale: [1.05, 0.95, 0.72] }));
+  head.add(part(sphere(0.1, 18, 14), snout, { pos: [0, -0.06, 0.16], scale: [1.08, 0.85, 1.2] }));
+  head.add(part(sphere(0.048, 14, 10), toon(0x2a1712), { pos: [0, -0.025, 0.28], scale: [1.25, 0.9, 0.9] }));
+  head.add(part(sphere(0.012, 8, 6), white, { pos: [0.018, -0.008, 0.318], outline: false }));
+  // big orange buck teeth under a grumpy frown
+  const tooth = geo("porcTooth", () => new THREE.BoxGeometry(0.026, 0.05, 0.014));
+  for (const s of [-1, 1]) head.add(part(tooth, toon(0xf0a43a), { pos: [s * 0.0145, -0.145, 0.235], rot: [-0.2, 0, 0] }));
+  head.add(stroke([[-0.055, -0.125, 0.225], [-0.02, -0.11, 0.245], [0.02, -0.11, 0.245], [0.055, -0.125, 0.225]], 0.007, "porc:frown"));
   for (const s of [-1, 1]) {
-    g.add(part(sphere(0.035), black, { pos: [s * 0.08, 0.4, 0.31], outline: false }));
-    // grumpy brows
-    g.add(part(geo("brow", () => new THREE.BoxGeometry(0.08, 0.016, 0.02)), toon(0x3a2418), { pos: [s * 0.08, 0.45, 0.32], rot: [0, 0, s * -0.4], outline: false }));
-    g.add(part(sphere(0.05), fur, { pos: [s * 0.17, 0.5, 0.12] }));
+    const eye = new THREE.Group();
+    eye.position.set(s * 0.085, 0.06, 0.15);
+    head.add(eye);
+    eyes.push(eye);
+    eye.add(part(sphere(0.036, 14, 10), black, { outline: false }));
+    eye.add(part(sphere(0.011, 8, 6), white, { pos: [0.012, 0.014, 0.03], outline: false }));
+    // heavy lids slanted down towards the nose
+    eye.add(part(geo("porcLid", () => new THREE.SphereGeometry(0.042, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2)), face, { rot: [0.18, 0, s * 0.38], outline: false }));
+    head.add(part(geo("porcBrow", () => new THREE.CapsuleGeometry(0.017, 0.07, 3, 8).rotateZ(Math.PI / 2)), furDark, { pos: [s * 0.092, 0.115, 0.17], rot: [0.25, 0, s * 0.42], outline: false }));
+    head.add(part(sphere(0.062, 12, 10), toon(0xe9cba6), { pos: [s * 0.15, -0.06, 0.1], scale: [1, 0.8, 0.7] }));
+    head.add(part(sphere(0.045, 12, 10), fur, { pos: [s * 0.18, 0.12, -0.02], scale: [1, 1, 0.6] }));
   }
-  // quills over the back half
-  const quill = geo("quill", () => new THREE.ConeGeometry(0.025, 0.3, 5).translate(0, 0.15, 0));
-  const qm = toon(0xffffff, quillTexture(), "quill");
+
+  // quills: cream with dark tips, swept back, longest along the crest
+  const quill = geo("quill2", () => new THREE.ConeGeometry(0.019, 1, 5, 1).translate(0, 0.5, 0));
+  const dirs: { pos: THREE.Vector3; dir: THREE.Vector3; len: number }[] = [];
   const rnd = rand(9);
-  for (let i = 0; i < 70; i++) {
-    const u = rnd();
-    const v = rnd();
-    const theta = Math.acos(1 - v * 1.1);
-    const phi = Math.PI * (0.15 + u * 1.7) + Math.PI / 2;
-    const dir = new THREE.Vector3(Math.sin(theta) * Math.cos(phi), Math.cos(theta), Math.sin(theta) * Math.sin(phi) - 0.3).normalize();
-    const q = new THREE.Mesh(quill, qm);
-    q.position.set(dir.x * 0.26, 0.32 + dir.y * 0.28, -0.04 + dir.z * 0.26);
-    q.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir);
-    q.scale.setScalar(0.8 + rnd() * 0.5);
-    g.add(q);
+  const N = 300;
+  const sweep = new THREE.Vector3(0, 0.25, -1);
+  for (let i = 0; i < N; i++) {
+    const y = 1 - (i / (N - 1)) * 2;
+    const r = Math.sqrt(1 - y * y);
+    const a = i * 2.39996;
+    const n = new THREE.Vector3(Math.cos(a) * r, y, Math.sin(a) * r);
+    // the back and the top of the body, not the face, the belly or the underside
+    if (n.z > 0.3 - Math.max(0, n.y) * 0.25 || n.y < -0.35) continue;
+    const dir = n.clone().addScaledVector(sweep, 0.55).normalize();
+    const len = 0.2 + Math.max(0, n.y) * 0.16 + Math.max(0, -n.z) * 0.08 + rnd() * 0.07;
+    dirs.push({ pos: new THREE.Vector3(n.x * 0.3, 0.3 + n.y * 0.3, -0.04 + n.z * 0.28), dir, len });
   }
+  // the crest: a ridge of long quills from the forehead back
+  for (let i = 0; i < 9; i++) {
+    const a = 0.25 + i * 0.16;
+    const n = new THREE.Vector3((rnd() - 0.5) * 0.12, Math.cos(a), -Math.sin(a) + 0.15);
+    dirs.push({ pos: new THREE.Vector3(n.x * 0.2, 0.36 + n.y * 0.28, 0.02 + n.z * 0.28), dir: n.clone().addScaledVector(sweep, 0.5).normalize(), len: 0.36 + rnd() * 0.12 });
+  }
+  const quills = new THREE.InstancedMesh(quill, toon(0xffffff, quillTexture(), "quill2"), dirs.length);
+  const up = new THREE.Vector3(0, 1, 0);
+  const m = new THREE.Matrix4();
+  const q = new THREE.Quaternion();
+  dirs.forEach((d, i) => {
+    q.setFromUnitVectors(up, d.dir);
+    m.compose(d.pos, q, new THREE.Vector3(1, d.len, 1));
+    quills.setMatrixAt(i, m);
+  });
+  quills.instanceMatrix.needsUpdate = true;
+  quills.computeBoundingSphere();
+  g.add(quills);
   return g;
 }
 

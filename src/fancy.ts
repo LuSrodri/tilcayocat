@@ -1,6 +1,6 @@
 // Fancy mice: 100 dressed-up mice (10 hats × 10 accessories). Each day has its own "mouse of the
 // day" (the list cycles every 100 days); it is the only fancy mouse that shows up, after every 10
-// plain catches, and it hops between holes before it runs off. Completing a day's challenge puts
+// plain catches, and it hops between holes before it runs off. Catching 20 of it in a day (over any number of rounds) puts
 // that mouse in the album; a full album earns the "Mouse Collector" seal.
 
 export const FANCY_COUNT = 100;

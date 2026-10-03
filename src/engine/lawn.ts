@@ -1725,12 +1725,18 @@ uniform vec4 uHits[4];
         }
         break;
       }
-      case "porcupine":
+      case "porcupine": {
         occ.body.scale.set(1 + Math.sin(t * 3) * 0.02, 1 - Math.sin(t * 3) * 0.02, 1);
+        // a slow, suspicious look around
+        const head = occ.body.getObjectByName("head");
+        if (head) head.rotation.set(Math.sin(t * 1.3) * 0.04, Math.sin(t * 0.9) * 0.3, Math.sin(t * 1.7) * 0.05);
+        blink(occ.body, t);
         break;
+      }
       default: {
         const head = occ.body.getObjectByName("head");
         if (head) head.rotation.set(Math.sin(t * 5) * 0.06, Math.sin(t * 2.3) * 0.25, Math.sin(t * 3.1) * 0.08);
+        blink(occ.body, t);
         const prop = occ.body.getObjectByName("propeller");
         if (prop) prop.rotation.y += dt * 18;
         if (occ.kind === "lizard") {
@@ -2176,6 +2182,14 @@ function casts(obj: THREE.Object3D): void {
   obj.traverse((o) => {
     if ((o as THREE.Mesh).isMesh && o.name !== "ink") o.castShadow = true;
   });
+}
+
+// Critters that list their eyes in `userData.eyes` blink every few seconds.
+function blink(body: THREE.Object3D, t: number): void {
+  const eyes = body.userData.eyes as THREE.Object3D[] | undefined;
+  if (!eyes?.length) return;
+  const s = t % 3.3 < 0.13 ? 0.12 : 1;
+  for (const e of eyes) e.scale.y = s;
 }
 
 function drawOrder(obj: THREE.Object3D, order: number): void {

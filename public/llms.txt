@@ -21,7 +21,7 @@ Last updated: 2026-10-01
 - Porcupine and green snake: slapping them makes the cat lick its paw and stop hunting (2 s / 3 s). The snake eats mice that pop out right next to it.
 - Lawn starts with 4 holes and a new one opens every 4.5 s until all 25 are dug; mice speed up smoothly.
 - Shop: points buy cats — Orange Tabby 150,000, Badger 400,000, Black Cat 800,000, White Cat 1,400,000, Calico 2,200,000, Tilcayo 4,000,000 — and the Yellow Lizard (600,000, worth 2 mice). Your cat and lizard also appear in 1v1.
-- Daily Challenge: catch 10 of the mouse of the day (one of 100 fancy mice) in one round to add it to the album.
+- Daily Challenge: catch 20 of the mouse of the day (one of 100 fancy mice), across any number of rounds that day, to add it to the album.
 - Power-ups: Auto-catch (6 s), Full time (clock back to 5 s), Freeze (4 s: clock stopped, every critter frozen in ice).
 - Hunter ranks: Sleepy Kitten 0, Curious Cub 5, Lawn Prowler 12, Night Hunter 20, Shadow Stalker 30, Lawn Legend 45, Mythic Mouser 65.
 - Seals: 11, including streak seals for 5, 15, 60 and 90 days in a row.
