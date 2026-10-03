@@ -173,7 +173,7 @@ export class Game {
     this.nextSpawnAt = this.readyUntil + 150;
     this.nextPowerAt = now + 25000 + Math.random() * 15000;
     this.nextFoeAt = now + 9000 + Math.random() * 6000;
-    this.nextSnakeAt = now + 26000 + Math.random() * 6000;
+    this.nextSnakeAt = now + 38000 + Math.random() * 8000;
     this.nextLizardAt = this.opts.lizard() ? now + LIZARD_FIRST_MS + Math.random() * 4000 : Infinity;
     this.lawn.cat(1, "idle");
     cancelAnimationFrame(this.raf);
@@ -319,7 +319,7 @@ export class Game {
     // The snake needs neighbours to be dangerous, so it waits for a bigger lawn.
     if (!frozen && now >= this.nextSnakeAt) {
       if (this.opened >= 9 && !this.holes.some((h) => h.up && h.what === "snake")) this.spawn(now, "snake");
-      this.nextSnakeAt = now + 15000 + Math.random() * 9000;
+      this.nextSnakeAt = now + 20000 + Math.random() * 10000;
     }
 
     // The lizard darts out every 9-14 s once there is room for it.
@@ -362,13 +362,13 @@ export class Game {
   private snakeBite(i: number, snake: Hole, now: number): void {
     for (const n of neighbours(i)) {
       const v = this.holes[n]!;
-      if (!v.up || !isPrey(v.what) || now - v.upAt < 380) continue;
+      if (!v.up || !isPrey(v.what) || now - v.upAt < 750) continue;
       const fancy = v.what === "fancy";
       v.up = false;
       v.busyUntil = now + 450;
       this.lawn.eat(i, n);
       sfx.gulp();
-      snake.nextBiteAt = now + 700;
+      snake.nextBiteAt = now + 1200;
       this.cb.onEvent({ type: "eaten", fancy });
       return;
     }
@@ -433,7 +433,7 @@ export class Game {
       sfx.grunt();
     } else if (what === "snake") {
       hole.hideAt = now + 4800;
-      hole.nextBiteAt = now + 650;
+      hole.nextBiteAt = now + 1100;
       sfx.hiss();
     } else {
       hole.hideAt = now + 2600;

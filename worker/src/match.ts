@@ -230,7 +230,7 @@ export class MatchRoom extends DurableObject<Env> {
     this.roundEnd = this.roundStart + ROUND_MS;
     this.nextSpawnAt = this.roundStart + 400;
     this.nextFoeAt = this.roundStart + 6000 + Math.random() * 5000;
-    this.nextSnakeAt = this.roundStart + 14000 + Math.random() * 6000;
+    this.nextSnakeAt = this.roundStart + 22000 + Math.random() * 6000;
     this.nextLizardAt = this.sockets().some((s) => s.att.lizard) ? this.roundStart + 7000 + Math.random() * 4000 : Infinity;
     this.lickUntil = [0, 0];
     this.plainCaught = 0;
@@ -279,7 +279,7 @@ export class MatchRoom extends DurableObject<Env> {
     }
     if (now >= this.nextSnakeAt) {
       if (![...this.mice.values()].some((m) => m.kind === "snake")) this.spawn(now, 4800, "snake");
-      this.nextSnakeAt = now + 14000 + Math.random() * 6000;
+      this.nextSnakeAt = now + 18000 + Math.random() * 8000;
     }
   }
 
@@ -296,7 +296,7 @@ export class MatchRoom extends DurableObject<Env> {
     const jitter = kind === "mouse" ? 0.8 + Math.random() * 0.4 : 1;
     const mouse: Live = {
       id: this.nextMouseId++, hole, kind, expiresAt: now + upTime * jitter, upAt: now,
-      hopsLeft: kind === "fancy" ? 4 + Math.floor(Math.random() * 3) : 0, nextBiteAt: now + 650
+      hopsLeft: kind === "fancy" ? 4 + Math.floor(Math.random() * 3) : 0, nextBiteAt: now + 1100
     };
     if (kind === "fancy") mouse.variant = dailyVariant();
     this.mice.set(mouse.id, mouse);
@@ -331,9 +331,9 @@ export class MatchRoom extends DurableObject<Env> {
     for (const n of neighbours(snake.hole)) {
       const id = this.byHole.get(n);
       const v = id === undefined ? undefined : this.mice.get(id);
-      if (!v || (v.kind !== "mouse" && v.kind !== "fancy" && v.kind !== "lizard") || now - v.upAt < 380) continue;
+      if (!v || (v.kind !== "mouse" && v.kind !== "fancy" && v.kind !== "lizard") || now - v.upAt < 750) continue;
       this.remove(v);
-      snake.nextBiteAt = now + 700;
+      snake.nextBiteAt = now + 1200;
       this.broadcast({ type: "eaten", id: v.id, hole: v.hole, snakeHole: snake.hole });
       return;
     }
