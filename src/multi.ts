@@ -8,6 +8,7 @@ import { currentSkin, hasLizard, earnPoints } from "./shop";
 import { mountOnline } from "./presence";
 import { fancyKind } from "./fancy";
 import { guard } from "./guard";
+import { track } from "./analytics";
 import type { PlayerInfo, RoundResult, ServerMessage, Slot } from "../worker/src/protocol";
 import { GRID, ROUND_MS, RECONNECT_GRACE_MS } from "../worker/src/protocol";
 
@@ -384,7 +385,10 @@ function handle(msg: ServerMessage): void {
       $("hudRound").textContent = String(msg.round);
       music.start();
       startClock();
-      if (msg.round === 1) checkStreakSeals(touchStreak().days);
+      if (msg.round === 1) {
+        checkStreakSeals(touchStreak().days);
+        track("game_start", { mode: "duel", skin: currentSkin() });
+      }
       break;
     }
     case "spawn": {
@@ -476,6 +480,7 @@ function handle(msg: ServerMessage): void {
       clearMice();
       setWins(msg.wins);
       showFinal(msg.winner, msg.wins, msg.rounds, msg.totals, msg.forfeit);
+      track("game_end", { mode: "duel", score: msg.totals[me - 1], won: msg.winner === me, forfeit: msg.forfeit });
       void loadLeaderboard();
       break;
     }
@@ -726,3 +731,5 @@ if (roomParam && /^[A-Za-z0-9]{4,8}$/.test(roomParam)) {
   showPanel("lobby");
 }
 void loadLeaderboard();
+// same account as solo, so 1v1 events carry the player's id too
+void import("./account").then((a) => a.initAccount()).catch(() => undefined);

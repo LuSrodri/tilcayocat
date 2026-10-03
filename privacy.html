@@ -13,7 +13,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
   <title>Privacy Policy — Cat The Mouse Company</title>
-  <meta name="description" content="What Cat The Mouse Company stores and why: progress kept on your device, the optional 1v1 nickname, Google Analytics, hosting logs and Google AdSense cookies.">
+  <meta name="description" content="What Cat The Mouse Company stores and why: progress kept on your device, your account and optional Google sign-in, Stripe purchases, the 1v1 nickname, Google Analytics, hosting logs and Google AdSense cookies.">
   <meta name="robots" content="index, follow">
   <meta name="theme-color" content="#0a0e1c">
   <meta name="color-scheme" content="dark">
@@ -65,7 +65,7 @@
         <p class="about__updated">Effective <time datetime="2026-10-03">October 3, 2026</time></p>
       </header>
 
-      <p class="about__lead"><strong>Short version:</strong> there are no accounts. Your scores and progress stay on your device. If you play 1v1 online, the nickname you choose and your match results appear on a public ranking. We use Google Analytics to understand how the game is played, and Google AdSense to show ads. Both may use cookies.</p>
+      <p class="about__lead"><strong>Short version:</strong> your scores and progress stay on your device. The game gives you an anonymous account so your stats and purchases stay linked; signing in with Google is optional and only needed to buy points, which are paid through Stripe. If you play 1v1 online, the nickname you choose and your match results appear on a public ranking. We use Google Analytics to understand how the game is played, and Google AdSense to show ads. Both may use cookies.</p>
 
       <p>This policy covers catthemouse.co and its pages (the “site”), run by an independent developer based in Brazil (“we”). Contact: <a href="mailto:rodrigueslucass@outlook.com.br">rodrigueslucass@outlook.com.br</a>.</p>
 
@@ -81,7 +81,15 @@
       <p>Shop points and unlocked items exist only in your browser. If you clear its data, they are gone and we cannot restore them.</p>
       <p>Score cards you share are drawn in your browser. They are only sent where you choose to share them.</p>
 
-      <h2>2. 1v1 online</h2>
+      <h2>2. Your account (Supabase) and signing in with Google</h2>
+      <p>The first time you open the game, it creates an <b>anonymous account</b> for you: a random user id, with no name or e-mail. It lets us connect your game events and purchases to the same player. Your browser keeps the session in its local storage.</p>
+      <p>Signing in with <b>Google</b> is optional. You need it only to buy points. When you sign in, Google shares your <b>name, e-mail address and profile picture</b> with us, and they are linked to the same account id. We use them to identify your account and your purchases, and to contact you about a purchase if needed. We never see your Google password.</p>
+      <p>Accounts are stored by <a href="https://supabase.com/privacy" target="_blank" rel="noopener">Supabase</a>, our account and database provider, on servers in the United States. You can sign out at any time from the shop. To delete your account and its data, email us.</p>
+
+      <h2>3. Purchases (Stripe)</h2>
+      <p>Points are paid through <a href="https://stripe.com/privacy" target="_blank" rel="noopener">Stripe</a>. You enter your card or other payment details on Stripe's checkout page, not on our site, and we never see or store them. Stripe tells us when a payment succeeds, and we keep a record of it: your account id, the amount, the currency, the number of points and Stripe's checkout id. Stripe also receives your account id and e-mail address with the payment. We keep purchase records as long as tax and accounting rules require.</p>
+
+      <h2>4. 1v1 online</h2>
       <p>To run a match, your browser opens a connection to our game server (Cloudflare Workers and Durable Objects). We receive:</p>
       <ul class="facts">
         <li><b>Your nickname</b> (up to 14 characters). Your opponent sees it during the match.</li>
@@ -92,33 +100,33 @@
       <p>Please don't use your real name or anything that identifies you as a nickname. Match rooms are temporary. Ranking rows are kept while the ranking exists. To have a nickname removed, email us with the nickname.</p>
       <p>The “cats online” counter only counts open connections. It stores nothing about you.</p>
 
-      <h2>3. Hosting logs</h2>
+      <h2>5. Hosting logs</h2>
       <p>The site is hosted on <a href="https://www.cloudflare.com/privacypolicy/" target="_blank" rel="noopener">Cloudflare</a>. Like any web host, Cloudflare processes your IP address and basic request details to deliver pages and protect the site, and our game server keeps short-lived technical logs for debugging. We also use Cloudflare Web Analytics to count visits. According to Cloudflare, it does not use cookies or local storage and does not track you across sites.</p>
 
-      <h2>4. Analytics (Google Analytics)</h2>
-      <p>We use Google Analytics 4 to see how many people play, which pages they visit, and how they found the site. Google Analytics sets first-party cookies (such as <code>_ga</code>) and collects information like the pages you view, how long you stay, your approximate location (country or city), your device, browser and operating system, and the site that sent you. Google Analytics does not log or store IP addresses. We see this information only as aggregated reports and do not use it to identify you.</p>
+      <h2>6. Analytics (Google Analytics)</h2>
+      <p>We use Google Analytics 4 to see how many people play, which pages they visit, and how they found the site. Google Analytics sets first-party cookies (such as <code>_ga</code>) and collects information like the pages you view, how long you stay, your approximate location (country or city), your device, browser and operating system, and the site that sent you. Google Analytics does not log or store IP addresses. We also send your random account id (not your name or e-mail) and game events, such as starting and finishing a round, unlocking a cat and buying points, so we can measure retention and purchases. We see this information only as aggregated reports.</p>
       <p>Google processes this data under its <a href="https://policies.google.com/privacy" target="_blank" rel="noopener">privacy policy</a>; see also <a href="https://policies.google.com/technologies/partner-sites" target="_blank" rel="noopener">how Google uses information from sites that use its services</a>. You can block it by blocking cookies for this site in your browser, or with the <a href="https://tools.google.com/dlpage/gaoptout" target="_blank" rel="noopener">Google Analytics opt-out add-on</a>.</p>
 
-      <h2>5. Advertising (Google AdSense)</h2>
+      <h2>7. Advertising (Google AdSense)</h2>
       <p>We show ads through Google AdSense. Google and its partners may use cookies or similar technologies to serve and measure ads, and, where allowed, to personalize them based on your visits to this and other sites. Learn more in <a href="https://policies.google.com/technologies/partner-sites" target="_blank" rel="noopener">how Google uses information from sites that use its services</a>. You can turn off personalized ads at <a href="https://adssettings.google.com" target="_blank" rel="noopener">Google Ad Settings</a> or <a href="https://www.aboutads.info/choices/" target="_blank" rel="noopener">aboutads.info</a>. Where the law requires it, Google asks for your consent first.</p>
 
-      <h2>6. Playing on other platforms</h2>
+      <h2>8. Playing on other platforms</h2>
       <p>The Google Analytics and AdSense scripts are part of every page, including when the game is embedded on a game portal such as CrazyGames. The portal's own privacy policy covers its own ads, accounts and analytics.</p>
 
-      <h2>7. What we don't do</h2>
+      <h2>9. What we don't do</h2>
       <ul class="facts">
         <li>We don't sell your data or share it for money.</li>
-        <li>We don't ask for your email, location, contacts, camera or microphone.</li>
+        <li>We don't ask for your location, contacts, camera or microphone. We only get your e-mail if you choose to sign in with Google.</li>
         <li>We don't build profiles of individual players. Analytics reports are aggregated.</li>
       </ul>
 
-      <h2>8. Children</h2>
+      <h2>10. Children</h2>
       <p>The game is for a general audience. We do not knowingly collect personal information from children. The only thing a player can type is an optional nickname, and it should not be a real name. If you believe a child has entered personal information, email us and we will remove it.</p>
 
-      <h2>9. Your rights</h2>
-      <p>Depending on where you live, laws such as Brazil's LGPD or the EU/UK GDPR give you rights to access, correct or delete your personal data and to object to its use. The personal data we hold ourselves is your 1v1 nickname and results, plus technical logs. Analytics data is held by Google and kept for 14 months at most. Email <a href="mailto:rodrigueslucass@outlook.com.br">rodrigueslucass@outlook.com.br</a> to use these rights. For analytics and ad cookies, use the Google controls above.</p>
+      <h2>11. Your rights</h2>
+      <p>Depending on where you live, laws such as Brazil's LGPD or the EU/UK GDPR give you rights to access, correct or delete your personal data and to object to its use. The personal data we hold ourselves is your account (anonymous id, and your Google name, e-mail and picture if you signed in), your purchase records, your 1v1 nickname and results, plus technical logs. Analytics data is held by Google and kept for 14 months at most. Email <a href="mailto:rodrigueslucass@outlook.com.br">rodrigueslucass@outlook.com.br</a> to use these rights. For analytics and ad cookies, use the Google controls above.</p>
 
-      <h2>10. Changes</h2>
+      <h2>12. Changes</h2>
       <p>If this policy changes, we will update this page and its effective date.</p>
     </article>
   </main>

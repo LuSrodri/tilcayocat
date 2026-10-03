@@ -11,6 +11,7 @@ import { dailyNumber, dailyVariant, dailyState, addDailyCatch, recordRound, dail
 import { nextFact } from "./facts";
 import { fancyKind, albumHas, albumSize, FANCY_COUNT } from "./fancy";
 import { guard, isGuarded } from "./guard";
+import { track } from "./analytics";
 
 function $<T extends HTMLElement>(id: string): T {
   const el = document.getElementById(id);
@@ -206,6 +207,7 @@ const game = new Game(lawn, {
     music.stop();
     lastStats = stats;
     earnPoints(stats.points);
+    track("game_end", { mode: "solo", score, points: stats.points, duration_s: Math.round(stats.elapsedMs / 1000), new_best: isNewBest });
     lawn.shakeIt(0.12);
     showResults(score, best, isNewBest, stats);
   }
@@ -391,6 +393,7 @@ $("shopBuy").addEventListener("click", () => {
   const id = shopSelected;
   if (id === "lizard") {
     if (buyLizard()) {
+      track("unlock_item", { item: "lizard", price: LIZARD_PRICE });
       toast("Lizard unlocked!", "seal");
       sfx.record();
     }
@@ -399,6 +402,7 @@ $("shopBuy").addEventListener("click", () => {
     lawn.setCatSkin(1, id);
     sfx.powerCollect();
   } else if (buySkin(id)) {
+    track("unlock_cat", { cat: id, price: skinById(id).price });
     lawn.setCatSkin(1, id);
     toast(`${skinById(id).name} joined the company!`, "seal");
     sfx.record();
@@ -515,6 +519,7 @@ function play(): void {
   roundBestBefore = game.bestScore;
   passedBest = false;
   dailyDoneThisRound = false;
+  track("game_start", { mode: "solo", skin: currentSkin() });
   const today0 = dailyState();
   renderHudDaily(today0.done ? 0 : today0.caught);
   const streak = touchStreak();
@@ -618,6 +623,77 @@ renderStart();
 renderWallet();
 guard(overlayCard);
 lawn.setCalm(true);
+
+// ---- account and the points pack ------------------------------------------------
+// Supabase loads in its own chunk after the game is up: an anonymous account right away, Google
+// when the player wants to buy.
+
+type AccountModule = typeof import("./account");
+let acc: AccountModule | null = null;
+const buyPointsBtn = $<HTMLButtonElement>("buyPointsBtn");
+const accountBtn = $<HTMLButtonElement>("accountBtn");
+
+function renderAccount(): void {
+  const st = acc?.account();
+  const google = !!st?.google;
+  $("accountText").textContent = google ? `Signed in as ${st!.label}` : "Playing as a guest";
+  accountBtn.textContent = google ? "Sign out" : "Sign in with Google";
+  $("offerNote").textContent = google ? "US$ 3.44 · one-time, added to your wallet" : "US$ 3.44 · sign in with Google to buy";
+  buyPointsBtn.textContent = google ? "US$ 3.44" : "Sign in";
+  buyPointsBtn.disabled = !acc;
+  accountBtn.disabled = !acc;
+}
+renderAccount();
+
+async function accountAction(fn: () => Promise<void>): Promise<void> {
+  buyPointsBtn.disabled = accountBtn.disabled = true;
+  try {
+    await fn();
+  } catch (err) {
+    toast(err instanceof Error ? err.message : "Something went wrong", "ouch");
+  } finally {
+    renderAccount();
+  }
+}
+
+buyPointsBtn.addEventListener("click", () => {
+  if (!acc) return;
+  const a = acc;
+  void accountAction(() => (a.account().google ? a.buyPoints() : a.signInWithGoogle()));
+});
+accountBtn.addEventListener("click", () => {
+  if (!acc) return;
+  const a = acc;
+  void accountAction(() => (a.account().google ? a.signOut() : a.signInWithGoogle()));
+});
+
+function creditToast(points: number): void {
+  renderWallet();
+  if (!views.shop.hidden) renderShop();
+  toast(`+${points.toLocaleString("en-US")} pts added!`, "seal");
+  sfx.record();
+  confetti();
+}
+
+void (async () => {
+  const url = new URL(location.href);
+  const paid = url.searchParams.has("paid");
+  const openShop = paid || url.searchParams.has("shop");
+  for (const k of ["paid", "shop"]) url.searchParams.delete(k);
+  if (openShop) history.replaceState(null, "", url.pathname + url.search);
+  try {
+    acc = await import("./account");
+    acc.onAccount(renderAccount);
+    await acc.initAccount();
+  } catch (err) {
+    console.warn("accounts unavailable", err);
+    return;
+  }
+  if (openShop && !overlay.hidden) showView("shop");
+  const got = paid ? await acc.claimAfterCheckout() : await acc.claimPoints();
+  if (got > 0) creditToast(got);
+  else if (paid) toast("Payment received. Your points will arrive shortly.", "seal");
+})();
 
 // dev-only handles for poking at the lawn from the console
 if (import.meta.env.DEV) Object.assign(window, { __lawn: lawn, __game: game });
