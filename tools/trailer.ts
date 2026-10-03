@@ -1,6 +1,7 @@
 // Trailer studio (dev only: open /tools/trailer.html with `npm run dev`).
 //
-// Renders the 4:3 trailer frame by frame on a virtual clock: performance.now, timers and
+// Renders the trailer frame by frame on a virtual clock, at 4:3 (default), 16:9 (?ar=16x9) or
+// 9:16 for Shorts/Reels (?ar=9x16): performance.now, timers and
 // requestAnimationFrame are replaced, so the real game (Game + Lawn) runs deterministically and
 // every frame is captured, however slow the machine. The game's own synthesized music and sound
 // effects are recorded into an OfflineAudioContext on the same clock. Captions, pops and the
@@ -11,9 +12,20 @@ export {};
 
 const FPS = 30;
 const DUR = 46; // seconds
-const W = 1440;
-const H = 1080;
 const params = new URLSearchParams(location.search);
+const SIZES: Record<string, [number, number]> = { "4x3": [1440, 1080], "16x9": [1920, 1080], "9x16": [1080, 1920] };
+const [W, H] = SIZES[params.get("ar") ?? "4x3"] ?? SIZES["4x3"]!;
+/** portrait (Shorts): keep words out of the bottom ~22% and the right edge, where the app draws its UI */
+const TALL = H > W;
+/** ?clean: no captions, HUD, pops or logo, for stills that ad images are built on */
+const CLEAN = params.has("clean");
+for (const el of document.querySelectorAll<HTMLElement>(".stage, #out")) {
+  el.style.width = `${W}px`;
+  el.style.height = `${H}px`;
+}
+const outEl = document.getElementById("out") as HTMLCanvasElement;
+outEl.width = W;
+outEl.height = H;
 const SINK = params.get("sink") ?? "http://localhost:5288";
 // ?at=7,12.5 renders up to those seconds, uploads one still each (p-<s>.jpg) and stops
 const PREVIEW = params.has("at") ? params.get("at")!.split(",").map(Number).sort((a, b) => a - b) : null;
@@ -146,9 +158,13 @@ const loadImg = (src: string): Promise<HTMLImageElement> =>
   });
 const logo = await loadImg("/brand/logo-wordmark.png");
 
-const insets = () => ({ top: 70, bottom: 170, left: 40, right: 40 });
+const insets = () => (TALL ? { top: 330, bottom: 560, left: 30, right: 30 } : { top: 70, bottom: 170, left: 40, right: 40 });
 const lawn = new Lawn({ container: document.getElementById("stage1")!, cats: 1, insets });
-const duel = new Lawn({ container: document.getElementById("stage2")!, cats: 2, insets: () => ({ top: 120, bottom: 170, left: 30, right: 30 }) });
+const duel = new Lawn({
+  container: document.getElementById("stage2")!,
+  cats: 2,
+  insets: () => (TALL ? { top: 420, bottom: 560, left: 20, right: 20 } : { top: 120, bottom: 170, left: 30, right: 30 })
+});
 for (const l of [lawn, duel] as unknown as Record<string, unknown>[]) {
   l.watchFrameRate = () => {};
   l.quality = 0;
@@ -219,13 +235,13 @@ const game = new Game(
       }
     },
     onFancy(variant, count) {
-      callouts.push({ text: `${fancyKind(variant).name} ${count}/10`, at: vt, color: "#ffd66b" });
+      callouts.push({ text: fancyKind(variant).name, at: vt, color: "#ffd66b" });
     },
     onEvent(ev) {
       if (ev.type === "catch" && ev.lizard) lizardCaught += 1;
     }
   },
-  { lizard: () => true }
+  { lizard: () => true, dailyDone: () => false }
 );
 const g = game as unknown as {
   holes: { up: boolean; what: string; upAt: number; open: boolean }[];
@@ -287,7 +303,9 @@ const events: { at: number; fn: () => void; done?: boolean }[] = [];
 const at = (t: number, fn: () => void): void => void events.push({ at: t, fn });
 
 at(0, () => music.start());
-at(11.0, () => g.spawn(vt, "fancy", dailyVariant()));
+// the mice of the day: each hat is a character (wand, crown, balloon, beard, eyepatch…)
+const PARADE = [dailyVariant(), 5, 88, 60];
+PARADE.forEach((v, i) => at(11.0 + i * 0.45, () => g.spawn(vt, "fancy", v)));
 at(15.2, () => {
   g.spawn(vt, "porcupine");
   forced.push({ at: 15.85, hole: () => holeOf("porcupine") });
@@ -312,7 +330,7 @@ const SKINS = [
 let skinLabel = { name: "Grey Tabby", at: 0 };
 at(28.2, () => {
   const p = (lawn as unknown as { cats: { model: { root: { position: InstanceType<typeof THREE.Vector3> } } }[] }).cats[0]!.model.root.position;
-  setCam({ target: p.clone().add(new THREE.Vector3(0.9, 0.9, 0.4)), dist: 7.2 });
+  setCam(TALL ? { target: p.clone().add(new THREE.Vector3(0.1, 1.1, 0.2)), dist: 8.6 } : { target: p.clone().add(new THREE.Vector3(0.9, 0.9, 0.4)), dist: 7.2 });
   skinLabel = { name: "Grey Tabby", at: vt };
 });
 SKINS.forEach(([id, name], i) => {
@@ -361,7 +379,7 @@ function duelTick(): void {
 }
 
 // ---- painting ---------------------------------------------------------------------------------
-const out = document.getElementById("out") as HTMLCanvasElement;
+const out = outEl;
 const ctx = out.getContext("2d")!;
 const INK = "#2e1a26";
 const clamp01 = (x: number): number => Math.min(1, Math.max(0, x));
@@ -376,6 +394,13 @@ function text(s: string, x: number, y: number, size: number, fill: string | Canv
   ctx.save();
   ctx.globalAlpha = alpha;
   ctx.font = `700 ${size}px Fredoka`;
+  // shrink anything wider than the frame (with a margin) so nothing gets cut off
+  const room = (TALL ? W - 220 : W - 120) * (align === "center" ? 1 : 0.9);
+  const wide = ctx.measureText(s).width;
+  if (wide > room) {
+    size = Math.floor((size * room) / wide);
+    ctx.font = `700 ${size}px Fredoka`;
+  }
   ctx.textAlign = align;
   ctx.textBaseline = "alphabetic";
   ctx.lineJoin = "round";
@@ -407,17 +432,21 @@ function caption(title: string, sub: string, t0: number, t1: number): void {
   const a = Math.min(clamp01((T - t0) / 0.2), outK);
   const dy = (1 - inK) * 60 + (1 - outK) * 30;
   // a soft dark band behind the words
-  const band = ctx.createLinearGradient(0, H - 260, 0, H);
+  const bottom = TALL ? H - 400 : H;
+  const bandH = TALL ? 340 : 260;
+  const band = ctx.createLinearGradient(0, bottom - bandH, 0, bottom);
   band.addColorStop(0, "rgba(20,10,28,0)");
   band.addColorStop(0.5, "rgba(20,10,28,.55)");
-  band.addColorStop(1, "rgba(20,10,28,.75)");
+  band.addColorStop(1, TALL ? "rgba(20,10,28,0)" : "rgba(20,10,28,.75)");
   ctx.save();
   ctx.globalAlpha = a;
   ctx.fillStyle = band;
-  ctx.fillRect(0, H - 260, W, 260);
+  ctx.fillRect(0, bottom - bandH, W, TALL ? bandH + 60 : bandH);
   ctx.restore();
-  text(title, W / 2, H - 112 + dy, 78, gold(H - 112 + dy, 78), a);
-  if (sub) text(sub, W / 2, H - 50 + dy, 40, "#fff6ea", a);
+  const ty = TALL ? bottom - 150 : H - 112;
+  const size = TALL ? 86 : 78;
+  text(title, W / 2, ty + dy, size, gold(ty + dy, size), a);
+  if (sub) text(sub, W / 2, ty + (TALL ? 72 : 62) + dy, TALL ? 44 : 40, "#fff6ea", a);
 }
 
 function drawLogo(cx: number, cy: number, width: number, alpha = 1, scale = 1): void {
@@ -466,7 +495,7 @@ function drawCallouts(): void {
     const s = easeBack(k / 0.25);
     const a = k > 0.75 ? 1 - (k - 0.75) / 0.25 : 1;
     ctx.save();
-    ctx.translate(W / 2, 250);
+    ctx.translate(W / 2, TALL ? 470 : 250);
     ctx.rotate(-0.04);
     ctx.scale(s, s);
     text(c.text, 0, 0, 84, c.color === "#ffd66b" ? gold(0, 84) : c.color, a);
@@ -480,14 +509,16 @@ function hud(alpha: number): void {
   ctx.globalAlpha = alpha;
   ctx.fillStyle = "rgba(46,33,58,.86)";
   ctx.beginPath();
-  ctx.roundRect(28, 26, 230, 86, 43);
+  const top = TALL ? 270 : 26;
+  ctx.roundRect(28, top, 230, 86, 43);
   ctx.fill();
   ctx.restore();
   ctx.font = "700 60px Fredoka";
   const w = ctx.measureText(String(g.score)).width;
-  text(String(g.score), 62, 92, 60, gold(92, 60), alpha, "left");
-  text("mice", 62 + w + 14, 88, 32, "#dccbc6", alpha, "left");
-  drawLogo(W - 175, 75, 300, alpha * 0.95);
+  text(String(g.score), 62, top + 66, 60, gold(top + 66, 60), alpha, "left");
+  text("mice", 62 + w + 14, top + 62, 32, "#dccbc6", alpha, "left");
+  if (TALL) drawLogo(W / 2, 150, 520, alpha * 0.95);
+  else drawLogo(W - 175, 75, 300, alpha * 0.95);
 }
 
 function frost(): void {
@@ -558,6 +589,7 @@ function paint(): void {
   }
   if (T < 34.4) frost();
   vignette(T < 4 || T > 40.4 ? 0.55 : 0.38);
+  if (CLEAN) return;
   if (T > 3.7 && T < 40.6) drawPops();
   else pops.length = 0;
   if (T > 4 && T < 34.4) drawCallouts();
@@ -565,8 +597,8 @@ function paint(): void {
   // intro
   if (T < 4.2) {
     const a = T > 3.6 ? 1 - (T - 3.6) / 0.6 : 1;
-    drawLogo(W / 2, H / 2 - 70, 1000, a, 0.35 + 0.65 * easeBack((T - 0.15) / 0.75));
-    if (T > 1.3) text("Catch the mice. Collect the cats.", W / 2, H / 2 + 300, 58, "#fff6ea", Math.min(a, clamp01((T - 1.3) / 0.4)));
+    drawLogo(W / 2, H / 2 - (TALL ? 200 : 70), Math.min(1000, W * 0.9), a, 0.35 + 0.65 * easeBack((T - 0.15) / 0.75));
+    if (T > 1.3) text("Catch the mice. Collect the cats.", W / 2, H / 2 + (TALL ? 140 : 300), TALL ? 64 : 58, "#fff6ea", Math.min(a, clamp01((T - 1.3) / 0.4)));
   }
 
   // in-game HUD
@@ -574,11 +606,11 @@ function paint(): void {
   hud(hudA);
 
   caption("Tap the mice!", "Never go 5 seconds without a catch", 4.4, 10.8);
-  caption("Catch the mouse of the day", "100 dressed-up mice to collect", 11.0, 15.0);
-  caption("Mind the porcupine & the snake", "Sore paws need licking", 15.2, 19.4);
+  caption("100 mice of the day", "Each one a character. Catch 20 a day!", 11.0, 15.0);
+  caption("Don't slap the grumpy porcupine", "…or the snake. Sore paws need licking!", 15.2, 19.4);
   caption("Freeze the whole lawn", "Everything stops. Except your paw.", 19.6, 23.9);
   caption("New: the yellow lizard", "Worth 2 mice!", 24.1, 28.0);
-  caption("Collect 7 cats", "Earn points in every round", 28.2, 34.3);
+  caption("Collect 7 cats", "Earn points every round, or get 50,000 for $3.44", 28.2, 34.3);
   caption("PvP: duel your friends 1v1", "Real-time online · quick match or private room", 34.7, 40.2);
 
   // cat name chip during the showcase
@@ -586,7 +618,7 @@ function paint(): void {
     const k = (vt - skinLabel.at) / 1000;
     const s = easeBack(k / 0.3);
     ctx.save();
-    ctx.translate(W * 0.68, H * 0.36);
+    ctx.translate(TALL ? W / 2 : W * 0.68, TALL ? 470 : H * 0.36);
     ctx.rotate(0.05);
     ctx.scale(s, s);
     ctx.font = "700 70px Fredoka";
@@ -600,7 +632,7 @@ function paint(): void {
     ctx.stroke();
     ctx.restore();
     ctx.save();
-    ctx.translate(W * 0.68, H * 0.36);
+    ctx.translate(TALL ? W / 2 : W * 0.68, TALL ? 470 : H * 0.36);
     ctx.rotate(0.05);
     ctx.scale(s, s);
     text(skinLabel.name, 0, 14, 70, "#ffffff");
@@ -612,7 +644,7 @@ function paint(): void {
   if (T > 34.8 && T < 36.4) {
     const k = (T - 34.8) / 1.6;
     ctx.save();
-    ctx.translate(W / 2, 330);
+    ctx.translate(W / 2, TALL ? 560 : 330);
     ctx.rotate(-0.08);
     ctx.scale(easeBack(k / 0.25) * (1 + 0.04 * Math.sin(T * 18)), easeBack(k / 0.25));
     text("VS", 0, 0, 190, gold(0, 190), k > 0.8 ? 1 - (k - 0.8) / 0.2 : 1);
@@ -621,7 +653,7 @@ function paint(): void {
   if (T > 38.9 && T < 40.3) {
     const k = (T - 38.9) / 1.4;
     ctx.save();
-    ctx.translate(W / 2, 300);
+    ctx.translate(W / 2, TALL ? 560 : 300);
     ctx.rotate(-0.04);
     ctx.scale(easeBack(k / 0.2), easeBack(k / 0.2));
     text("You win the match!", 0, 0, 104, gold(0, 104), k > 0.85 ? 1 - (k - 0.85) / 0.15 : 1);
@@ -631,12 +663,13 @@ function paint(): void {
   // end card
   if (T > 40.6) {
     const k = (T - 40.6) / 0.8;
-    drawLogo(W / 2, H / 2 - 110, 1060, clamp01(k * 1.5), 0.4 + 0.6 * easeBack(k));
+    const cy = TALL ? H / 2 - 260 : H / 2;
+    drawLogo(W / 2, cy - 110, Math.min(1060, W * 0.92), clamp01(k * 1.5), 0.4 + 0.6 * easeBack(k));
     const pk = clamp01((T - 41.5) / 0.5);
     if (pk > 0) {
       const s = easeBack(pk);
       ctx.save();
-      ctx.translate(W / 2, H / 2 + 270);
+      ctx.translate(W / 2, cy + 270);
       ctx.scale(s, s);
       ctx.fillStyle = "#ffae42";
       ctx.strokeStyle = INK;
@@ -651,15 +684,15 @@ function paint(): void {
       ctx.fill();
       ctx.restore();
       ctx.save();
-      ctx.translate(W / 2, H / 2 + 270);
+      ctx.translate(W / 2, cy + 270);
       ctx.scale(s, s);
       text("▶ PLAY FREE", 0, 24, 66, "#ffffff");
       ctx.restore();
     }
     const uk = clamp01((T - 42.1) / 0.5);
     if (uk > 0) {
-      text("catthemouse.co", W / 2, H / 2 + 410, 64, gold(H / 2 + 410, 64), uk);
-      text("Free · in your browser · phones & desktop", W / 2, H / 2 + 470, 34, "#dccbc6", uk);
+      text("catthemouse.co", W / 2, cy + 410, 64, gold(cy + 410, 64), uk);
+      text("Free in your browser · 50,000 pts for $3.44", W / 2, cy + 470, 34, "#dccbc6", uk);
     }
   }
 }
