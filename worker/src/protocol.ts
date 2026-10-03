@@ -6,6 +6,8 @@ export const ROUNDS_TO_WIN = 2;
 export const MAX_ROUNDS = 5;
 export const COUNTDOWN_MS = 3_000;
 export const INTERMISSION_MS = 5_000;
+// A player whose connection drops has this long to come back before the rival wins by forfeit.
+export const RECONNECT_GRACE_MS = 20_000;
 // Slapping a porcupine or a snake doesn't cost points any more: the cat sits out, licking its paw.
 export const PORCUPINE_LICK_MS = 2000;
 export const SNAKE_LICK_MS = 3000;
@@ -70,7 +72,7 @@ export interface RoundResult {
 }
 
 export type ServerMessage =
-  | { type: "welcome"; you: Slot; code: string; players: PlayerInfo[]; now: number }
+  | { type: "welcome"; you: Slot; code: string; players: PlayerInfo[]; now: number; token: string; resumed: boolean }
   | { type: "players"; players: PlayerInfo[] }
   | { type: "countdown"; round: number; startsAt: number; now: number }
   | { type: "round"; round: number; startsAt: number; endsAt: number; now: number; scores: [number, number]; wins: [number, number] }

@@ -554,13 +554,14 @@ export class Game {
       sfx.fancyCatch();
       this.cb.onFancy(variant, this.fancyCaught.length, i);
       this.cb.onEvent({ type: "fancy", variant, count: this.fancyCaught.length, elapsed: this.elapsed });
-    } else if (!lizard) {
+    } else if (!lizard && this.fancyCaught.length < DAILY_GOAL) {
       this.plainSinceFancy += 1;
-      // every 10th plain catch calls out a fancy mouse (if one isn't already hopping around)
+      // every 10th plain catch calls out a fancy mouse (if one isn't already hopping around),
+      // until the round has the day's 10
       if (this.plainSinceFancy >= FANCY_EVERY && !this.holes.some((h) => h.up && h.what === "fancy")) {
         this.plainSinceFancy = 0;
         window.setTimeout(() => {
-          if (this.running) this.spawn(performance.now(), "fancy", dailyVariant());
+          if (this.running && this.fancyCaught.length < DAILY_GOAL) this.spawn(performance.now(), "fancy", dailyVariant());
         }, 350);
       }
     }

@@ -1,6 +1,6 @@
 import { DurableObject } from "cloudflare:workers";
 import {
-  COUNTDOWN_MS, GRID, INTERMISSION_MS, MAX_ROUNDS, ROUNDS_TO_WIN, ROUND_MS,
+  COUNTDOWN_MS, GRID, INTERMISSION_MS, MAX_ROUNDS, ROUNDS_TO_WIN, ROUND_MS, RECONNECT_GRACE_MS,
   PORCUPINE_LICK_MS, SNAKE_LICK_MS, FANCY_EVERY, FANCY_POINTS, FANCY_KINDS, LIZARD_POINTS, neighbours, cleanSkin,
   type ClientMessage, type Critter, type MouseInfo, type PlayerInfo, type RoundResult, type ServerMessage, type Slot, type Skin
 } from "./protocol";
@@ -30,6 +30,16 @@ interface Persisted {
   rounds: RoundResult[];
   names: [string, string];
   skins?: [Skin, Skin];
+  /** per-slot secret handed out on join; presenting it again takes the slot back after a drop */
+  tokens?: [string, string];
+  /** the final message, replayed to a player who reconnects after the match ended */
+  final?: ServerMessage;
+}
+
+const ACTIVE: Phase[] = ["countdown", "round", "intermission"];
+
+function freshState(): Persisted {
+  return { code: "", phase: "waiting", round: 0, wins: [0, 0], rounds: [], names: ["", ""] };
 }
 
 // One MatchRoom per room code. The room is authoritative: it spawns the mice, resolves taps
@@ -38,8 +48,10 @@ interface Persisted {
 // yellow lizard joins when either player has bought it. Two players share the same 5×5 lawn for 60-second
 // rounds, best of three. In-memory state only matters during a round, when timers keep the
 // object awake; everything needed to resume after hibernation lives in storage/attachments.
+// A player who drops mid-match has RECONNECT_GRACE_MS to come back with their token; the match
+// keeps running meanwhile and they are resynced on return, otherwise the rival wins by forfeit.
 export class MatchRoom extends DurableObject<Env> {
-  private state: Persisted = { code: "", phase: "waiting", round: 0, wins: [0, 0], rounds: [], names: ["", ""] };
+  private state: Persisted = freshState();
 
   constructor(ctx: DurableObjectState, env: Env) {
     super(ctx, env);
@@ -63,6 +75,9 @@ export class MatchRoom extends DurableObject<Env> {
   private nextSpawnAt = 0;
   private nextFoeAt = 0;
   private nextLizardAt = Infinity;
+  private countdownAt = 0;
+  private nextRoundAt: number | null = null;
+  private grace = new Map<Slot, ReturnType<typeof setTimeout>>();
 
   private async save(): Promise<void> {
     await this.ctx.storage.put("state", this.state);
@@ -76,36 +91,74 @@ export class MatchRoom extends DurableObject<Env> {
     const name = url.searchParams.get("name") ?? "Cat";
     const skin = cleanSkin(url.searchParams.get("skin"));
     const lizard = url.searchParams.get("lizard") === "1";
+    const token = (url.searchParams.get("token") ?? "").slice(0, 64);
     if (!this.state.code) {
       this.state.code = code;
       await this.save();
     }
 
-    const taken = new Set(this.sockets().map((s) => s.att.slot));
-    const slot: Slot | null = !taken.has(1) ? 1 : !taken.has(2) ? 2 : null;
+    // a returning player takes their own slot back; newcomers only get a seat before the match starts
+    const tokens = (this.state.tokens ??= ["", ""]);
+    const own = token ? tokens.indexOf(token) : -1;
+    const resumed = own >= 0;
+    let slot: Slot | null = resumed ? ((own + 1) as Slot) : null;
+    if (!resumed && this.state.phase === "waiting") {
+      const taken = new Set(this.sockets().map((s) => s.att.slot));
+      slot = !taken.has(1) ? 1 : !taken.has(2) ? 2 : null;
+    }
     const pair = new WebSocketPair();
     const [client, server] = Object.values(pair);
 
-    if (slot === null || this.state.phase === "final") {
+    if (slot === null || (this.state.phase === "final" && !resumed)) {
       this.ctx.acceptWebSocket(server);
       send(server, { type: "full" });
       server.close(1008, "room full");
       return new Response(null, { status: 101, webSocket: client });
     }
 
+    // a half-open socket of the same player may still look alive: the new one replaces it
+    const stale = this.sockets().filter((s) => s.att.slot === slot);
     const att: Attachment = { slot, name, skin, lizard };
     this.ctx.acceptWebSocket(server, [`p${slot}`]);
     server.serializeAttachment(att);
+    for (const s of stale) close(s.ws, 4000, "replaced");
+    const pending = this.grace.get(slot);
+    if (pending) clearTimeout(pending);
+    this.grace.delete(slot);
+    if (!resumed) tokens[slot - 1] = crypto.randomUUID();
     this.state.names[slot - 1] = name;
     this.state.skins ??= ["grey", "grey"];
     this.state.skins[slot - 1] = skin;
     await this.save();
 
-    send(server, { type: "welcome", you: slot, code: this.state.code, players: this.players(), now: Date.now() });
+    send(server, {
+      type: "welcome", you: slot, code: this.state.code, players: this.players(), now: Date.now(),
+      token: tokens[slot - 1], resumed
+    });
     this.broadcast({ type: "players", players: this.players() });
+    if (resumed) this.resync(server);
 
     if (this.state.phase === "waiting" && this.sockets().length === 2) this.startCountdown();
     return new Response(null, { status: 101, webSocket: client });
+  }
+
+  // Bring a returning player up to date with whatever the room is doing right now.
+  private resync(ws: WebSocket): void {
+    const now = Date.now();
+    const { phase, round, wins, rounds } = this.state;
+    if (phase === "countdown") {
+      send(ws, { type: "countdown", round, startsAt: this.countdownAt, now });
+    } else if (phase === "round") {
+      send(ws, { type: "round", round, startsAt: this.roundStart, endsAt: this.roundEnd, now, scores: this.scores, wins });
+      for (const m of this.mice.values()) {
+        const { id, hole, kind, expiresAt, variant } = m;
+        send(ws, { type: "spawn", mouse: { id, hole, kind, expiresAt, variant }, now });
+      }
+    } else if (phase === "intermission" && rounds.length) {
+      send(ws, { type: "roundEnd", result: rounds[rounds.length - 1]!, wins, nextAt: this.nextRoundAt, now });
+    } else if (phase === "final" && this.state.final) {
+      send(ws, this.state.final);
+    }
   }
 
   async webSocketMessage(ws: WebSocket, raw: string | ArrayBuffer): Promise<void> {
@@ -129,14 +182,26 @@ export class MatchRoom extends DurableObject<Env> {
     close(ws, code, reason);
     const att = ws.deserializeAttachment() as Attachment | null;
     if (!att) return;
+    // the player already came back on a new socket
+    if (this.sockets().some((s) => s.att.slot === att.slot)) return;
     this.broadcast({ type: "players", players: this.players() });
-    if (this.state.phase === "round" || this.state.phase === "countdown" || this.state.phase === "intermission") {
-      // the remaining player wins by forfeit
-      const other: Slot = att.slot === 1 ? 2 : 1;
-      await this.finish(other, true);
+    if (ACTIVE.includes(this.state.phase)) {
+      this.startGrace(att.slot);
     } else if (this.state.phase === "waiting" && this.sockets().length === 0) {
+      this.state = freshState();
       await this.ctx.storage.deleteAll();
     }
+  }
+
+  // The match goes on without the dropped player; if they are not back in time, the rival wins by forfeit.
+  private startGrace(slot: Slot): void {
+    if (this.grace.has(slot)) return;
+    const t = setTimeout(() => {
+      this.grace.delete(slot);
+      if (this.sockets().some((s) => s.att.slot === slot) || !ACTIVE.includes(this.state.phase)) return;
+      void this.finish(slot === 1 ? 2 : 1, true);
+    }, RECONNECT_GRACE_MS);
+    this.grace.set(slot, t);
   }
 
   async webSocketError(ws: WebSocket): Promise<void> {
@@ -150,6 +215,7 @@ export class MatchRoom extends DurableObject<Env> {
     this.state.round += 1;
     void this.save();
     const startsAt = Date.now() + COUNTDOWN_MS;
+    this.countdownAt = startsAt;
     this.broadcast({ type: "countdown", round: this.state.round, startsAt, now: Date.now() });
     this.after(COUNTDOWN_MS, () => this.startRound());
   }
@@ -322,6 +388,7 @@ export class MatchRoom extends DurableObject<Env> {
         champion = t1 === t2 ? 0 : t1 > t2 ? 1 : 2;
       }
       this.state.phase = "intermission";
+      this.nextRoundAt = null;
       void this.save();
       this.broadcast({ type: "roundEnd", result, wins: this.state.wins, nextAt: null, now: Date.now() });
       this.after(INTERMISSION_MS, () => void this.finish(champion, false));
@@ -330,6 +397,7 @@ export class MatchRoom extends DurableObject<Env> {
     this.state.phase = "intermission";
     void this.save();
     const nextAt = Date.now() + INTERMISSION_MS;
+    this.nextRoundAt = nextAt;
     this.broadcast({ type: "roundEnd", result, wins: this.state.wins, nextAt, now: Date.now() });
     this.after(INTERMISSION_MS, () => this.startCountdown());
   }
@@ -340,13 +408,17 @@ export class MatchRoom extends DurableObject<Env> {
     this.loop = null;
     if (this.timer) clearTimeout(this.timer);
     this.timer = null;
+    for (const t of this.grace.values()) clearTimeout(t);
+    this.grace.clear();
     this.state.phase = "final";
     const totals: [number, number] = [
       this.state.rounds.reduce((s, r) => s + r.scores[0], 0),
       this.state.rounds.reduce((s, r) => s + r.scores[1], 0)
     ];
+    const final: ServerMessage = { type: "final", winner, wins: this.state.wins, rounds: this.state.rounds, totals, forfeit };
+    this.state.final = final;
     await this.save();
-    this.broadcast({ type: "final", winner, wins: this.state.wins, rounds: this.state.rounds, totals, forfeit });
+    this.broadcast(final);
 
     const [n1, n2] = this.state.names;
     if (n1 && n2 && this.state.rounds.length > 0) {
@@ -362,7 +434,8 @@ export class MatchRoom extends DurableObject<Env> {
     }
     // Let clients read the result, then tear the room down so the code can be reused.
     this.after(30_000, () => {
-      for (const s of this.ctx.getWebSockets()) s.close(1000, "match over");
+      for (const s of this.ctx.getWebSockets()) close(s, 1000, "match over");
+      this.state = freshState();
       void this.ctx.storage.deleteAll();
     });
   }

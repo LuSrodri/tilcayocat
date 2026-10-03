@@ -189,7 +189,7 @@ const game = new Game(lawn, {
       toast(isNew ? "Daily done! New in your album" : "Daily Challenge done!", "seal");
       sfx.record();
     } else {
-      toast(count > DAILY_GOAL ? fancyKind(variant).name : `${fancyKind(variant).name} ${count}/10`, "fancy");
+      toast(`${fancyKind(variant).name} ${count}/${DAILY_GOAL}`, "fancy");
     }
   },
   onEvent(ev) {

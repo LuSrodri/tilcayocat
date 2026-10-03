@@ -9,7 +9,7 @@ import { mountOnline } from "./presence";
 import { fancyKind } from "./fancy";
 import { guard } from "./guard";
 import type { PlayerInfo, RoundResult, ServerMessage, Slot } from "../worker/src/protocol";
-import { GRID, ROUND_MS } from "../worker/src/protocol";
+import { GRID, ROUND_MS, RECONNECT_GRACE_MS } from "../worker/src/protocol";
 
 // The 1v1 arena is server-driven: the MatchRoom Durable Object spawns the critters and resolves
 // every tap; this file only renders what the room says (on the same 3D lawn as solo) and sends taps.
@@ -80,6 +80,14 @@ let roundEndsAt = 0;
 let clockTimer = 0;
 let toastTimer = 0;
 let names: [string, string] = ["You", "Opponent"];
+// reconnection: the room hands out a token that takes our slot back after a drop
+let token = "";
+let joinName = "";
+let lostAt = 0; // when the current outage began; 0 while connected
+let retries = 0;
+let retryTimer = 0;
+let lastHeard = 0;
+let rivalHere = false;
 const mouseHole = new Map<number, number>();
 const fancyOf = new Map<number, number>();
 
@@ -165,9 +173,8 @@ $<HTMLFormElement>("joinForm").addEventListener("submit", (ev) => {
 $("cancelBtn").addEventListener("click", () => {
   queueWs?.close();
   queueWs = null;
-  ws?.close();
-  ws = null;
   phase = "idle";
+  dropSocket();
   history.replaceState(null, "", "/play");
   showPanel("lobby");
 });
@@ -224,40 +231,134 @@ async function loadLeaderboard(): Promise<void> {
 
 // ---- connection -------------------------------------------------------------
 
+const tokenKey = (c: string): string => `tilcayo.mp.${c}`;
+
 function connect(roomCode: string, name: string): void {
-  ws?.close();
+  phase = "idle";
+  dropSocket();
   code = roomCode.toUpperCase();
+  joinName = name;
+  // a token from this tab (e.g. after a reload mid-match) takes the same seat back
+  try {
+    token = sessionStorage.getItem(tokenKey(code)) ?? "";
+  } catch {
+    token = "";
+  }
   history.replaceState(null, "", `/play?room=${code}`);
+  showWaiting();
+  phase = "waiting";
+  lobbyError.hidden = true;
+  openSocket();
+}
+
+function showWaiting(): void {
   $("waitText").textContent = "Share this code or link with a friend.";
   $("codeBox").hidden = false;
   $("codeText").textContent = code;
   showPanel("wait");
-  phase = "waiting";
-  lobbyError.hidden = true;
+}
 
+function openSocket(): void {
+  window.clearTimeout(retryTimer);
   // your cat and your unlocked lizard come along to the match
-  ws = new WebSocket(`${WS_BASE}/ws/${code}?name=${encodeURIComponent(name)}&skin=${currentSkin()}&lizard=${hasLizard() ? 1 : 0}`);
-  ws.onmessage = (ev) => handle(JSON.parse(ev.data) as ServerMessage);
-  ws.onerror = () => fail("Connection failed. Check the code and try again.");
-  ws.onclose = (ev) => {
+  const sock = new WebSocket(
+    `${WS_BASE}/ws/${code}?name=${encodeURIComponent(joinName)}&skin=${currentSkin()}&lizard=${hasLizard() ? 1 : 0}&token=${encodeURIComponent(token)}`
+  );
+  const prev = ws;
+  ws = sock;
+  prev?.close(); // an attempt still hanging in "connecting"
+  let opened = false;
+  sock.onopen = () => {
+    opened = true;
+    lastHeard = Date.now();
+  };
+  sock.onmessage = (ev) => {
+    if (sock !== ws) return;
+    lastHeard = Date.now();
+    handle(JSON.parse(ev.data) as ServerMessage);
+  };
+  sock.onclose = (ev) => {
+    if (sock !== ws) return;
+    ws = null;
     if (phase === "final" || phase === "idle") return;
     if (ev.code === 1008) return; // "full" was already handled
-    fail("Connection lost.");
-    phase = "idle";
+    if (!opened && !lostAt) {
+      phase = "idle";
+      fail("Connection failed. Check the code and try again.");
+      return;
+    }
+    reconnect();
   };
+}
+
+// Forget the current socket without triggering a reconnect.
+function dropSocket(): void {
+  window.clearTimeout(retryTimer);
+  lostAt = 0;
+  retries = 0;
+  const s = ws;
+  ws = null;
+  s?.close();
+}
+
+// Retry with backoff while the room still holds our seat (it waits RECONNECT_GRACE_MS for us).
+function reconnect(): void {
+  if (!lostAt) {
+    lostAt = Date.now();
+    retries = 0;
+    stopClock();
+    music.stop();
+    clearMice();
+    countdownEl.hidden = true;
+    $("waitText").textContent = "Connection lost. Reconnecting…";
+    $("codeBox").hidden = true;
+    showPanel("wait");
+  }
+  if (Date.now() - lostAt > RECONNECT_GRACE_MS + 5000) {
+    phase = "idle";
+    dropSocket();
+    fail("Connection lost. Could not get back to the lawn.");
+    return;
+  }
+  window.clearTimeout(retryTimer);
+  retryTimer = window.setTimeout(openSocket, Math.min(4000, 500 * 2 ** retries++));
+}
+
+function matchLive(): boolean {
+  return phase === "waiting" || phase === "countdown" || phase === "round" || phase === "intermission";
 }
 
 function handle(msg: ServerMessage): void {
   switch (msg.type) {
     case "full":
-      fail("That room is already full.");
       phase = "idle";
+      fail(lostAt ? "Connection lost. The match ended while you were away." : "That room is already full.");
+      lostAt = 0;
       break;
-    case "welcome":
+    case "welcome": {
+      const wasLost = lostAt !== 0;
+      lostAt = 0;
+      retries = 0;
+      if (wasLost && !msg.resumed && phase !== "waiting") {
+        // the room forgot us (the match is long over): nothing to go back to
+        phase = "idle";
+        dropSocket();
+        fail("Connection lost. The match ended while you were away.");
+        return;
+      }
       me = msg.you;
+      token = msg.token;
+      try {
+        sessionStorage.setItem(tokenKey(code), token);
+      } catch {
+        /* ignore */
+      }
       clockOffset = msg.now - Date.now();
       applyPlayers(msg.players);
+      // still waiting for a rival: back to the code screen; otherwise the room resyncs us next
+      if (wasLost && phase === "waiting") showWaiting();
       break;
+    }
     case "players":
       applyPlayers(msg.players);
       break;
@@ -277,6 +378,7 @@ function handle(msg: ServerMessage): void {
       clockOffset = msg.now - Date.now();
       roundEndsAt = msg.endsAt;
       countdownEl.hidden = true;
+      if (!overlay.hidden) hideOverlay(); // back from a reconnect mid-round
       setScores(msg.scores);
       setWins(msg.wins);
       $("hudRound").textContent = String(msg.round);
@@ -390,6 +492,12 @@ function applyPlayers(players: PlayerInfo[]): void {
     lawn.setCatPresent(p.slot, p.connected);
     if (p.skin) lawn.setCatSkin(p.slot, p.skin);
   }
+  const rival = players.find((p) => p.slot !== me);
+  if (rival && phase !== "waiting" && matchLive()) {
+    if (rivalHere && !rival.connected) toast(`${rival.name} lost connection…`, "ouch");
+    else if (!rivalHere && rival.connected) toast(`${rival.name} is back!`, "grid");
+  }
+  rivalHere = rival?.connected ?? false;
   if (players.length < 2) {
     const other: Slot = me === 1 ? 2 : 1;
     $(`hudName${other}`).textContent = "…";
@@ -571,16 +679,39 @@ soundBtn.addEventListener("click", () => {
   renderSound();
 });
 window.addEventListener("beforeunload", () => ws?.close());
+
+// come straight back when the network or the tab does, instead of waiting for the next retry
+function retryNow(): void {
+  if (lostAt && matchLive()) openSocket();
+}
+window.addEventListener("online", retryNow);
 document.addEventListener("visibilitychange", () => {
   if (document.hidden) music.stop();
-  else if (phase === "round") music.start();
+  else {
+    if (phase === "round") music.start();
+    retryNow();
+  }
 });
 
 // keepalive so idle rooms are not dropped by proxies while waiting for a rival
 setInterval(() => {
-  if (ws && ws.readyState === WebSocket.OPEN) ws.send('{"type":"ping"}');
+  if (ws && ws.readyState === WebSocket.OPEN && phase === "waiting") ws.send('{"type":"ping"}');
   if (queueWs && queueWs.readyState === WebSocket.OPEN) queueWs.send('{"type":"ping"}');
 }, 25_000);
+
+// heartbeat during a match: a dead connection often never fires "close" (Wi-Fi switch, sleep),
+// so silence from the room for too long counts as a drop
+setInterval(() => {
+  if (!ws || ws.readyState !== WebSocket.OPEN || phase === "waiting" || !matchLive()) return;
+  if (Date.now() - lastHeard > 10_000) {
+    const dead = ws;
+    ws = null;
+    dead.close();
+    reconnect();
+  } else {
+    ws.send('{"type":"ping"}');
+  }
+}, 3_000);
 
 // deep link: /play?room=CODE
 const roomParam = new URLSearchParams(location.search).get("room");
