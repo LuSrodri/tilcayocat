@@ -1,6 +1,6 @@
 import {
-  SKINS, SKIN_PRICES, LIZARD_PRICE, POINTS_PACK, MAX_EARN,
-  type Inventory, type GuestProgress, type ShopItem, type Skin
+  SKINS, SKIN_PRICES, LIZARD_PRICE, POINTS_PACKS, PACK_IDS, PACK_CURRENCY, MAX_EARN,
+  type Inventory, type GuestProgress, type ShopItem, type Skin, type PackId
 } from "./protocol";
 import type { Env } from "./index";
 
@@ -66,8 +66,13 @@ function toInventory(row: Row): Inventory {
 async function load(env: Env, userId: string): Promise<{ inv: Inventory; fresh: boolean }> {
   const now = Date.now();
   const made = await env.DB.prepare("INSERT OR IGNORE INTO accounts (user_id, created_at, updated_at) VALUES (?, ?, ?)").bind(userId, now, now).run();
-  const row = await env.DB.prepare("SELECT wallet, owned, lizard, skin FROM accounts WHERE user_id = ?").bind(userId).first<Row>();
-  return { inv: toInventory(row!), fresh: (made.meta.changes ?? 0) > 0 };
+  const [rows, starter] = await env.DB.batch([
+    env.DB.prepare("SELECT wallet, owned, lizard, skin FROM accounts WHERE user_id = ?").bind(userId),
+    env.DB.prepare("SELECT 1 FROM purchases WHERE user_id = ? AND pack = 'starter' LIMIT 1").bind(userId)
+  ]);
+  const inv = toInventory(rows!.results[0] as Row);
+  inv.starterUsed = starter!.results.length > 0;
+  return { inv, fresh: (made.meta.changes ?? 0) > 0 };
 }
 
 async function save(env: Env, userId: string, inv: Inventory, delta: number, reason: string, ref: string | null = null): Promise<void> {
@@ -88,7 +93,7 @@ async function sync(env: Env, user: AuthUser, body: { guest?: GuestProgress | nu
   if (!g) return inv;
   const coins = Math.max(0, Math.min(GUEST_MAX, Math.floor(Number(g.wallet) || 0)));
   const owned = cleanOwned([...inv.owned, ...cleanOwned(g.owned)]);
-  const merged: Inventory = { wallet: inv.wallet + coins, owned, lizard: inv.lizard || !!g.lizard, skin: inv.skin };
+  const merged: Inventory = { ...inv, wallet: inv.wallet + coins, owned, lizard: inv.lizard || !!g.lizard };
   if (fresh && owned.includes(g.skin)) merged.skin = g.skin;
   await save(env, user.id, merged, coins, "guest-merge");
   return merged;
@@ -136,19 +141,25 @@ async function equip(env: Env, user: AuthUser, body: { skin?: string }): Promise
   return { ...inv, skin };
 }
 
-async function checkout(request: Request, env: Env, user: AuthUser): Promise<{ url: string }> {
+async function checkout(request: Request, env: Env, user: AuthUser, body: { pack?: string }): Promise<{ url: string }> {
+  const packId = (body.pack ?? "starter") as PackId;
+  if (!PACK_IDS.includes(packId)) throw new HttpError(400, "Unknown pack");
+  const pack = POINTS_PACKS[packId];
+  if (pack.once && (await load(env, user.id)).inv.starterUsed) throw new HttpError(409, "You already got the starter pack");
   const origin = request.headers.get("Origin");
   const site = origin && SITES.includes(origin) ? origin : SITES[0]!;
+  const points = pack.points.toLocaleString("en-US");
   const form = new URLSearchParams({
     mode: "payment",
     "line_items[0][quantity]": "1",
-    "line_items[0][price_data][currency]": POINTS_PACK.currency,
-    "line_items[0][price_data][unit_amount]": String(POINTS_PACK.amountCents),
-    "line_items[0][price_data][product_data][name]": "50,000 shop points",
+    "line_items[0][price_data][currency]": PACK_CURRENCY,
+    "line_items[0][price_data][unit_amount]": String(pack.amountCents),
+    "line_items[0][price_data][product_data][name]": pack.once ? `Starter pack: ${points} shop points` : `${points} shop points`,
     "line_items[0][price_data][product_data][description]": "Spend them in the Cat The Mouse Company shop.",
     client_reference_id: user.id,
     "metadata[user_id]": user.id,
-    "metadata[points]": String(POINTS_PACK.points),
+    "metadata[pack]": packId,
+    "metadata[points]": String(pack.points),
     "payment_intent_data[metadata][user_id]": user.id,
     success_url: `${site}/?paid={CHECKOUT_SESSION_ID}`,
     cancel_url: `${site}/?shop=1`
@@ -169,7 +180,7 @@ async function checkout(request: Request, env: Env, user: AuthUser): Promise<{ u
 
 async function purchase(env: Env, user: AuthUser, url: URL): Promise<unknown> {
   const id = url.searchParams.get("session") ?? "";
-  const row = await env.DB.prepare("SELECT points, amount_cents, currency FROM purchases WHERE session_id = ? AND user_id = ?").bind(id, user.id).first();
+  const row = await env.DB.prepare("SELECT pack, points, amount_cents, currency FROM purchases WHERE session_id = ? AND user_id = ?").bind(id, user.id).first();
   return row ? { credited: true, ...row } : { credited: false };
 }
 
@@ -196,7 +207,10 @@ async function stripeWebhook(request: Request, env: Env): Promise<Response> {
   const s = event.data.object;
   if (s.payment_status !== "paid") return new Response("not paid yet");
   const userId = String(s.metadata?.user_id ?? s.client_reference_id ?? "");
-  if (!userId || s.amount_total !== POINTS_PACK.amountCents || s.currency !== POINTS_PACK.currency) {
+  // sessions from before the packs carry no pack id: those were all the starter pack
+  const packId = String(s.metadata?.pack ?? "starter") as PackId;
+  const pack = PACK_IDS.includes(packId) ? POINTS_PACKS[packId] : null;
+  if (!userId || !pack || s.amount_total !== pack.amountCents || s.currency !== PACK_CURRENCY) {
     console.error("unexpected session", s.id, s.amount_total, s.currency);
     return new Response("unexpected session");
   }
@@ -205,10 +219,11 @@ async function stripeWebhook(request: Request, env: Env): Promise<Response> {
   try {
     // one transaction: a session already recorded fails the insert and credits nothing
     await env.DB.batch([
-      env.DB.prepare("INSERT INTO purchases (session_id, user_id, points, amount_cents, currency, created_at) VALUES (?, ?, ?, ?, ?, ?)")
-        .bind(s.id, userId, POINTS_PACK.points, s.amount_total, s.currency, now),
-      env.DB.prepare("UPDATE accounts SET wallet = wallet + ?, updated_at = ? WHERE user_id = ?").bind(POINTS_PACK.points, now, userId),
-      env.DB.prepare("INSERT INTO ledger (user_id, delta, reason, ref, created_at) VALUES (?, ?, 'purchase', ?, ?)").bind(userId, POINTS_PACK.points, s.id, now)
+      // a paid session is always credited, even a second starter pack (two checkouts opened at once)
+      env.DB.prepare("INSERT INTO purchases (session_id, user_id, pack, points, amount_cents, currency, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)")
+        .bind(s.id, userId, packId, pack.points, s.amount_total, s.currency, now),
+      env.DB.prepare("UPDATE accounts SET wallet = wallet + ?, updated_at = ? WHERE user_id = ?").bind(pack.points, now, userId),
+      env.DB.prepare("INSERT INTO ledger (user_id, delta, reason, ref, created_at) VALUES (?, ?, ?, ?, ?)").bind(userId, pack.points, `purchase:${packId}`, s.id, now)
     ]);
   } catch (err) {
     if (String(err).includes("UNIQUE")) return new Response("already credited");
@@ -236,7 +251,7 @@ export async function handleAccount(path: string, request: Request, env: Env, co
     if (path === "/account/earn") return reply(await earn(env, user, body));
     if (path === "/account/buy") return reply(await buy(env, user, body));
     if (path === "/account/equip") return reply(await equip(env, user, body));
-    return reply(await checkout(request, env, user));
+    return reply(await checkout(request, env, user, body));
   } catch (err) {
     if (err instanceof HttpError) return reply({ error: err.message }, err.status);
     console.error("account error", err);

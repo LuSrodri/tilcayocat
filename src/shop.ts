@@ -94,6 +94,11 @@ export function isAccount(): boolean {
   return account !== null;
 }
 
+/** The signed-in player already bought the one-time starter pack. */
+export function starterUsed(): boolean {
+  return !!account?.inv.starterUsed;
+}
+
 /** A signed-in player: from now on the server holds the wallet. */
 export function attachAccount(uid: string, inv: Inventory, s: ShopServer): void {
   const pending = account?.uid === uid ? account.pending : 0;

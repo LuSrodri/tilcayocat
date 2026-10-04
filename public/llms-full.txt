@@ -6,7 +6,7 @@ Last updated: 2026-10-01
 
 ## The game
 
-- Genre: arcade / reflex (whack-a-mole style). Solo mode plus a 1v1 online mode. Free, no sign-up, no install; the site shows ads. An optional 50,000-point shop pack costs US$ 3.44 and needs an account (e-mail and password); signed-in players keep their points and cats on the server.
+- Genre: arcade / reflex (whack-a-mole style). Solo mode plus a 1v1 online mode. Free, no sign-up, no install; the site shows ads. Optional point packs (50,000-point starter pack for US$ 3.44, once per account; 100,000 for US$ 9.99; 150,000 for US$ 19.90) need an account (e-mail and password); signed-in players keep their points and cats on the server.
 - Platform: any modern web browser; designed for phones first, also works on desktop with the mouse (Space starts a round). Can be added to the home screen as a web app.
 - Rules: a 3D lawn at dusk. It starts with 4 holes and a new one opens every 4.5 seconds, middle first, until all 25 are dug; a bar at the top shows when. Mice speed up smoothly (about 10% every 30 s). Tap a mouse to catch it (+1): the cat swipes its paw down on it. You start with 5 seconds; every catch adds 0.8 seconds (capped at 5) and slapping an empty hole costs 0.3 seconds. A porcupine pokes out now and then, and a green snake that stays up longer and eats any mouse that pops out right next to it. Slapping either makes the cat lick its paw and stop hunting: 2 s for the porcupine, 3 s for the snake (solo and 1v1).
 - Yellow lizard (unlocked in the shop): darts out every 9–14 seconds once the lawn has 6 holes; it is quick and counts as 2 mice.

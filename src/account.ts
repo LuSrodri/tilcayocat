@@ -2,7 +2,7 @@ import { createClient, type User } from "@supabase/supabase-js";
 import { API } from "./api";
 import { setUserId, track } from "./analytics";
 import { attachAccount, detachAccount, setInventory, guestProgress, clearGuest, type ShopServer } from "./shop";
-import { POINTS_PACK, type Inventory } from "../worker/src/protocol";
+import { POINTS_PACKS, type Inventory, type PackId } from "../worker/src/protocol";
 
 // Accounts. Supabase Auth signs players in with e-mail and password (the address must be
 // confirmed). Before that, every visitor gets an anonymous session, so analytics follow one id
@@ -12,7 +12,6 @@ import { POINTS_PACK, type Inventory } from "../worker/src/protocol";
 const SUPABASE_URL = "https://ewyigeljgsrebcgjfboi.supabase.co";
 const SUPABASE_KEY = "sb_publishable_T5RwnIDOl9yD551QiLXsLw_Xav0vPmA";
 
-export const PACK_PRICE = `US$ ${(POINTS_PACK.amountCents / 100).toFixed(2)}`;
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY, {
   auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
@@ -162,12 +161,14 @@ function go(url: string): void {
   else location.assign(url);
 }
 
-/** Send a signed-in player to Stripe Checkout for the points pack. */
-export async function buyPoints(): Promise<void> {
+const packItem = (id: PackId) => ({ item_id: id, item_name: `${POINTS_PACKS[id].points.toLocaleString("en-US")} points` });
+
+/** Send a signed-in player to Stripe Checkout for a points pack. */
+export async function buyPoints(pack: PackId): Promise<void> {
   if (!current.member) throw new Error("Sign in to buy");
-  const value = POINTS_PACK.amountCents / 100;
-  track("begin_checkout", { currency: "USD", value, items: [{ item_id: "points_50k", item_name: "50,000 points" }] });
-  const { url } = await api<{ url: string }>("/checkout", {});
+  const value = POINTS_PACKS[pack].amountCents / 100;
+  track("begin_checkout", { currency: "USD", value, items: [{ ...packItem(pack), price: value, quantity: 1 }] });
+  const { url } = await api<{ url: string }>("/checkout", { pack });
   go(url);
 }
 
@@ -176,7 +177,7 @@ export async function confirmPurchase(sessionId: string, timeoutMs = 45_000): Pr
   const until = Date.now() + timeoutMs;
   while (Date.now() < until) {
     if (current.member) {
-      const p = await api<{ credited: boolean; points?: number; amount_cents?: number; currency?: string }>(`/purchase?session=${encodeURIComponent(sessionId)}`).catch(() => null);
+      const p = await api<{ credited: boolean; pack?: PackId; points?: number; amount_cents?: number; currency?: string }>(`/purchase?session=${encodeURIComponent(sessionId)}`).catch(() => null);
       if (p?.credited) {
         await refreshInventory();
         const value = (p.amount_cents ?? 0) / 100;
@@ -184,7 +185,7 @@ export async function confirmPurchase(sessionId: string, timeoutMs = 45_000): Pr
           transaction_id: sessionId,
           value,
           currency: (p.currency ?? "usd").toUpperCase(),
-          items: [{ item_id: "points_50k", item_name: "50,000 points", price: value, quantity: 1 }]
+          items: [{ ...packItem(p.pack ?? "starter"), price: value, quantity: 1 }]
         });
         return p.points ?? 0;
       }

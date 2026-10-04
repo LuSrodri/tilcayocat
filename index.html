@@ -339,10 +339,12 @@
             <div class="shop__info"><b id="shopName"></b><small id="shopBlurb"></small></div>
             <button id="shopBuy" class="btn btn--primary" type="button">Choose</button>
           </div>
-          <div class="offer">
-            <div class="offer__info"><b>+50,000 pts</b><small id="offerNote">Sign in with Google to buy</small></div>
-            <button id="buyPointsBtn" class="btn btn--offer" type="button">US$ 3.44</button>
+          <div class="offers" role="group" aria-label="Buy points">
+            <button class="offer" type="button" data-pack="starter"><span class="offer__tag">Starter · once</span><b>+50,000</b><span class="offer__price">US$ 3.44</span></button>
+            <button class="offer" type="button" data-pack="pack100k"><span class="offer__tag">Pack</span><b>+100,000</b><span class="offer__price">US$ 9.99</span></button>
+            <button class="offer" type="button" data-pack="pack150k"><span class="offer__tag">Big pack</span><b>+150,000</b><span class="offer__price">US$ 19.90</span></button>
           </div>
+          <p id="offerNote" class="offer-note">Sign in to buy points</p>
           <p class="account-line"><span id="accountText">Playing as a guest</span> · <button id="accountBtn" class="account-line__btn" type="button">Sign in</button></p>
         </div>
 

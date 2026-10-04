@@ -32,8 +32,15 @@ export const SKIN_PRICES: Record<Skin, number> = {
   grey: 0, orange: 150_000, badger: 400_000, black: 800_000, white: 1_400_000, calico: 2_200_000, tilcayo: 4_000_000
 };
 export const LIZARD_PRICE = 600_000;
-/** The only thing sold for money: a pack of shop points. */
-export const POINTS_PACK = { points: 50_000, amountCents: 344, currency: "usd" } as const;
+/** The only things sold for money: packs of shop points. The starter pack can be bought once per account. */
+export const POINTS_PACKS = {
+  starter: { points: 50_000, amountCents: 344, once: true },
+  pack100k: { points: 100_000, amountCents: 999, once: false },
+  pack150k: { points: 150_000, amountCents: 1990, once: false }
+} as const;
+export type PackId = keyof typeof POINTS_PACKS;
+export const PACK_IDS = Object.keys(POINTS_PACKS) as PackId[];
+export const PACK_CURRENCY = "usd";
 /** Most points a single round or match can report (a guard against forged requests). */
 export const MAX_EARN = 50_000;
 
@@ -45,10 +52,12 @@ export interface Inventory {
   owned: Skin[];
   lizard: boolean;
   skin: Skin;
+  /** the one-time starter pack was already bought (accounts only) */
+  starterUsed?: boolean;
 }
 
 /** A guest's progress, folded into the account the first time they sign in on this browser. */
-export type GuestProgress = Inventory;
+export type GuestProgress = Omit<Inventory, "starterUsed">;
 
 export type Slot = 1 | 2;
 

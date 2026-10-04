@@ -5,8 +5,9 @@ import { sfx, music, volume } from "./sound";
 import { SealTracker, mountSeals, collectFancy, checkStreakSeals } from "./seals";
 import { rankFor, touchStreak, currentStreak, challengeTarget, type Rank } from "./rank";
 import {
-  SKINS, LIZARD_PRICE, LIZARD_VALUE, wallet, earnPoints, ownsSkin, currentSkin, equipSkin, buySkin, hasLizard, buyLizard, skinById, onInventory, type SkinId
+  SKINS, LIZARD_PRICE, LIZARD_VALUE, wallet, earnPoints, ownsSkin, currentSkin, equipSkin, buySkin, hasLizard, buyLizard, skinById, onInventory, starterUsed, type SkinId
 } from "./shop";
+import type { PackId } from "../worker/src/protocol";
 import { dailyNumber, dailyVariant, dailyState, addDailyCatch, recordRound, dailyShareText } from "./daily";
 import { nextFact } from "./facts";
 import { fancyKind, albumHas, albumSize, FANCY_COUNT } from "./fancy";
@@ -630,7 +631,7 @@ lawn.setCalm(true);
 
 type AccountModule = typeof import("./account");
 let acc: AccountModule | null = null;
-const buyPointsBtn = $<HTMLButtonElement>("buyPointsBtn");
+const offerBtns = [...document.querySelectorAll<HTMLButtonElement>(".offer[data-pack]")];
 const accountBtn = $<HTMLButtonElement>("accountBtn");
 const authForm = $<HTMLFormElement>("authForm");
 const authEmail = $<HTMLInputElement>("authEmail");
@@ -645,9 +646,12 @@ function renderAccount(): void {
   const member = !!st?.member;
   $("accountText").textContent = member ? st!.email : "Playing as a guest";
   accountBtn.textContent = member ? "Account" : "Sign in to save your points";
-  $("offerNote").textContent = member ? "US$ 3.44 · one-time, added to your account" : "US$ 3.44 · sign in to buy";
-  buyPointsBtn.textContent = member ? "US$ 3.44" : "Sign in";
-  buyPointsBtn.disabled = accountBtn.disabled = !acc;
+  $("offerNote").textContent = member ? "One-time payments, added to your account" : "Sign in to buy points";
+  for (const b of offerBtns) {
+    b.disabled = !acc;
+    b.hidden = b.dataset.pack === "starter" && member && starterUsed();
+  }
+  accountBtn.disabled = !acc;
   // the account view: a form for guests, the account for members
   if (st?.recovering) authMode = "newpass";
   const showForm = !member || authMode === "newpass";
@@ -746,18 +750,21 @@ $("signOutBtn").addEventListener("click", () => {
 });
 
 accountBtn.addEventListener("click", () => openAccount(acc?.account().member ? undefined : "signin"));
-buyPointsBtn.addEventListener("click", () => {
-  if (!acc) return;
-  if (!acc.account().member) return openAccount("signin");
-  buyPointsBtn.disabled = true;
-  acc.buyPoints()
-    .catch((err: unknown) => toast(err instanceof Error ? err.message : "Checkout is unavailable", "ouch"))
-    .finally(renderAccount);
-});
+for (const btn of offerBtns) {
+  btn.addEventListener("click", () => {
+    if (!acc) return;
+    if (!acc.account().member) return openAccount("signin");
+    for (const b of offerBtns) b.disabled = true;
+    acc.buyPoints(btn.dataset.pack as PackId)
+      .catch((err: unknown) => toast(err instanceof Error ? err.message : "Checkout is unavailable", "ouch"))
+      .finally(renderAccount);
+  });
+}
 
 // the wallet and the cats can change from the server (sign-in, purchases, a refused buy)
 onInventory(() => {
   renderWallet();
+  renderAccount();
   if (!views.shop.hidden) renderShop();
   lawn.setCatSkin(1, currentSkin());
 });
