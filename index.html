@@ -1,6 +1,21 @@
 <!doctype html>
 <html lang="en" dir="ltr">
 <head>
+  <!-- If a game script comes back broken (say, a stale copy cached during a deploy), fetch fresh
+       copies past the browser cache and reload once. -->
+  <script>
+    (function () {
+      function heal() {
+        try { if (sessionStorage.getItem("ctmc.healed")) return; sessionStorage.setItem("ctmc.healed", "1"); } catch (e) { return; }
+        var urls = [].map.call(document.querySelectorAll('script[type="module"][src], link[rel="modulepreload"]'), function (el) { return el.src || el.href; });
+        Promise.all(urls.map(function (u) { return fetch(u, { cache: "reload" }).catch(function () {}); })).then(function () { location.reload(); });
+      }
+      window.addEventListener("error", function (e) {
+        var t = e.target;
+        if ((t && t.tagName === "SCRIPT" && t.type === "module") || (e.filename && e.filename.indexOf("/assets/") > -1 && e instanceof ErrorEvent && /SyntaxError|Unexpected token/.test(e.message))) heal();
+      }, true);
+    })();
+  </script>
   <!-- Google tag (gtag.js) -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-F66DVGWFBE"></script>
   <script>

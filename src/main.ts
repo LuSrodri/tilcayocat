@@ -640,6 +640,8 @@ document.addEventListener("visibilitychange", () => {
 });
 field.addEventListener("touchstart", () => sfx.unlock(), { passive: true, once: true });
 
+// the game script ran (the self-heal snippet in index.html and support checks look for this)
+document.documentElement.dataset.booted = "1";
 renderStart();
 renderWallet();
 guard(overlayCard);
