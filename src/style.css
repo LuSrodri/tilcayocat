@@ -977,6 +977,13 @@ body.game { background: var(--sky-top); }
 .field[data-lick="1"] .vignette { box-shadow: inset 0 0 80px 14px rgba(255, 143, 177, .3); }
 .loading { position: absolute; inset: 0; z-index: 4; display: grid; place-items: center; background: var(--sky-top); }
 .loading[hidden] { display: none; }
+/* the card sits in the middle while the lawn loads, so the spinner waits below it */
+.loading { place-items: end center; padding-bottom: max(28px, env(safe-area-inset-bottom)); }
+.loading__pill { display: inline-flex; align-items: center; gap: 10px; padding: 8px 16px 8px 10px; border-radius: 999px; background: rgba(0, 0, 0, .28); color: var(--ink-soft); font-size: 13px; font-weight: 600; }
+.loading__pill .spinner { width: 20px; height: 20px; margin: 0; border-width: 3px; }
+.daily__img:not([src]) { background: linear-gradient(100deg, #e9dccb 30%, #f7eee2 50%, #e9dccb 70%) 0 0 / 300% 100%; animation: shimmer 1.4s linear infinite; }
+@keyframes shimmer { to { background-position: -150% 0; } }
+@media (prefers-reduced-motion: reduce) { .daily__img:not([src]) { animation: none; } }
 
 .ready {
   position: absolute;
@@ -1245,6 +1252,12 @@ body.game { background: var(--sky-top); }
 .rank-chip { padding: 4px 12px; border-radius: 999px; background: linear-gradient(135deg, var(--r1, #fff), var(--r2, #888)); color: #2a140a; font: 600 13px var(--font-display); }
 .fact { margin: 0; padding: 10px 12px; border-radius: 14px; background: rgba(0, 0, 0, .18); font-size: 13px; line-height: 1.4; text-align: left; }
 .fact::before { content: "Cat fact · "; font-weight: 700; color: var(--teal); }
+/* end of round: how far the next cat is, and the shortcut to the points packs */
+.nudge { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 4px 10px; margin: 0; padding: 9px 12px; border-radius: 14px; background: linear-gradient(135deg, rgba(255, 214, 107, .16), rgba(255, 143, 177, .12)); box-shadow: inset 0 0 0 1px rgba(255, 214, 107, .3); font-size: 13px; line-height: 1.35; }
+.nudge[hidden], .nudge__link[hidden] { display: none; }
+.nudge b { color: var(--gold); }
+.nudge__btn { appearance: none; border: 0; border-radius: 999px; padding: 5px 12px; background: linear-gradient(180deg, #fff3c4, var(--gold)); color: #3a1f10; font: 700 12.5px var(--font-display); cursor: pointer; }
+.nudge__link { appearance: none; border: 0; background: none; padding: 2px; color: var(--teal); font: 600 12.5px var(--font); text-decoration: underline; text-underline-offset: 2px; cursor: pointer; }
 
 .back { appearance: none; align-self: flex-start; padding: 6px 10px 6px 4px; border: 0; background: none; color: var(--ink-soft); font: 600 14px var(--font-display); cursor: pointer; }
 .view__title { margin: -6px 0 0; font: 700 24px var(--font-display); color: var(--gold); }

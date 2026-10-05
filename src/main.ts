@@ -472,6 +472,7 @@ function showResults(score: number, best: number, isNewBest: boolean, stats: Rou
   $("factText").textContent = nextFact().text;
   renderWallet();
   renderDaily();
+  renderNudge();
 
   playBtn.textContent = "Play again";
   shareBtn.hidden = false;
@@ -481,6 +482,25 @@ function showResults(score: number, best: number, isNewBest: boolean, stats: Rou
     setTimeout(() => sfx.record(), 350);
   }
 }
+
+// The next cat the player doesn't own yet: how many points it still needs, and a way to the packs.
+function renderNudge(): void {
+  const next = SKINS.filter((s) => !ownsSkin(s.id)).sort((a, b) => a.price - b.price)[0];
+  const guest = !acc?.account().member;
+  const nudge = $("nudge");
+  nudge.hidden = !next && !guest;
+  const need = next ? next.price - wallet() : 0;
+  $("nudgeText").innerHTML = next
+    ? need > 0
+      ? `<b>${need.toLocaleString("en-US")} pts</b> to the ${next.name}`
+      : `You can unlock the <b>${next.name}</b>!`
+    : "All the cats are yours!";
+  $("nudgeShop").textContent = next && need > 0 ? "Get points" : "Open the shop";
+  $("nudgeShop").hidden = !next;
+  $("nudgeSignIn").hidden = !guest || wallet() <= 0;
+}
+$("nudgeShop").addEventListener("click", () => showView("shop"));
+$("nudgeSignIn").addEventListener("click", () => openAccount("signup"));
 
 function confetti(): void {
   if (reduceMotion) return;
