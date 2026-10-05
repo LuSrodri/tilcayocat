@@ -675,7 +675,9 @@ function renderAccount(): void {
   authPassword.autocomplete = authMode === "signin" ? "current-password" : "new-password";
   authPassword.placeholder = authMode === "signin" ? "Password" : "Password (8+ characters)";
   $("authSwitch").textContent = authMode === "signup" ? "Have an account? Sign in" : "New here? Create an account";
-  $("authForgot").hidden = authMode !== "signin";
+  $("authForgot").hidden = $("authForgotSep").hidden = authMode !== "signin";
+  $("authWallet").textContent = wallet().toLocaleString("en-US");
+  $("homeAccountBtn").textContent = member ? "Account" : "Sign in";
 }
 
 function say(text: string, kind: "ok" | "error" | "" = ""): void {
@@ -750,6 +752,8 @@ $("signOutBtn").addEventListener("click", () => {
 });
 
 accountBtn.addEventListener("click", () => openAccount(acc?.account().member ? undefined : "signin"));
+$("homeAccountBtn").addEventListener("click", () => openAccount(acc?.account().member ? undefined : "signin"));
+$("authShopBtn").addEventListener("click", () => showView("shop"));
 for (const btn of offerBtns) {
   btn.addEventListener("click", () => {
     if (!acc) return;

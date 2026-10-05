@@ -1285,9 +1285,10 @@ body.game { background: var(--sky-top); }
 
 @media (max-height: 560px) and (orientation: landscape) {
   .game:not(.game--duel) .overlay__card { width: min(100%, 640px); }
-  .game #homeView { display: grid; grid-template-columns: 1fr 1fr; column-gap: 18px; align-items: center; }
+  .game #homeView:not([hidden]) { display: grid; grid-template-columns: 1fr 1fr; column-gap: 18px; align-items: center; }
   .game #homeView > * { grid-column: 1; }
   .game #homeView > .daily, .game #homeView > .result, .game #homeView > .intro { grid-column: 2; grid-row: 1 / span 4; }
+  .game .shop { grid-template-columns: repeat(8, 1fr); }
   .game .result__num { font-size: 44px; }
 }
 
@@ -1510,6 +1511,9 @@ body.game { background: var(--sky-top); }
 .auth__msg { margin: 0; padding: 8px 12px; border-radius: 12px; background: rgba(255, 255, 255, .07); font-size: 13px; line-height: 1.4; color: var(--ink); }
 .auth__msg[data-kind="error"] { background: rgba(255, 107, 107, .16); color: #ffd0d0; }
 .auth__msg[data-kind="ok"] { background: rgba(125, 220, 122, .16); color: #d6ffd4; }
+.auth__wallet { margin: 0; text-align: center; font-size: 13px; color: var(--ink-soft); }
+.auth__wallet b { font: 700 26px var(--font-display); color: var(--gold); }
+.overlay__foot .account-line__btn { padding: 0; color: inherit; font: inherit; }
 .auth__links { margin: 0; font-size: 12px; color: var(--ink-soft); }
 .auth__member { display: flex; flex-direction: column; gap: 10px; }
 .auth__member p { margin: 0; font-size: 14px; line-height: 1.45; color: var(--ink-soft); }

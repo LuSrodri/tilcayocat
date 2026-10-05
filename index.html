@@ -318,7 +318,7 @@
             <button id="albumBtn" class="pill" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/></svg>Album <b id="albumCount">0</b>/100</button>
             <button id="sealsBtn" class="pill" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="9" r="5.5"/><path d="M8.5 13.5 7 21l5-2.5 5 2.5-1.5-7.5"/></svg>Seals <b id="sealsCount">0/11</b></button>
           </nav>
-          <p class="overlay__foot"><a href="/how-to-play">How to play</a> · <a href="/about">The cats</a> · <a href="/terms">Terms</a> · <a href="/privacy">Privacy</a></p>
+          <p class="overlay__foot"><button id="homeAccountBtn" class="account-line__btn" type="button">Sign in</button> · <a href="/how-to-play">How to play</a> · <a href="/about">The cats</a> · <a href="/terms">Terms</a> · <a href="/privacy">Privacy</a></p>
         </div>
 
         <!-- album -->
@@ -359,9 +359,11 @@
             <button id="authSubmit" class="btn btn--primary" type="submit">Sign in</button>
           </form>
           <p id="authMsg" class="auth__msg" role="status" hidden></p>
-          <p id="authLinks" class="auth__links"><button id="authSwitch" class="account-line__btn" type="button">New here? Create an account</button> · <button id="authForgot" class="account-line__btn" type="button">Forgot password?</button></p>
+          <p id="authLinks" class="auth__links"><button id="authSwitch" class="account-line__btn" type="button">New here? Create an account</button><span id="authForgotSep"> · </span><button id="authForgot" class="account-line__btn" type="button">Forgot password?</button></p>
           <div id="authMember" class="auth__member" hidden>
             <p>Signed in as <b id="authWho"></b>. Your points and cats are saved to your account.</p>
+            <p class="auth__wallet"><b id="authWallet">0</b> pts</p>
+            <button id="authShopBtn" class="btn btn--primary" type="button">Open the shop</button>
             <button id="signOutBtn" class="btn" type="button">Sign out</button>
           </div>
         </div>

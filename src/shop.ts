@@ -70,10 +70,16 @@ let account: AccountCache | null = readAccount();
 let server: ShopServer | null = null;
 const listeners = new Set<() => void>();
 
+/** A whole inventory, as the server sends it (a broken one would take the game down with it). */
+function isInventory(x: unknown): x is Inventory {
+  const inv = x as Inventory | null;
+  return !!inv && Number.isFinite(inv.wallet) && Array.isArray(inv.owned) && typeof inv.skin === "string";
+}
+
 function readAccount(): AccountCache | null {
   try {
     const raw = JSON.parse(localStorage.getItem(ACCOUNT_KEY) ?? "null") as AccountCache | null;
-    return raw && typeof raw.uid === "string" && raw.inv ? raw : null;
+    return raw && typeof raw.uid === "string" && isInventory(raw.inv) && Number.isFinite(raw.pending) ? raw : null;
   } catch {
     return null;
   }
@@ -101,6 +107,7 @@ export function starterUsed(): boolean {
 
 /** A signed-in player: from now on the server holds the wallet. */
 export function attachAccount(uid: string, inv: Inventory, s: ShopServer): void {
+  if (!isInventory(inv)) return;
   const pending = account?.uid === uid ? account.pending : 0;
   account = { uid, inv, pending };
   server = s;
@@ -110,7 +117,7 @@ export function attachAccount(uid: string, inv: Inventory, s: ShopServer): void 
 
 /** Fresh numbers from the server (keeps unconfirmed points on top). */
 export function setInventory(inv: Inventory): void {
-  if (!account) return;
+  if (!account || !isInventory(inv)) return;
   account.inv = { ...inv, wallet: inv.wallet + account.pending };
   changed();
 }
