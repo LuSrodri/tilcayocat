@@ -12,6 +12,7 @@ export const PORCUPINE_LICK_MS = 2000;
 export const SNAKE_LICK_MS = 3000;
 // Every abrupt screen change gets a short grace period so a stray tap doesn't count.
 export const GUARD_MS = 1250;
+const FIRST_TOUCH_FORGIVE_MS = 300;
 
 // The lawn grows one hole at a time: four to start, then a new one every few seconds, dug
 // from the middle outwards. Each new hole is announced by a wiggling mound first.
@@ -140,6 +141,8 @@ export class Game {
   private slices: number[] = [];
   private plainSinceFancy = 0;
   private fancyCaught: number[] = [];
+  private waitingHole = -1;
+  private forgiveUntil = 0;
 
   constructor(private readonly lawn: Lawn, private readonly cb: GameCallbacks, private readonly opts: GameOptions = { lizard: () => false, dailyDone: () => false }) {
     this.best = readBest();
@@ -162,12 +165,42 @@ export class Game {
     return this.running;
   }
 
-  start(): void {
+  /**
+   * A clean lawn and a full timer with one mouse sitting out in the open, nothing moving: the
+   * round waits for start(). Returns the mouse's hole.
+   */
+  prepare(): number {
     this.reset();
+    this.lawn.cat(1, "idle");
+    const i = START_HOLES[Math.floor(Math.random() * START_HOLES.length)]!;
+    const hole = this.holes[i]!;
+    hole.up = true;
+    hole.what = "mouse";
+    hole.variant = null;
+    hole.hopsLeft = 0;
+    this.lawn.raise(i, "mouse", null);
+    sfx.squeak();
+    this.waitingHole = i;
+    return i;
+  }
+
+  start(): void {
+    // After prepare() this is the player's first touch: the waiting mouse is already catchable,
+    // and that same touch landing on an empty hole shouldn't cost time.
+    const waiting = this.waitingHole;
+    if (waiting < 0) this.reset();
+    this.waitingHole = -1;
     this.running = true;
     const now = performance.now();
     this.lastFrame = now;
-    this.readyUntil = now + GUARD_MS;
+    this.readyUntil = waiting < 0 ? now + GUARD_MS : now;
+    this.forgiveUntil = waiting < 0 ? 0 : now + FIRST_TOUCH_FORGIVE_MS;
+    if (waiting >= 0) {
+      const hole = this.holes[waiting]!;
+      hole.upAt = now;
+      hole.hideAt = now + this.upTime() * (0.8 + Math.random() * 0.4);
+      hole.autoAt = now + 140;
+    }
     this.deadline = this.readyUntil + CATCH_WINDOW_MS;
     this.nextSpawnAt = this.readyUntil + 150;
     this.nextPowerAt = now + 25000 + Math.random() * 15000;
@@ -181,6 +214,7 @@ export class Game {
   }
 
   private reset(): void {
+    this.waitingHole = -1;
     this.score = 0;
     this.points = 0;
     this.elapsed = 0;
@@ -479,7 +513,7 @@ export class Game {
     const hole = this.holes[i]!;
     if (!hole.open) return;
     if (!hole.up) {
-      this.whiff(i);
+      if (now >= this.forgiveUntil) this.whiff(i);
       return;
     }
     if (isPrey(hole.what)) {

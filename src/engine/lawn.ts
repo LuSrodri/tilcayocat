@@ -598,6 +598,12 @@ export class Lawn {
   }
 
   /** Floating label over a hole. */
+  /** Where a critter standing in this hole shows on screen, in pixels from the lawn's corner. */
+  critterPoint(hole: number): { x: number; y: number } | null {
+    const h = this.holes[hole];
+    return h ? this.toScreen(h.pos.clone().add(new THREE.Vector3(0, 0.3, 0))) : null;
+  }
+
   pop(hole: number, text: string, kind = ""): void {
     const h = this.holes[hole];
     if (!h || !text) return;

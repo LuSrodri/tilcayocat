@@ -6,7 +6,7 @@ Goal: people who buy the 50,000-point pack (US$ 3.44). Total cap: **R$ 100** (pl
 - GA4 property "Cat The Mouse Company" linked to Google Ads 271-801-6468 (personalized ads on, auto-tagging on).
 - Primary conversion: GA4 `purchase` (value + currency from the game, transaction_id = Stripe session).
 - Secondary: GA4 `sign_up` (mark as key event once it shows up in GA4 → Admin → Events).
-- The game sends `user_id` (Supabase id) and `game_start`, `game_end`, `unlock_cat`, `begin_checkout`, `purchase`.
+- The game sends `user_id` (Supabase id) and `game_start` (solo: on the first touch), `game_end` (with `duration_s`, `input_count`, `avg_fps`), `restart`, `unlock_cat`, `begin_checkout`, `purchase`.
 
 ## Budget (never above R$ 98)
 | Campaign | Type | Daily | Days | Max |

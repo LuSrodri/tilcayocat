@@ -8,7 +8,7 @@ import { currentSkin, hasLizard, earnPoints } from "./shop";
 import { mountOnline } from "./presence";
 import { fancyKind } from "./fancy";
 import { guard } from "./guard";
-import { track } from "./analytics";
+import { FpsMeter, track } from "./analytics";
 import type { PlayerInfo, RoundResult, ServerMessage, Slot } from "../worker/src/protocol";
 import { GRID, ROUND_MS, RECONNECT_GRACE_MS } from "../worker/src/protocol";
 
@@ -67,6 +67,10 @@ lawn.onTap((hole) => {
   if (ws && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify({ type: "tap", hole }));
 });
 
+field.addEventListener("pointerdown", () => {
+  if (phase === "round") inputCount++;
+});
+
 // the lobby has no seal shelf; earning one still gets its toast and fanfare
 mountSeals(document.createElement("ul"), document.createElement("span"), toast);
 mountOnline("duel");
@@ -89,6 +93,11 @@ let retries = 0;
 let retryTimer = 0;
 let lastHeard = 0;
 let rivalHere = false;
+// When this match began here: null = not yet, 0 = game_end already sent. Stored per room, so a
+// reload keeps the clock and a "round" or "final" replayed on resume is not counted twice.
+let matchStart: number | null = null;
+let inputCount = 0;
+const fps = new FpsMeter();
 const mouseHole = new Map<number, number>();
 const fancyOf = new Map<number, number>();
 
@@ -193,6 +202,7 @@ $("copyBtn").addEventListener("click", async () => {
 });
 
 $("againBtn").addEventListener("click", () => {
+  track("restart", { mode: "duel" });
   history.replaceState(null, "", "/play");
   resetArena();
   showPanel("lobby");
@@ -233,10 +243,33 @@ async function loadLeaderboard(): Promise<void> {
 // ---- connection -------------------------------------------------------------
 
 const tokenKey = (c: string): string => `tilcayo.mp.${c}`;
+const startKey = (c: string): string => `tilcayo.mp.${c}.start`;
+
+function setMatchStart(value: number | null): void {
+  matchStart = value;
+  try {
+    if (value === null) sessionStorage.removeItem(startKey(code));
+    else sessionStorage.setItem(startKey(code), String(value));
+  } catch {
+    /* ignore */
+  }
+}
+
+function storedMatchStart(): number | null {
+  try {
+    const value = sessionStorage.getItem(startKey(code));
+    return value === null ? null : Number(value);
+  } catch {
+    return null;
+  }
+}
 
 function connect(roomCode: string, name: string): void {
   phase = "idle";
   dropSocket();
+  matchStart = null;
+  inputCount = 0;
+  fps.stop();
   code = roomCode.toUpperCase();
   joinName = name;
   // a token from this tab (e.g. after a reload mid-match) takes the same seat back
@@ -354,6 +387,9 @@ function handle(msg: ServerMessage): void {
       } catch {
         /* ignore */
       }
+      // a new seat is a new match, even if this tab played an earlier one under the same code
+      if (msg.resumed) matchStart ??= storedMatchStart();
+      else setMatchStart(null);
       clockOffset = msg.now - Date.now();
       applyPlayers(msg.players);
       // still waiting for a rival: back to the code screen; otherwise the room resyncs us next
@@ -385,10 +421,12 @@ function handle(msg: ServerMessage): void {
       $("hudRound").textContent = String(msg.round);
       music.start();
       startClock();
-      if (msg.round === 1) {
-        checkStreakSeals(touchStreak().days);
+      if (msg.round === 1) checkStreakSeals(touchStreak().days);
+      if (matchStart === null) {
+        setMatchStart(Date.now());
         track("game_start", { mode: "duel", skin: currentSkin() });
       }
+      fps.start();
       break;
     }
     case "spawn": {
@@ -480,7 +518,18 @@ function handle(msg: ServerMessage): void {
       clearMice();
       setWins(msg.wins);
       showFinal(msg.winner, msg.wins, msg.rounds, msg.totals, msg.forfeit);
-      track("game_end", { mode: "duel", score: msg.totals[me - 1], won: msg.winner === me, forfeit: msg.forfeit });
+      if (matchStart) {
+        track("game_end", {
+          mode: "duel",
+          score: msg.totals[me - 1],
+          won: msg.winner === me,
+          forfeit: msg.forfeit,
+          duration_s: Math.round((Date.now() - matchStart) / 1000),
+          input_count: inputCount,
+          avg_fps: Math.round(fps.stop())
+        });
+        setMatchStart(0);
+      }
       void loadLeaderboard();
       break;
     }

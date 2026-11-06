@@ -12,7 +12,7 @@ import { dailyNumber, dailyVariant, dailyState, addDailyCatch, recordRound, dail
 import { nextFact } from "./facts";
 import { fancyKind, albumHas, albumSize, FANCY_COUNT } from "./fancy";
 import { guard, isGuarded } from "./guard";
-import { track } from "./analytics";
+import { FpsMeter, track } from "./analytics";
 
 function $<T extends HTMLElement>(id: string): T {
   const el = document.getElementById(id);
@@ -49,6 +49,10 @@ let roundBestBefore = 0;
 let passedBest = false;
 let toastTimer = 0;
 let roundLive = false;
+// the round waits for the first touch on the lawn; 0 = not waiting
+let armedAt = 0;
+let inputCount = 0;
+const fps = new FpsMeter();
 let comboTimer = 0;
 let dailyDoneThisRound = false;
 
@@ -208,7 +212,7 @@ const game = new Game(lawn, {
     music.stop();
     lastStats = stats;
     earnPoints(stats.points);
-    track("game_end", { mode: "solo", score, points: stats.points, duration_s: Math.round(stats.elapsedMs / 1000), new_best: isNewBest });
+    track("game_end", { mode: "solo", score, points: stats.points, duration_s: Math.round(stats.elapsedMs / 1000), new_best: isNewBest, input_count: inputCount, avg_fps: Math.round(fps.stop()) });
     lawn.shakeIt(0.12);
     showResults(score, best, isNewBest, stats);
   }
@@ -536,6 +540,32 @@ function play(): void {
   sfx.unlock();
   hideOverlay();
   closeSheet();
+  if (lastStats && !armedAt) track("restart", { mode: "solo" });
+  const mouseHole = game.prepare();
+  if (!armedAt) requestAnimationFrame(() => pointHandAt(mouseHole));
+  armedAt = performance.now();
+  $("startHint").hidden = false;
+}
+
+// Follows the mouse every frame because the lawn refits itself on resize and while it loads.
+function pointHandAt(hole: number): void {
+  if (!armedAt) return;
+  const p = lawn.critterPoint(hole);
+  const hand = $("startHand");
+  hand.hidden = !p;
+  if (p) {
+    hand.style.left = `${p.x}px`;
+    hand.style.top = `${p.y}px`;
+  }
+  requestAnimationFrame(() => pointHandAt(hole));
+}
+
+// The first touch on the lawn starts the round, so nobody loses one without ever playing it.
+function beginRound(): void {
+  armedAt = 0;
+  $("startHint").hidden = true;
+  inputCount = 1;
+  fps.start();
   roundRank = rankFor(0);
   roundBestBefore = game.bestScore;
   passedBest = false;
@@ -547,15 +577,25 @@ function play(): void {
   music.start();
   roundLive = true;
   game.start();
-  // the lawn gets the same grace period as the menus: nothing to tap for a moment
-  const ready = $("ready");
-  ready.hidden = false;
-  setTimeout(() => (ready.hidden = true), GUARD_MS);
   if (streak.grew) setTimeout(() => toast(`🔥 ${streak.days}-day streak!`, "seal"), GUARD_MS + 200);
   setTimeout(() => checkStreakSeals(streak.days), GUARD_MS + 1700);
 }
 
 playBtn.addEventListener("click", play);
+
+// A double click on Play must not count as the first touch.
+const FIRST_TOUCH_DELAY_MS = 350;
+
+// Capture phase: the round is already running when the same touch reaches the lawn, so it can catch
+// the waiting mouse.
+field.addEventListener(
+  "pointerdown",
+  (ev) => {
+    if (roundLive) inputCount++;
+    else if (armedAt && ev.timeStamp - armedAt > FIRST_TOUCH_DELAY_MS) beginRound();
+  },
+  true
+);
 
 document.addEventListener("keydown", (ev) => {
   if (ev.code !== "Space" || overlay.hidden || !sheet.hidden || views.home.hidden) return;
@@ -636,7 +676,7 @@ soundBtn.addEventListener("click", () => {
 // Pause the tune when the tab is hidden; the round itself ends on return (timer keeps counting).
 document.addEventListener("visibilitychange", () => {
   if (document.hidden) music.stop();
-  else if (overlay.hidden) music.start();
+  else if (roundLive) music.start();
 });
 field.addEventListener("touchstart", () => sfx.unlock(), { passive: true, once: true });
 
